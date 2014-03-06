@@ -1,0 +1,255 @@
+{
+ "content_id": "com.ubuntu.maas:boot-resources", 
+ "products": {
+================================================================================================================
+                    New enablement for Highbank in 12.10, requires kernel flavor "highbank"
+================================================================================================================
+  "com.ubuntu.maas:boot:12.10:armhf:highbank": {
+   "release": "quantal", 
+   "version": "12.10", 
+   "arch": "armhf",
+   "versions": {
+    "20130805": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "highbank" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/highbank/vmlinuz-zzz.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/highbank/initrd-zzz.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/highbank/di-vmlinuz-zzz.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/highbank/di-initrd-zzz.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/quantal/disk-zzz.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+================================================================================================================
+                    In 13.04, required kernel flavor required for Highbank is now "generic"
+================================================================================================================
+  "com.ubuntu.maas:boot:13.04:armhf:generic": {
+   "release": "raring", 
+   "version": "13.04", 
+   "arch": "armhf",
+   "versions": {
+    "20140101": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "highbank slayton exynos" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/generic/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/generic/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/generic/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/generic/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/saucy/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+=====================================================================================================================
+  A machine works only with hwe-q or later kernels; MAAS must be able to deploy Precise to it (with a HWE Q kernel)
+=====================================================================================================================  "com.ubuntu.maas:boot:12.04:armhf:hwe-q": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/q/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/q/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/q/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/q/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+=====================================================================================================================
+    Third party team (eg. Hyperscale enablement team) enables a new machine not yet published on maas.ubuntu.com
+=====================================================================================================================
+
+/* This should be placed on a separate server (e.g. http://maas.hyperscale.ubuntu.com) */
+
+{
+ "content_id": "com.ubuntu.hyperscale.maas:boot-resources", 
+ "products": {
+ "com.ubuntu.hyperscale.maas:boot:14.04:armhf:newmachine": {
+   "release": "trusty", 
+   "version": "14.04", 
+   "arch": "armhf",
+   "versions": {
+    "20140315": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "newmachine" }
+      "boot-kernel": { ftype: "boot-kernel" path: hyperscale/armhf/newmachine/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: hyperscale/armhf/newmachine/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: hyperscale/armhf/newmachine/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: hyperscale/armhf/newmachine/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: hyperscale/armhf/trusty/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+=====================================================================================================================
+        maas.ubuntu.com picks up a new enablement which no longer needs to be covered by a third party team
+=====================================================================================================================
+/* maas.ubuntu.com is mentioned earlier in maas config which means that it has higher priority */
+/* When this entry shows up on maas.ubuntu.com maas will use it instead of hyperscale's one */
+
+{
+ "content_id": "com.ubuntu.maas:boot-resources", 
+ "products": {
+
+ <...>
+
+ "com.ubuntu.hyperscale.maas:boot:14.04:armhf:generic": {
+   "release": "trusty", 
+   "version": "14.04", 
+   "arch": "armhf",
+   "versions": {
+    "20140510": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "<...> newmachine <...>" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/generic/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/generic/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/generic/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/generic/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/trusty/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+
+ <...>
+}
+=====================================================================================================================
+              sabdfl wants to configure MAAS to always get the latest HWE kernel on LTS release
+=====================================================================================================================
+
+/* Let's imagine that we're looking for an image for hwe-q-machine subarch assigned to machines which were enabled by hwe-q kernel */
+/* At the very beginning of its lifecycle only entry #1 (see below) exists and we use hwe-q kernel for hwe-q-machine               */
+/* At some point more than one boot resources become available (we assume that both hwe-r and hwe-s support hwe-q-machine)         */
+/* At this point MaaS observes all three entries while doing search for 'subarch = hwe-q-machine' and 'release = precise'          */
+
+/* To be able to pull the latest kernel available we need to either:                                                               */
+/* (1) have some priority (e.g. based on a special "hwe: ?" attribute)                                                             */
+/* or                                                                                                                              */
+/* (2) choose the alpabetically latest boot resource available (based on the product name)                                         */
+   
+{
+ "content_id": "com.ubuntu.maas:boot-resources", 
+ "products": {
+
+ <...>
+
+"com.ubuntu.maas:boot:12.04:armhf:hwe-q": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/q/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/q/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/q/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/q/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+
+"com.ubuntu.maas:boot:12.04:armhf:hwe-r": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine hwe-r-machines" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/r/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/r/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/r/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/r/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+
+"com.ubuntu.maas:boot:12.04:armhf:hwe-s": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine hwe-r-machines hwe-s-machines" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/s/vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/s/initrd-xxx.img size: <...> sha256sum: <...> }
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/s/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/s/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+
+ <...>
+}
+
+=====================================================================================================================
+A region contains a variety of machines including ones tagged hwe-q and hwe-r
+User wants to deploy a 3.8 kernel or later for newer openvswitch functionality
+=====================================================================================================================
+
+/* kernel >= 3.8 constraint requires us to use hwe-r boot resource for both hwe-r and hwe-q machines */
+/* to deal with that we may either add 'kernel-version' ftype and filter on it */
+/* or try to figure out kernel version by regexping kernel path/name (if typical kernel name contains its version) */
+
+{
+ "content_id": "com.ubuntu.maas:boot-resources", 
+ "products": {
+
+ <...>
+
+"com.ubuntu.maas:boot:12.04:armhf:hwe-q": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/q/vmlinuz-3.6.x.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/q/initrd-3.6.x.img size: <...> sha256sum: <...> }
+
+      "kernel-version" : <...>
+
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/q/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/q/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+
+"com.ubuntu.maas:boot:12.04:armhf:hwe-r": {
+   "release": "precise", 
+   "version": "12.04", 
+   "arch": "armhf",
+   "versions": {
+    "20130212": {
+     "items": {
+      "subarch": { ftype: "subarch" subarch: "hwe-q-machine hwe-r-machines" }
+      "boot-kernel": { ftype: "boot-kernel" path: armhf/hwe/r/vmlinuz-3.8.x.img size: <...> sha256sum: <...> }
+      "boot-initrd": { ftype: "boot-initrd" path: armhf/hwe/r/initrd-3.8.x.img size: <...> sha256sum: <...> }
+
+      "kernel-version": <...>
+
+      "di-kernel": { ftype: "di-kernel" path: armhf/hwe/r/di-vmlinuz-xxx.img size: <...> sha256sum: <...> }
+      "di-initrd": { ftype: "di-initrd" path: armhf/hwe/r/di-initrd-xxx.img size: <...> sha256sum: <...> }
+      "disk": { ftype: "disk" path: armhf/precise/disk-xxx.img size: <...> sha256sum: <...> }
+   }
+  }
+ }
+}
+
+ <...>
+}
+
+
