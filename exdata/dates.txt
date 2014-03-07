@@ -1,0 +1,10 @@
+20120426: 12.04    precise
+20120824: 12.04.1  precise-polish
+20121018: 12.10    quantal
+20130214: 12.04.2  precise-hwe-q
+20130425: 13.04    raring
+20130823: 12.04.3  precise-hwe-r
+20131017: 13.10    saucy
+20140206: 12.04.4  precise-hwe-s
+20140417: 14.04    trusty
+20140828: 12.04.5  precise-hwe-t

@@ -1,0 +1,2 @@
+* split d-i kernel/initrd into its own products
+  That could be created with: lp:~smoser/maas/netinst2ss

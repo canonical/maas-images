@@ -1,0 +1,40 @@
+"com.ubuntu.maas:boot:12.04:armhf:hwe-q":
+  _path: "%(release)s/%(arch)s/hwe-q/%(version_id)s/%(item_id)s"
+  release: "precise"
+  version: "12.04"
+  arch: "armhf"
+  subarches: "generic,hwe-p,hwe-q"
+  versions:
+    "20130214":
+       items:
+         boot-kernel: {}
+         boot-initrd: {}
+         di-kernel: {}
+         di-initrd: {}
+         root-image:
+           path: "%(release)s/%(arch)s/20130213/root-image"
+    "20130823":
+       items:
+         boot-kernel: {}
+         boot-initrd: {}
+         di-kernel: {}
+         di-initrd: {}
+         root-image:
+           path: "%(release)s/%(arch)s/20130822/root-image"
+    "20140206":
+       items:
+         boot-kernel: {}
+         boot-initrd: {}
+         di-kernel: {}
+         di-initrd: {}
+         root-image:
+           path: "%(release)s/%(arch)s/20140205/root-image"
+    "20140828":
+       items:
+         boot-kernel: {}
+         boot-initrd: {}
+         di-kernel: {}
+         di-initrd: {}
+         root-image:
+           path: "%(release)s/%(arch)s/20140827/root-image"
+

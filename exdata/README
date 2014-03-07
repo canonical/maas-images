@@ -1,0 +1,19 @@
+each directory under here is a disjoint source/site.
+ * muc/ (maas.ubuntu.com)
+ * hcc/ (hyperscale.canonica.com)
+
+files in those directories are products.
+they contain the same basic layout as a product_id in a content_id.
+
+The intent is to build a tool that can do this:
+
+ * mk-exdata --output=muc-output/ --content-id=maas.ubuntu.com:boot \
+     muc/precise-*
+   this would create a index.json in muc-output with valid stream.
+   it would just create the files and insert checksums and sizes.
+
+   Other parameters would be '--as-of-date=20140213' to only produce
+   output as of that date, and '--max=3' to limit the output to only
+   the latest 3 in each entry.
+
+   mk-exdata would fill in the paths per the '_path'.

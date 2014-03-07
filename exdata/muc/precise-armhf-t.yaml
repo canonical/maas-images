@@ -1,0 +1,15 @@
+"com.ubuntu.maas:boot:12.04:armhf:hwe-t":
+  _path: "%(release)s/%(arch)s/hwe-t/%(version_id)s/%(item_id)s"
+  release: "precise"
+  version: "12.04"
+  arch: "armhf"
+  subarches: "generic,hwe-q,hwe-r,hwe-s,hwe-t,highbank"
+  versions:
+    "20140828":
+       items:
+         boot-kernel: {}
+         boot-initrd: {}
+         di-kernel: {}
+         di-initrd: {}
+         root-image:
+           path: "%(release)s/%(arch)s/20140827/root-image"
