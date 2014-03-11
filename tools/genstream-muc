@@ -65,10 +65,34 @@ def get_checksums(inputstr):
     return ret
 
 
+def get_filedata(path, buflen=1024):
+    checksums = ('md5', 'sha256')
+    hashers = {h: hashlib.new(h) for h in checksums}
+    ret = {'size': 0}
+
+    with open(path, "r") as fp:
+            
+        blen = buflen
+        while blen == buflen:
+            buf = fp.read(buflen)
+            blen = len(buf)
+            ret['size'] += blen
+            for h in hashers:
+                hashers[h].update(buf)
+
+    ret.update({h: hashers[h].hexdigest() for h in checksums})
+    return ret
+
+
 def mkdir_p(path):
     if os.path.exists(path):
         return
     os.makedirs(path)
+
+
+def makedata_filepath(target, item):
+    with open(target, "w") as fp:
+        fp.write(item['path'] + "\n")
 
 
 class FakeEphProduct(object):
@@ -102,18 +126,17 @@ class FakeEphProduct(object):
             subst = self.tags.copy()
             subst.update({'item_id': item, 'version_id': version})
             path = self.get_path_templ(version, item) % subst
-            d[item] = {'path': path, 'size': len(path), 'ftype': item}
-            d[item].update(get_checksums(path + "\n"))
+            d[item] = {'path': path, 'ftype': item}
         self._versions[version] = d
 
-    def makepaths(self, target):
+    def makepaths(self, target, makedata=makedata_filepath):
         for version_id, ver in self._versions.items():
             for item_id, item in ver.items():
                 tfile = os.path.join(target, item['path'])
                 if not os.path.exists(tfile):
                     mkdir_p(os.path.dirname(tfile))
-                    with open(tfile, "w") as fp:
-                        fp.write(item['path'] + "\n")
+                    makedata(tfile, item)
+                item.update(get_filedata(tfile))
 
     def asproduct(self):
         t = {self.product_id: {}}
@@ -158,8 +181,8 @@ def main():
         products.append(myp)
 
     for product in products:
-        print json.dumps(product.asproduct(), indent=1)
         product.makepaths(args.out_d)
+        print json.dumps(product.asproduct(), indent=1)
 
 if __name__ == '__main__':
     sys.exit(main())
