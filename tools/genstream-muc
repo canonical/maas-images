@@ -1,0 +1,167 @@
+#!/usr/bin/python
+#   Copyright (C) 2013 Canonical Ltd.
+#
+#   Author: Scott Moser <scott.moser@canonical.com>
+#
+#   Simplestreams is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU Affero General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or (at your
+#   option) any later version.
+#
+#   Simplestreams is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public
+#   License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with Simplestreams.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import hashlib
+import json
+import os
+import os.path
+import sys
+
+
+MAAS_RDNS = "com.ubuntu.maas"
+FILE_DATA = {}
+
+DEF_TAGS = {'arch': 'NOARCH', 'release': 'NORELEASE', 'version': 'NOVERSION'}
+DEF_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image']
+DEF_PATH_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(_subarch)s/%(item_id)s"
+DEF_ROOTIMG_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(item_id)s"
+
+VERSIONS = {
+    'p-hwe-p': ["20120426", "20120824", "20130214", "20130823", "20140206",
+                "20140828"],
+    'p-hwe-q': ["20130214", "20130823", "20140206", "20140828"],
+    'p-hwe-r': ["20130823", "20140206", "20140828"],
+    'p-hwe-s': ["20140206", "20140828"],
+    'p-hwe-t': ["20140828"],
+}
+NONLTS = {
+    'quantal': {'version': "12.10",
+                'subarches': ["generic", "hwe-p", "hwe-q"],
+                'versions': ["20121018", "20130131", "20130404"],
+                'subarch': "hwe-q"},
+    'raring': {'version': "13.04",
+               'subarches': ["generic", "hwe-p", "hwe-q", "hwe-r"],
+               'versions': ["20130425", "20130630", "20130920"],
+               'subarch': "hwe-r"},
+    'saucy': {'version': "13.10",
+              'subarches': ["generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s"],
+              'versions': ["20131017", "20140122", "20140323"],
+              'subarch': "hwe-s"},
+}
+
+
+def get_checksums(inputstr):
+    ret = {}
+    for h in ('md5', 'sha256'):
+        hl = hashlib.new(h)
+        hl.update(inputstr)
+        ret[h] = hl.hexdigest()
+    return ret
+
+
+def mkdir_p(path):
+    if os.path.exists(path):
+        return
+    os.makedirs(path)
+
+
+class FakeEphProduct(object):
+    def __init__(self, product_id, versions=None, tags=None, items=None,
+                 templs=None):
+        self.product_id = product_id
+        if versions is None:
+            versions = []
+        if tags is None:
+            tags = DEF_TAGS.copy()
+        if items is None:
+            items = [f for f in DEF_ITEMS]
+        if templs is None:
+            templs = {'default': DEF_PATH_TEMPL,
+                      'root-image': DEF_ROOTIMG_TEMPL}
+        self.versions = versions
+        self.templs = templs
+        self.tags = tags
+        self.items = items
+        self._versions = {}
+        for v in versions:
+            self.makeitems(v)
+
+    def get_path_templ(self, version, item):
+        return self.templs.get(item, self.templs.get('default'))
+
+    def makeitems(self, version):
+        d = {}
+        for item in self.items:
+            d[item] = {}
+            subst = self.tags.copy()
+            subst.update({'item_id': item, 'version_id': version})
+            path = self.get_path_templ(version, item) % subst
+            d[item] = {'path': path, 'size': len(path)}
+            d[item].update(get_checksums(path + "\n"))
+        self._versions[version] = d
+
+    def makepaths(self, target):
+        for version_id, ver in self._versions.items():
+            for item_id, item in ver.items():
+                tfile = os.path.join(target, item['path'])
+                if not os.path.exists(tfile):
+                    mkdir_p(os.path.dirname(tfile))
+                    with open(tfile, "w") as fp:
+                        fp.write(item['path'] + "\n")
+
+    def asproduct(self):
+        t = {self.product_id: {}}
+        t[self.product_id]['versions'] = self._versions.copy()
+        t[self.product_id].update({k: v for k, v in self.tags.items()
+                                   if not k.startswith("_")})
+        return t
+
+
+def main():
+    parser = argparse.ArgumentParser(description="create example content tree")
+
+    parser.add_argument("out_d", metavar='out_d',
+                        help=('create content under output_dir'))
+
+    parser.add_argument('--sign', action='store_true', default=False,
+                        help='sign all generated files')
+
+    args = parser.parse_args()
+
+    products = []
+    for arch in ("armhf", "i386", "amd64"):
+        subarches = ["generic"]
+        for subarch in ("hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t"):
+            subarches.append(subarch)
+            pid = "com.ubuntu.maas:boot:12.04:" + arch + ":" + subarch
+            myp = FakeEphProduct(
+                product_id=pid, versions=VERSIONS["p-" + subarch],
+                tags={'release': "precise", 'version': "12.04", 'arch': arch,
+                      'subarches': ",".join(subarches), "_subarch": subarch})
+            products.append(myp)
+
+    for release, data in NONLTS.iteritems():
+        for arch in data.get('arches', ("armhf", "i386", "amd64")):
+            pid = ("com.ubuntu.maas:boot:" + data['version'] + ":" + arch +
+                   ":" + data['subarch'])
+            myp = FakeEphProduct(
+                product_id=pid, versions=data['versions'],
+                tags={'release': release, 'version': data['version'],
+                      'arch': arch, 'subarches': ",".join(data['subarches']),
+                      '_subarch': subarch})
+        products.append(myp)
+
+    for product in products:
+        print json.dumps(product.asproduct(), indent=1)
+        product.makepaths(args.out_d)
+
+if __name__ == '__main__':
+    sys.exit(main())
+
+# vi: ts=4 expandtab
