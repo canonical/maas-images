@@ -17,6 +17,7 @@
 #   along with Simplestreams.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -32,6 +33,8 @@ DEF_EPH_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image']
 DEF_PATH_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(_subarch)s/%(item_id)s"
 DEF_ROOTIMG_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(item_id)s"
 
+BASE_ARCHES = ["armhf", "i386", "amd64"]
+
 VERSIONS = {
     'p-hwe-p': ["20120426", "20120824", "20130214", "20130823", "20140206",
                 "20140828"],
@@ -40,20 +43,50 @@ VERSIONS = {
     'p-hwe-s': ["20140206", "20140828"],
     'p-hwe-t': ["20140828"],
 }
-NONLTS = {
+RELEASE_DATA = {
+    'precise': {'version': "12.04",
+                'base_subarches': ["generic"],
+                'arches': BASE_ARCHES,
+                'hwes': [
+                    ('hwe-p', ["20120426", "20120824", "20130214", "20130823",
+                               "20140206", "20140828"],),
+                    ('hwe-q', ["20130214", "20130823", "20140206", "20140828"],),
+                    ('hwe-r', ["20130823", "20140206", "20140828"],),
+                    ('hwe-s', ["20140206", "20140828"],),
+                    ('hwe-t', ["20140828"],),
+                ],
+               },
     'quantal': {'version': "12.10",
-                'subarches': ["generic", "hwe-p", "hwe-q"],
-                'versions': ["20121018", "20130131", "20130404"],
-                'subarch': "hwe-q"},
-    'raring': {'version': "13.04",
-               'subarches': ["generic", "hwe-p", "hwe-q", "hwe-r"],
-               'versions': ["20130425", "20130630", "20130920"],
-               'subarch': "hwe-r"},
-    'saucy': {'version': "13.10",
-              'subarches': ["generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s"],
-              'versions': ["20131017", "20140122", "20140323"],
-              'subarch': "hwe-s"},
+                'arches': BASE_ARCHES,
+                'base_subarches': ["generic", "hwe-p"],
+                'hwes': [("hwe-q", ["20121018", "20130131", "20130404"]),],
+               },
+    'raring':  {'version': "13.04",
+                'arches': BASE_ARCHES,
+                'base_subarches': ["generic", "hwe-p", "hwe-q"],
+                'hwes': [("hwe-r", ["20130425", "20130630", "20130920"]),],
+               },
+    'saucy':   {'version': "13.10",
+                'arches': BASE_ARCHES,
+                'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r"],
+                'hwes': [("hwe-s", ["20131017", "20140122", "20140323"]),],
+               },
+    'trusty':  {'version': "14.04",
+                'arches': BASE_ARCHES + ['ppc64el'],
+                'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s"],
+                'hwes': [
+                    ('hwe-t', ["20140417", "20140508"],),
+                ],
+               },
 }
+
+# we just make the d-i kernels one day earlier
+DI_DATA = copy.deepcopy(RELEASE_DATA)
+for _r in DI_DATA:
+    _t = []
+    for hwe, vlist in DI_DATA[_r]['hwes']:
+        _t.append((hwe, [str(int(v)-1) for v in vlist],))
+    DI_DATA[_r]['hwes'] = _t
 
 
 def get_checksums(inputstr):
@@ -146,6 +179,23 @@ class FakeProduct(object):
         return t
 
 
+def get_products(pid_pre, release, data, items=None):
+    products = []
+    for arch in data.get('arches', BASE_ARCHES):
+        subarches = [s for s in data['base_subarches']]
+        for hwe, versions in data['hwes']:
+            subarches.append(hwe)
+            pid = ':'.join((pid_pre, data['version'], arch, hwe,))
+            myp = FakeProduct(
+                product_id=pid, versions=versions, items=items,
+                tags={'release': release, 'version': data['version'],
+                      'arch': arch, 'subarches': ",".join(subarches),
+                      '_subarch': hwe})
+        products.append(myp)
+    return products
+    
+
+
 def main():
     parser = argparse.ArgumentParser(description="create example content tree")
 
@@ -158,44 +208,18 @@ def main():
     args = parser.parse_args()
 
     products = []
+
     pid_pre = MAAS_RDNS + ":boot-ephem"
-    for arch in ("armhf", "i386", "amd64"):
-        subarches = ["generic"]
-        version = "12.04"
-        for subarch in ("hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t"):
-            subarches.append(subarch)
-            pid = ':'.join((pid_pre, version, arch, subarch,))
-            myp = FakeProduct(
-                product_id=pid, versions=VERSIONS["p-" + subarch],
-                tags={'release': "precise", 'version': version, 'arch': arch,
-                      'subarches': ",".join(subarches), "_subarch": subarch})
-            products.append(myp)
+    for release, data in RELEASE_DATA.iteritems():
+        tprod = get_products(pid_pre=pid_pre, release=release,
+                             data=data)
+        products += tprod
 
-    for release, data in NONLTS.iteritems():
-        for arch in data.get('arches', ("armhf", "i386", "amd64")):
-            pid = ':'.join((pid_pre, data['version'], arch, subarch,))
-            myp = FakeProduct(
-                product_id=pid, versions=data['versions'],
-                tags={'release': release, 'version': data['version'],
-                      'arch': arch, 'subarches': ",".join(data['subarches']),
-                      '_subarch': subarch})
-        products.append(myp)
-
-    pid_pre = ':'.join((MAAS_RDNS, 'di-netboot',))
-    items = ['di-kernel', 'di-initrd']
-    for arch in ("armhf", "i386", "amd64"):
-        subarches = ["generic"]
-        version = "12.04"
-        for subarch in ("hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t"):
-            subarches.append(subarch)
-            pid = ':'.join((pid_pre, version, arch, subarch,))
-            myp = FakeProduct(
-                product_id=pid,
-                versions=[str(int(v) - 1) for v in VERSIONS["p-" + subarch]],
-                tags={'release': "precise", 'version': version, 'arch': arch,
-                      'subarches': ",".join(subarches), "_subarch": subarch},
-                items=items)
-            products.append(myp)
+    pid_pre = MAAS_RDNS + ":di-netboot"
+    for release, data in DI_DATA.iteritems():
+        tprod = get_products(pid_pre=pid_pre, release=release,
+                             data=data, items=['di-kernel', 'di-initrd'])
+        products += tprod
 
     for product in products:
         product.makepaths(args.out_d)
