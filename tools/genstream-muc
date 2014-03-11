@@ -28,7 +28,7 @@ MAAS_RDNS = "com.ubuntu.maas"
 FILE_DATA = {}
 
 DEF_TAGS = {'arch': 'NOARCH', 'release': 'NORELEASE', 'version': 'NOVERSION'}
-DEF_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image']
+DEF_EPH_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image']
 DEF_PATH_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(_subarch)s/%(item_id)s"
 DEF_ROOTIMG_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(item_id)s"
 
@@ -95,7 +95,7 @@ def makedata_filepath(target, item):
         fp.write(item['path'] + "\n")
 
 
-class FakeEphProduct(object):
+class FakeProduct(object):
     def __init__(self, product_id, versions=None, tags=None, items=None,
                  templs=None):
         self.product_id = product_id
@@ -104,7 +104,7 @@ class FakeEphProduct(object):
         if tags is None:
             tags = DEF_TAGS.copy()
         if items is None:
-            items = [f for f in DEF_ITEMS]
+            items = [f for f in DEF_EPH_ITEMS]
         if templs is None:
             templs = {'default': DEF_PATH_TEMPL,
                       'root-image': DEF_ROOTIMG_TEMPL}
@@ -158,27 +158,44 @@ def main():
     args = parser.parse_args()
 
     products = []
+    pid_pre = MAAS_RDNS + ":boot-ephem"
     for arch in ("armhf", "i386", "amd64"):
         subarches = ["generic"]
+        version = "12.04"
         for subarch in ("hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t"):
             subarches.append(subarch)
-            pid = "com.ubuntu.maas:boot:12.04:" + arch + ":" + subarch
-            myp = FakeEphProduct(
+            pid = ':'.join((pid_pre, version, arch, subarch,))
+            myp = FakeProduct(
                 product_id=pid, versions=VERSIONS["p-" + subarch],
-                tags={'release': "precise", 'version': "12.04", 'arch': arch,
+                tags={'release': "precise", 'version': version, 'arch': arch,
                       'subarches': ",".join(subarches), "_subarch": subarch})
             products.append(myp)
 
     for release, data in NONLTS.iteritems():
         for arch in data.get('arches', ("armhf", "i386", "amd64")):
-            pid = ("com.ubuntu.maas:boot:" + data['version'] + ":" + arch +
-                   ":" + data['subarch'])
-            myp = FakeEphProduct(
+            pid = ':'.join((pid_pre, data['version'], arch, subarch,))
+            myp = FakeProduct(
                 product_id=pid, versions=data['versions'],
                 tags={'release': release, 'version': data['version'],
                       'arch': arch, 'subarches': ",".join(data['subarches']),
                       '_subarch': subarch})
         products.append(myp)
+
+    pid_pre = ':'.join((MAAS_RDNS, 'di-netboot',))
+    items = ['di-kernel', 'di-initrd']
+    for arch in ("armhf", "i386", "amd64"):
+        subarches = ["generic"]
+        version = "12.04"
+        for subarch in ("hwe-p", "hwe-q", "hwe-r", "hwe-s", "hwe-t"):
+            subarches.append(subarch)
+            pid = ':'.join((pid_pre, version, arch, subarch,))
+            myp = FakeProduct(
+                product_id=pid,
+                versions=[str(int(v) - 1) for v in VERSIONS["p-" + subarch]],
+                tags={'release': "precise", 'version': version, 'arch': arch,
+                      'subarches': ",".join(subarches), "_subarch": subarch},
+                items=items)
+            products.append(myp)
 
     for product in products:
         product.makepaths(args.out_d)
