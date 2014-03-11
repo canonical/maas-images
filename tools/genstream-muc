@@ -102,7 +102,7 @@ class FakeEphProduct(object):
             subst = self.tags.copy()
             subst.update({'item_id': item, 'version_id': version})
             path = self.get_path_templ(version, item) % subst
-            d[item] = {'path': path, 'size': len(path)}
+            d[item] = {'path': path, 'size': len(path), 'ftype': item}
             d[item].update(get_checksums(path + "\n"))
         self._versions[version] = d
 
