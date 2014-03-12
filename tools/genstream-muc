@@ -31,7 +31,8 @@ MAAS_RDNS = "com.ubuntu.maas"
 FILE_DATA = {}
 
 DEF_TAGS = {'arch': 'NOARCH', 'release': 'NORELEASE', 'version': 'NOVERSION'}
-DEF_EPH_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image']
+DEF_BOOT_ITEMS = ['boot-kernel', 'boot-initrd', 'root-image', 'di-kernel',
+                  'di-initrd']
 DEF_PATH_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(_subarch)s/%(item_id)s"
 DEF_ROOTIMG_TEMPL = "%(release)s/%(arch)s/%(version_id)s/%(item_id)s"
 
@@ -71,14 +72,6 @@ RELEASE_DATA = {
         'hwes': [('hwe-t', ["20140417", "20140508"],), ],
     },
 }
-
-# we just make the d-i kernels one day earlier
-DI_DATA = copy.deepcopy(RELEASE_DATA)
-for _r in DI_DATA:
-    _t = []
-    for hwe, vlist in DI_DATA[_r]['hwes']:
-        _t.append((hwe, [str(int(v)-1) for v in vlist],))
-    DI_DATA[_r]['hwes'] = _t
 
 
 def get_checksums(inputstr):
@@ -128,7 +121,7 @@ class FakeProduct(object):
         if tags is None:
             tags = DEF_TAGS.copy()
         if items is None:
-            items = [f for f in DEF_EPH_ITEMS]
+            items = [f for f in DEF_BOOT_ITEMS]
         if templs is None:
             templs = {'default': DEF_PATH_TEMPL,
                       'root-image': DEF_ROOTIMG_TEMPL}
@@ -139,6 +132,20 @@ class FakeProduct(object):
         self._versions = {}
         for v in versions:
             self.makeitems(v)
+
+    def reuse_di_versions(self):
+        # this applies a hack to di-versions to ensure that they are separate
+        # in release pattern from eph image data. it causes it to look like
+        # di-kernel and di-initrd get updated only every other eph version.
+        last = {}
+        last = {'di-kernel': None, 'di-initrd': None}
+        for vername, vdata in self._versions.items():
+            for i in last.keys():
+                if last[i]:
+                    vdata[i] = last[i]
+                    last[i] = None
+                else:
+                    last[i] = vdata[i].copy()
 
     def get_path_templ(self, version, item):
         return self.templs.get(item, self.templs.get('default'))
@@ -229,12 +236,6 @@ def main():
                              data=data)
         products += tprod
 
-    pid_pre = MAAS_RDNS + "boot:di-netboot"
-    for release, data in DI_DATA.iteritems():
-        tprod = get_products(pid_pre=pid_pre, release=release,
-                             data=data, items=['di-kernel', 'di-initrd'])
-        products += tprod
-
     content = {
         'datatype': 'image-downloads',
         'format': 'products:1.0',
@@ -244,6 +245,7 @@ def main():
     }
     for product in products:
         product.makepaths(args.out_d)
+        product.reuse_di_versions()
         t = product.asproduct()
         content['products'][product.product_id] = t[product.product_id]
 
