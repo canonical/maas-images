@@ -39,9 +39,8 @@ BASE_ARCHES = ["armhf", "i386", "amd64"]
 
 RELEASE_DATA = {
     'precise': {
-        'version': "12.04",
+        'version': "12.04", 'arches': BASE_ARCHES,
         'base_subarches': ["generic"],
-        'arches': BASE_ARCHES,
         'hwes': [
             ('hwe-p', ["20120426", "20120824", "20130214", "20130823",
                        "20140206", "20140828"],),
