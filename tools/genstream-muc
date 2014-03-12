@@ -195,7 +195,30 @@ def get_products(pid_pre, release, data, items=None):
                       '_subarch': hwe})
         products.append(myp)
     return products
-    
+
+
+def create_index(target_d, files=None, path_prefix="streams/v1/"):
+    if files is None:
+        files = [f for f in os.listdir(target_d) if f.endswith(".json")]
+
+    ret = {'index': {}, 'format': 'index:1.0', 'updated': sutil.timestamp()}
+    for f in files:
+        with open(os.path.join(target_d, f), "r") as fp:
+            data = sutil.load_content(fp.read())
+        fmt = data.get('format')
+        cid = data.get('content_id')
+        if fmt == "index:1.0" or not (fmt and cid):
+            continue
+        optcopy = ('datatype', 'updated', 'format')
+        item = {k:data.get(k) for k in optcopy if data.get(k)}
+        if data.get('format') == "products:1.0":
+            item['products'] = [p for p in data['products'].keys()]
+
+        item['path'] = path_prefix + f
+
+        ret['index'][cid] = item
+
+    return ret
 
 
 def main():
@@ -236,12 +259,17 @@ def main():
         content['products'][product.product_id] = t[product.product_id]
 
     sutil.products_condense(content)
-    cpath = os.path.join(args.out_d, 'streams', 'v1', content['content_id'])
+    v1dir = os.path.join(args.out_d, 'streams', 'v1')
+    cpath = os.path.join(v1dir, content['content_id'])
+    ipath = os.path.join(v1dir, 'index.json')
     cpath += ".json"
     mkdir_p(os.path.dirname(cpath))
     with open(cpath, "w") as fp:
         fp.write(sutil.dump_data(content))
-    #print json.dumps(content, indent=1)
+
+    index = create_index(v1dir)
+    with open(ipath, "w") as fp:
+        fp.write(sutil.dump_data(index))
 
 if __name__ == '__main__':
     sys.exit(main())
