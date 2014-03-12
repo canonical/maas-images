@@ -24,6 +24,8 @@ import os
 import os.path
 import sys
 
+import simplestreams.util as sutil
+
 
 MAAS_RDNS = "com.ubuntu.maas"
 FILE_DATA = {}
@@ -209,21 +211,37 @@ def main():
 
     products = []
 
-    pid_pre = MAAS_RDNS + ":boot-ephem"
+    pid_pre = MAAS_RDNS + ":boot:boot-ephem"
     for release, data in RELEASE_DATA.iteritems():
         tprod = get_products(pid_pre=pid_pre, release=release,
                              data=data)
         products += tprod
 
-    pid_pre = MAAS_RDNS + ":di-netboot"
+    pid_pre = MAAS_RDNS + "boot:di-netboot"
     for release, data in DI_DATA.iteritems():
         tprod = get_products(pid_pre=pid_pre, release=release,
                              data=data, items=['di-kernel', 'di-initrd'])
         products += tprod
 
+    content = {
+        'datatype': 'image-downloads',
+        'format': 'products:1.0',
+        'content_id': MAAS_RDNS + ":boot",
+        'updated': sutil.timestamp(),
+        'products': {}
+    }
     for product in products:
         product.makepaths(args.out_d)
-        print json.dumps(product.asproduct(), indent=1)
+        t = product.asproduct()
+        content['products'][product.product_id] = t[product.product_id]
+
+    sutil.products_condense(content)
+    cpath = os.path.join(args.out_d, 'streams', 'v1', content['content_id'])
+    cpath += ".json"
+    mkdir_p(os.path.dirname(cpath))
+    with open(cpath, "w") as fp:
+        fp.write(sutil.dump_data(content))
+    #print json.dumps(content, indent=1)
 
 if __name__ == '__main__':
     sys.exit(main())
