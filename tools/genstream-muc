@@ -244,8 +244,8 @@ def main():
         'products': {}
     }
     for product in products:
-        product.makepaths(args.out_d)
         product.reuse_di_versions()
+        product.makepaths(args.out_d)
         t = product.asproduct()
         content['products'][product.product_id] = t[product.product_id]
 
