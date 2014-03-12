@@ -45,41 +45,44 @@ VERSIONS = {
     'p-hwe-s': ["20140206", "20140828"],
     'p-hwe-t': ["20140828"],
 }
+F = {
+    'x': {
+    }
+}
 RELEASE_DATA = {
-    'precise': {'version': "12.04",
-                'base_subarches': ["generic"],
-                'arches': BASE_ARCHES,
-                'hwes': [
-                    ('hwe-p', ["20120426", "20120824", "20130214", "20130823",
-                               "20140206", "20140828"],),
-                    ('hwe-q', ["20130214", "20130823", "20140206", "20140828"],),
-                    ('hwe-r', ["20130823", "20140206", "20140828"],),
-                    ('hwe-s', ["20140206", "20140828"],),
-                    ('hwe-t', ["20140828"],),
-                ],
-               },
-    'quantal': {'version': "12.10",
-                'arches': BASE_ARCHES,
-                'base_subarches': ["generic", "hwe-p"],
-                'hwes': [("hwe-q", ["20121018", "20130131", "20130404"]),],
-               },
-    'raring':  {'version': "13.04",
-                'arches': BASE_ARCHES,
-                'base_subarches': ["generic", "hwe-p", "hwe-q"],
-                'hwes': [("hwe-r", ["20130425", "20130630", "20130920"]),],
-               },
-    'saucy':   {'version': "13.10",
-                'arches': BASE_ARCHES,
-                'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r"],
-                'hwes': [("hwe-s", ["20131017", "20140122", "20140323"]),],
-               },
-    'trusty':  {'version': "14.04",
-                'arches': BASE_ARCHES + ['ppc64el'],
-                'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s"],
-                'hwes': [
-                    ('hwe-t', ["20140417", "20140508"],),
-                ],
-               },
+    'precise': {
+        'version': "12.04",
+        'base_subarches': ["generic"],
+        'arches': BASE_ARCHES,
+        'hwes': [
+            ('hwe-p', ["20120426", "20120824", "20130214", "20130823",
+                       "20140206", "20140828"],),
+            ('hwe-q', ["20130214", "20130823", "20140206", "20140828"],),
+            ('hwe-r', ["20130823", "20140206", "20140828"],),
+            ('hwe-s', ["20140206", "20140828"],),
+            ('hwe-t', ["20140828"],),
+        ],
+    },
+    'quantal': {
+        'version': "12.10", 'arches': BASE_ARCHES,
+        'base_subarches': ["generic", "hwe-p"],
+        'hwes': [("hwe-q", ["20121018", "20130131", "20130404"]), ],
+    },
+    'raring':  {
+        'version': "13.04", 'arches': BASE_ARCHES,
+        'base_subarches': ["generic", "hwe-p", "hwe-q"],
+        'hwes': [("hwe-r", ["20130425", "20130630", "20130920"]), ],
+    },
+    'saucy':   {
+        'version': "13.10", 'arches': BASE_ARCHES,
+        'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r"],
+        'hwes': [("hwe-s", ["20131017", "20140122", "20140323"]), ],
+    },
+    'trusty':  {
+        'version': "14.04", 'arches': BASE_ARCHES + ['ppc64el'],
+        'base_subarches': ["generic", "hwe-p", "hwe-q", "hwe-r", "hwe-s"],
+        'hwes': [('hwe-t', ["20140417", "20140508"],), ],
+    },
 }
 
 # we just make the d-i kernels one day earlier
@@ -106,7 +109,6 @@ def get_filedata(path, buflen=1024):
     ret = {'size': 0}
 
     with open(path, "r") as fp:
-            
         blen = buflen
         while blen == buflen:
             buf = fp.read(buflen)
@@ -210,7 +212,7 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
         if fmt == "index:1.0" or not (fmt and cid):
             continue
         optcopy = ('datatype', 'updated', 'format')
-        item = {k:data.get(k) for k in optcopy if data.get(k)}
+        item = {k: data.get(k) for k in optcopy if data.get(k)}
         if data.get('format') == "products:1.0":
             item['products'] = [p for p in data['products'].keys()]
 
