@@ -189,7 +189,7 @@ def get_products(pid_pre, release, data, items=None):
                 tags={'release': release, 'version': data['version'],
                       'arch': arch, 'subarches': ",".join(subarches),
                       '_subarch': hwe})
-        products.append(myp)
+            products.append(myp)
     return products
 
 
