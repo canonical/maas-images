@@ -142,27 +142,27 @@ class FakeProduct(object):
         for vername, vdata in self._versions.items():
             for i in last.keys():
                 if last[i]:
-                    vdata[i] = last[i]
+                    vdata['items'][i] = last[i]
                     last[i] = None
                 else:
-                    last[i] = vdata[i].copy()
+                    last[i] = vdata['items'][i].copy()
 
     def get_path_templ(self, version, item):
         return self.templs.get(item, self.templs.get('default'))
 
     def makeitems(self, version):
-        d = {}
+        d = {'items': {}}
         for item in self.items:
-            d[item] = {}
+            d['items'][item] = {}
             subst = self.tags.copy()
             subst.update({'item_id': item, 'version_id': version})
             path = self.get_path_templ(version, item) % subst
-            d[item] = {'path': path, 'ftype': item}
+            d['items'][item] = {'path': path, 'ftype': item}
         self._versions[version] = d
 
     def makepaths(self, target, makedata=makedata_filepath):
         for version_id, ver in self._versions.items():
-            for item_id, item in ver.items():
+            for item_id, item in ver['items'].items():
                 tfile = os.path.join(target, item['path'])
                 if not os.path.exists(tfile):
                     mkdir_p(os.path.dirname(tfile))
