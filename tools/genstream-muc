@@ -158,7 +158,11 @@ class FakeProduct(object):
             subst.update({'item_id': item, 'version_id': version})
             path = self.get_path_templ(version, item) % subst
             d['items'][item] = {'path': path, 'ftype': item}
+        d['label'] = self.get_label(version)
         self._versions[version] = d
+
+    def get_label(self, version):
+        return 'daily'
 
     def makepaths(self, target, makedata=makedata_filepath):
         for version_id, ver in self._versions.items():
