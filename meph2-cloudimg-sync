@@ -1,0 +1,417 @@
+#!/usr/bin/python
+
+from simplestreams import util as sutil
+from simplestreams import contentsource
+from simplestreams import objectstores
+from simplestreams import mirrors
+import copy
+import hashlib
+import errno
+import json
+import os
+import tempfile
+import shutil
+import subprocess
+import sys
+
+SRC_MIRROR = "http://maas.ubuntu.com/images/ephemeral/daily/"
+if os.environ.get("HTTPS"):
+   SRC_MIRROR = "https://maas.ubuntu.com/images/ephemeral/daily/"
+SRC_PATH = "streams/v1/com.ubuntu.maas.daily:download.json"
+PROD_PRE = "com.ubuntu.maas:boot"
+CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
+
+DI_KRD_TSV = "di-krd.tsv"
+DI_KRD_FIELDS = ("arch", "release", "krel", "ftype", "flavor", "di-version", "size", "sha256", "url")
+
+HWE_SUBARCHES = ['hwe-p', 'hwe-q', 'hwe-r', 'hwe-s', 'hwe-t']
+SA_HWE_P = HWE_SUBARCHES[0:1]
+SA_HWE_Q = HWE_SUBARCHES[0:2]
+SA_HWE_R = HWE_SUBARCHES[0:3]
+SA_HWE_S = HWE_SUBARCHES[0:4]
+SA_HWE_T = HWE_SUBARCHES[0:5]
+SA_ARM_T = ["highbank"]
+HBANK = "highbank"
+GLPAE = "generic-lpae"
+
+SUBARCHES = {
+#    keyname           arch       subarch  kflavor    krel      subarches
+    'i386/hwe-p':    ('i386',    'hwe-p', 'generic', 'precise', SA_HWE_P),
+    'amd64/hwe-p':   ('amd64',   'hwe-p', 'generic', 'precise', SA_HWE_P),
+    'armhf/hbankp':  ('armhf',   HBANK,   HBANK,     'precise', SA_HWE_P),
+    'i386/hwe-q':    ('i386',    'hwe-q', 'generic', 'quantal', SA_HWE_Q),
+    'amd64/hwe-q':   ('amd64',   'hwe-q', 'generic', 'quantal', SA_HWE_Q),
+    'i386/hwe-r':    ('i386',    'hwe-r', 'generic', 'raring',  SA_HWE_R),
+    'amd64/hwe-r':   ('amd64',   'hwe-r', 'generic', 'raring',  SA_HWE_R),
+    'armhf/glpae-s': ('armhf',   GLPAE,   GLPAE,     'saucy',   [GLPAE]),
+    'armhf/hwe-s':   ('armhf',   'hwe-s', 'generic', 'saucy',   SA_HWE_S + [HBANK]),
+    'i386/hwe-s':    ('i386',    'hwe-s', 'generic', 'saucy',   SA_HWE_S),
+    'amd64/hwe-s':   ('amd64',   'hwe-s', 'generic', 'saucy',   SA_HWE_S),
+    'ppc64el/hwe-t': ('ppc64el', 'hwe-t', 'generic', 'trusty',  SA_HWE_T),
+    'armhf/glpae-t': ('armhf',   GLPAE,   GLPAE,     'trusty',  [GLPAE]),
+    'armhf/hwe-t':   ('armhf',   'hwe-t', 'generic', 'trusty',  SA_HWE_T + [HBANK]),
+    'i386/hwe-t':    ('i386',    'hwe-t', 'generic', 'trusty',  SA_HWE_T),
+    'amd64/hwe-t':   ('amd64',   'hwe-t', 'generic', 'trusty',  SA_HWE_T),
+}
+
+PRODUCTS_MAP = {
+  "trusty": {
+     'version': "14.04",
+     'release': "trusty",
+     'subarches': ["armhf/hwe-t", "armhf/glpae-t", "i386/hwe-t", "amd64/hwe-t", "ppc64el/hwe-t"]
+  },
+  "saucy": {
+     'version': "13.10",
+     'release': "saucy",
+     'subarches': ["armhf/hwe-s", "armhf/glpae-s", "i386/hwe-s", "amd64/hwe-s"]
+  },
+  "precise": {
+     'version': "12.04",
+     'release': "precise",
+     'subarches': [
+         'i386/hwe-p', 'amd64/hwe-p', 'armhf/hbankp',
+         'i386/hwe-q', 'amd64/hwe-q',
+         'i386/hwe-r', 'amd64/hwe-r',
+         'i386/hwe-s', 'amd64/hwe-s',
+     ]
+  },
+}
+
+
+def get_krd_info(arch, release, krel, ftype, flavor="generic"):
+    ftype = ftype.replace('di-','')
+    with open(DI_KRD_TSV) as fp:
+	for line in fp:
+            if line.startswith("#"):
+                continue
+            toks = line.split()
+            x = {DI_KRD_FIELDS[i]: toks[i] for i in range(0, len(toks))}
+            if (x['arch'] == arch and x['release'] == release and
+                x['krel'] == krel and x['ftype'] == ftype and
+                x['flavor'] == flavor):
+                return({'size': int(x['size']), 'url': x['url'],
+                        'di-version': x['di-version'], 'sha256': x['sha256']})
+    return None
+
+
+def get_path(item, name, version):
+    if item['ftype'] in ("root-image.tgz", "root-image.gz"):
+        toks = (item['release'], item['arch'], version, name)
+    elif item['ftype'] in ("di-kernel", "di-initrd"):
+        toks = (item['release'], item['arch'], 'di', item['di-version'], item['krel'], item['kflavor'], name)
+    elif item['ftype'] in ("boot-kernel", "boot-initrd"):
+        toks = (item['release'], item['arch'], version, item['krel'], item['kflavor'], name)
+    return '/'.join(toks)
+
+
+def insert_item(item, fstore):
+    src = contentsource.UrlContentSource(item['url'])
+    fstore.insert(item['path'], contentsource.UrlContentSource(item['url']),
+                  mutable=False, size=item['size'],
+                  checksums={'sha256': item['sha256']})
+
+
+def v2tov1_products(prodtree):
+    ret = empty_iid_products("com.ubuntu.maas.daily:download")
+    for product in prodtree.get('products'):
+        tprod = ("com.ubuntu.maas.daily:ephemeral:%(version)s:%(arch)s"
+                 % prodtree['products'][product])
+        if tprod not in ret['products']:
+            ret['products'][tprod] = {'versions': {}}
+        for vername in prodtree['products'][product].get('versions'):
+            if vername not in ret['products'][tprod]['versions']:
+                ret['products'][tprod]['versions'][vername] = {}
+        
+    print "returning: %s" % ret
+    return ret
+
+
+def empty_iid_products(content_id):
+    return {'content_id': content_id, 'products': {},
+            'datatype': 'image-ids', 'format': 'products:1.0'}
+    pass
+
+
+def get_products(release, arch):
+    data = None
+    for rel, d in PRODUCTS_MAP.items():
+        if d['release'] == release:
+            data = d
+    if data is None:
+        return data
+
+    products = {}
+    for s in data['subarches']:
+        tup = SUBARCHES[s]
+        d = data.copy()
+        d.update({'arch': tup[0], 'subarch': tup[1], 'kflavor': tup[2],
+                  'krel': tup[3], 'subarches': tup[4]})
+        if d['arch'] != arch:
+            continue
+
+        # if this is 'hwe-X' subarch, then support 'generic'
+        if d['subarch'] == "hwe-" + release[0:1]:
+            d['subarches'] = ['generic'] + d['subarches']
+
+        d['subarches'] = ','.join(sorted(d['subarches']))
+
+        pid = ':'.join([PROD_PRE, d['version'], d['arch'], d['subarch']])
+        products[pid] = d
+    return products
+
+def insert_fake_item(item, fstore):
+    content = item['path'] + "\n"
+    item['size'] = len(content)
+    fstore.insert_content(path=item['path'], content=content)
+    item['_fake'] = 'fake-data: ' + item['path']
+
+
+def read_sums(out_d):
+    cfile = os.path.join(out_d, '.CHECKSUMS.json')
+    if not os.path.isfile(cfile):
+        return {}
+    with open(cfile, "r") as fp:
+        return json.load(fp)
+
+def write_sums(out_d, sums=None):
+    cfile = os.path.join(out_d, '.CHECKSUMS.json')
+    if sums is None:
+        return
+
+    with open(cfile, "w") as fp:
+        return json.dump(sums, fp)
+    
+
+def fill_item_from_fs(out_d, item):
+    if not item.get('size'):
+        item['size'] = os.path.getsize(os.path.join(out_d, item['path']))
+
+    if not item.get('sha256'):
+        sums = read_sums(out_d)
+        cached = sums.get(item['path'])
+        if cached:
+            item['sha256'] = cached
+        else:
+            with open(os.path.join(out_d, item['path']), "r") as fp:
+                buflen = 1024*1024
+                cs = hashlib.new('sha256')
+                while True:
+                    buf = fp.read(buflen)
+                    cs.update(buf)
+                    if len(buf) != buflen:
+                        break
+            item['sha256'] = cs.hexdigest()
+            sums[item['path']] = item['sha256']
+            write_sums(out_d, sums)
+
+    return
+
+
+def get_eph_items(ephtgz, url, out_d, kernel, initrd):
+    missing = []
+    for i in (ephtgz, kernel, initrd):
+       target = os.path.join(out_d, i['path'])
+       if os.path.isfile(target):
+           fill_item_from_fs(out_d, i)
+       else:
+           missing.append(i)
+
+    if not missing:
+        return
+
+    mrootgz = ['./make-rootgz', url, out_d, ephtgz['path'],
+               kernel['path'], initrd['path']]
+    print "call: %s" % ' '.join(mrootgz)
+    subprocess.check_call(mrootgz)
+    for i in (ephtgz, kernel, initrd):
+        fill_item_from_fs(out_d, i)
+    return
+
+
+def is_v1_included_kernel(arch, rel, krel, kflavor):
+    if krel != rel:
+        return False
+    if (arch == "armhf" and kflavor == "highbank" and
+        rel in ('precise', 'quantal', 'raring')):
+            return True
+    return (kflavor == "generic")
+
+
+def empty_iid_products(content_id):
+    return {'content_id': content_id, 'products': {},
+            'datatype': 'image-ids', 'format': 'products:1.0'}
+
+
+class V2mirror(mirrors.BasicMirrorWriter):
+
+    def __init__(self, *args, **kwargs):
+        super(V2mirror, self).__init__(config=kwargs.get('config'))
+        self.out_d = kwargs.get('out_d')
+        self.fstore = objectstores.FileStore(prefix=self.out_d)
+        self.content_id = CONTENT_ID
+
+    def _cidpath(self, content_id):
+        return "streams/v1/%s.json" % content_id
+    
+    def load_products(self, path=None, content_id=None):
+        if content_id != "com.ubuntu.maas.daily:download":
+            raise ValueError("Not expecting to sync with content_id: %s" % content_id)
+
+        try:
+            path = self._cidpath(self.content_id)
+            my_prods = sutil.load_content(self.fstore.source(path).read())
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            my_prods = empty_iid_products(self.content_id)
+
+        # we wont be updating the 'target' passed in, but rather this.
+        self.content_t = my_prods
+        return v2tov1_products(my_prods)
+        
+
+    def insert_item(self, data, src, target, pedigree, contentsource):
+        print "target=%s" % target
+        flat = sutil.products_exdata(src, pedigree)
+        rel = flat['release']
+        ver = flat['version']
+        arch = flat['arch']
+        version_name = flat['version_name']
+        products = get_products(release=rel, arch=arch)
+        #print "%s: %s" % (flat['product_name'], products.keys())
+        ephtgz = {'ftype': 'root-image.gz',
+                  'release': rel, 'arch': arch, 'version': ver}
+        ephtgz['path'] = get_path(ephtgz, 'root-image.gz', version_name)
+        eph_krds = []
+        included = {}
+
+        my_prods = self.content_t
+        for pid, pdata in products.items():
+            items = {}
+            pdata['label'] = "daily"
+            sutil.products_set(my_prods, pdata, (pid,))
+            # get di-kernels/d-initrd
+            common = {'release': rel, 'krel': pdata['krel'],
+                      'arch': arch, 'subarch': pdata['subarch'],
+                      'kflavor': pdata['kflavor'], 'version': ver}
+
+            for item_name in ('di-kernel', 'di-initrd'):
+                item = common.copy()
+                item['ftype'] = item_name
+
+                kinfo = get_krd_info(arch=arch, release=rel,
+                                     krel=pdata['krel'], ftype=item_name,
+                                     flavor=pdata['kflavor'])
+                if kinfo is None:
+                    raise Exception("No %s for %s / %s / %s" %
+                                    (item_name, pid, arch, rel))
+                item.update(kinfo)
+               
+                item['path'] = get_path(item, item_name, version_name)
+                items[item_name] = item
+                insert_item(item, self.fstore)
+                sutil.products_set(my_prods, item, (pid, version_name, item_name,))
+
+            for item_name in ('boot-kernel', 'boot-initrd'):
+                item = common.copy()
+                item['ftype'] = item_name
+                item['path'] = get_path(item, item_name, version_name)
+                items[item_name] = item
+
+                if is_v1_included_kernel(arch, rel, pdata['krel'], pdata['kflavor']):
+                    if included.get(item_name):
+                        raise Exception("%s reset: %s => %s" %
+                                        (item_name, included[item_name], item))
+                    included[item_name] = item
+                else:
+                    insert_fake_item(item, self.fstore)
+                    fill_item_from_fs(self.out_d, item)
+
+                sutil.products_set(my_prods, item, (pid, version_name, item_name,))
+
+                eph_krds.append(item)
+
+            sutil.products_set(my_prods, ephtgz, (pid, version_name, 'root-image.gz',))
+
+        if not included:
+            raise Exception("No %s for %s / %s / %s" %
+                            ('in_image_kernel', flat['product_name'], arch, rel))
+        
+        get_eph_items(ephtgz, contentsource.url, self.out_d,
+                      included['boot-kernel'], included['boot-initrd'])
+        #print data
+        #print contentsource.url
+            
+    def insert_products(self, path, target, content):
+        tree = copy.deepcopy(self.content_t)
+        sutil.products_prune(tree)
+        sticky = ['ftype', 'sha256', 'size', 'name', 'id', 'di-version']
+        sutil.products_condense(tree, sticky)
+        tsnow = sutil.timestamp()
+        tree['updated'] = tsnow
+        dpath = self._cidpath(tree['content_id'])
+
+        print "writing to %s" % dpath
+        self.fstore.insert_content(dpath, sutil.dump_data(tree))
+
+
+    def filter_product(self, data, src, target, pedigree):
+        flat = sutil.products_exdata(src, pedigree)
+        if flat['release'] in ('quantal', 'raring'):
+            return False
+        return True
+
+
+def create_index(target_d, files=None, path_prefix="streams/v1/"):
+    if files is None:
+        files = [f for f in os.listdir(target_d) if f.endswith(".json")]
+
+    ret = {'index': {}, 'format': 'index:1.0', 'updated': sutil.timestamp()}
+    for f in files:
+        with open(os.path.join(target_d, f), "r") as fp:
+            data = sutil.load_content(fp.read())
+        fmt = data.get('format')
+        cid = data.get('content_id')
+        if fmt == "index:1.0" or not (fmt and cid):
+            continue
+        optcopy = ('datatype', 'updated', 'format')
+        item = {k: data.get(k) for k in optcopy if data.get(k)}
+        if data.get('format') == "products:1.0":
+            item['products'] = [p for p in data['products'].keys()]
+
+        item['path'] = path_prefix + f
+
+        ret['index'][cid] = item
+
+    return ret
+
+
+def main():
+    url = SRC_MIRROR
+    print "using mirror: %s" % SRC_MIRROR + SRC_PATH
+    out_d = sys.argv[1]
+    mirror_config = {'max_items': 1}
+
+    initial_path = SRC_PATH
+    def policy(content, path):  # pylint: disable=W0613
+        if initial_path.endswith('sjson'):
+            return util.read_signed(content, keyring=args.keyring)
+        else:
+            return content
+
+    smirror = mirrors.UrlMirrorReader(url, policy=policy)
+    tmirror = V2mirror(out_d=out_d, config=mirror_config)
+
+    tmirror.sync(smirror, initial_path)
+    streams_d = os.path.join(out_d, "streams/v1")
+    index = create_index(streams_d)
+    with open(os.path.join(streams_d, "index.json"), "w") as fp:
+        fp.write(sutil.dump_data(index))
+
+
+
+if __name__ == '__main__':
+    main()
+
+# vi: ts=4 expandtab syntax=python
+
