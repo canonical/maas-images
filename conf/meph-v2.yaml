@@ -1,0 +1,53 @@
+# kernel entries are a list of
+#   kernel-release, arch, primary-subarch, flavor, subarches
+# we use the anchors to make subarches more compact
+
+subarches:
+ - &sa_hwe_p  [generic, hwe-p]
+ - &sa_hwe_q  [generic, hwe-p, hwe-q]
+ - &sa_hwe_r  [generic, hwe-p, hwe-q, hwe-r]
+ - &sa_hwe_s  [generic, hwe-p, hwe-q, hwe-r, hwe-s]
+ - &sa_hwe_t  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+ - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+
+misc:
+ - &glpae generic-lpae
+
+releases:
+  trusty:
+    version: 14.04
+    release: trusty
+    kernels:
+     - [trusty,  armhf,   hwe-t,    generic,   *arm_hwe_t]
+     - [trusty,  armhf,   *glpae,   *glpae,    [*glpae]]
+     - [trusty,  i386,    hwe-t,    generic,   *sa_hwe_t]
+     - [trusty,  amd64,   hwe-t,    generic,   *sa_hwe_t]
+     - [trusty,  ppc64el, hwe-t,    generic,   *sa_hwe_t]
+  saucy:                                      
+    version: 13.10                            
+    release: saucy                            
+    kernels:                                  
+     - [saucy,   armhf,   hwe-s,    generic,   *sa_hwe_s]
+     - [saucy,   armhf,   *glpae,   *glpae,    [*glpae]]
+     - [saucy,   i386,    hwe-t,    generic,   *sa_hwe_t]
+     - [saucy,   amd64,   hwe-t,    generic,   *sa_hwe_t]
+  precise:
+    version: 12.04
+    release: precise
+    kernels:
+     - [precise, i386,    hwe-p,    generic,   *sa_hwe_p]
+     - [precise, amd64,   hwe-p,    generic,   *sa_hwe_p]
+     - [precise, armhf,   highbank, highbank,  [highbank]]
+     - [quantal, i386,    hwe-q,    generic,   *sa_hwe_q]
+     - [quantal, amd64,   hwe-q,    generic,   *sa_hwe_q]
+     - [raring,  i386,    hwe-r,    generic,   *sa_hwe_r]
+     - [raring,  amd64,   hwe-r,    generic,   *sa_hwe_r]
+     - [saucy,   i386,    hwe-s,    generic,   *sa_hwe_s]
+     - [saucy,   amd64,   hwe-s,    generic,   *sa_hwe_s]
+
+## Notes:
+##  * there are no hwe installer kernels for armhf
+##    nothing named 'saucy-highbank' at 
+##     http://ports.ubuntu.com/ubuntu-ports/dists/precise-updates/main/installer-armhf/current/images/MD5SUMS
+##    so for now, we just don't have a stream for that.
+##  * kernel meta package in all cases here is linux-image-<flavor>
