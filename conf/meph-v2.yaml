@@ -1,6 +1,9 @@
 # kernel entries are a list of
 #   kernel-release, arch, primary-subarch, flavor, subarches
 # we use the anchors to make subarches more compact
+#
+# default_kernel is "builtin" kernel.
+# default is 'linux-generic'
 
 subarches:
  - &sa_hwe_p  [generic, hwe-p]
@@ -23,10 +26,10 @@ releases:
      - [trusty,  i386,    hwe-t,    generic,   *sa_hwe_t]
      - [trusty,  amd64,   hwe-t,    generic,   *sa_hwe_t]
      - [trusty,  ppc64el, hwe-t,    generic,   *sa_hwe_t]
-  saucy:                                      
-    version: 13.10                            
-    release: saucy                            
-    kernels:                                  
+  saucy:
+    version: 13.10
+    release: saucy
+    kernels:
      - [saucy,   armhf,   hwe-s,    generic,   *sa_hwe_s]
      - [saucy,   armhf,   *glpae,   *glpae,    [*glpae]]
      - [saucy,   i386,    hwe-t,    generic,   *sa_hwe_t]
@@ -34,6 +37,7 @@ releases:
   precise:
     version: 12.04
     release: precise
+    default_kernel: {armhf: linux-highbank}
     kernels:
      - [precise, i386,    hwe-p,    generic,   *sa_hwe_p]
      - [precise, amd64,   hwe-p,    generic,   *sa_hwe_p]
@@ -47,7 +51,7 @@ releases:
 
 ## Notes:
 ##  * there are no hwe installer kernels for armhf
-##    nothing named 'saucy-highbank' at 
+##    nothing named 'saucy-highbank' at
 ##     http://ports.ubuntu.com/ubuntu-ports/dists/precise-updates/main/installer-armhf/current/images/MD5SUMS
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
