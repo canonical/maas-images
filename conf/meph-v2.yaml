@@ -17,37 +17,34 @@ misc:
  - &glpae generic-lpae
 
 releases:
-  trusty:
-    version: 14.04
-    release: trusty
-    kernels:
-     - [trusty,  armhf,   hwe-t,    generic,   *arm_hwe_t]
-     - [trusty,  armhf,   *glpae,   *glpae,    [*glpae]]
-     - [trusty,  i386,    hwe-t,    generic,   *sa_hwe_t]
-     - [trusty,  amd64,   hwe-t,    generic,   *sa_hwe_t]
-     - [trusty,  ppc64el, hwe-t,    generic,   *sa_hwe_t]
-  saucy:
-    version: 13.10
-    release: saucy
-    kernels:
-     - [saucy,   armhf,   hwe-s,    generic,   *sa_hwe_s]
-     - [saucy,   armhf,   *glpae,   *glpae,    [*glpae]]
-     - [saucy,   i386,    hwe-t,    generic,   *sa_hwe_t]
-     - [saucy,   amd64,   hwe-t,    generic,   *sa_hwe_t]
-  precise:
-    version: 12.04
-    release: precise
-    default_kernel: {armhf: linux-highbank}
-    kernels:
-     - [precise, i386,    hwe-p,    generic,   *sa_hwe_p]
-     - [precise, amd64,   hwe-p,    generic,   *sa_hwe_p]
-     - [precise, armhf,   highbank, highbank,  [highbank]]
-     - [quantal, i386,    hwe-q,    generic,   *sa_hwe_q]
-     - [quantal, amd64,   hwe-q,    generic,   *sa_hwe_q]
-     - [raring,  i386,    hwe-r,    generic,   *sa_hwe_r]
-     - [raring,  amd64,   hwe-r,    generic,   *sa_hwe_r]
-     - [saucy,   i386,    hwe-s,    generic,   *sa_hwe_s]
-     - [saucy,   amd64,   hwe-s,    generic,   *sa_hwe_s]
+ - version: 14.04
+   release: trusty
+   kernels:
+    - [trusty,  armhf,   hwe-t,    generic,   *arm_hwe_t]
+    - [trusty,  armhf,   *glpae,   *glpae,    [*glpae]]
+    - [trusty,  i386,    hwe-t,    generic,   *sa_hwe_t]
+    - [trusty,  amd64,   hwe-t,    generic,   *sa_hwe_t]
+    - [trusty,  ppc64el, hwe-t,    generic,   *sa_hwe_t]
+ - version: 13.10
+   release: saucy
+   kernels:
+    - [saucy,   armhf,   hwe-s,    generic,   *sa_hwe_s]
+    - [saucy,   armhf,   *glpae,   *glpae,    [*glpae]]
+    - [saucy,   i386,    hwe-t,    generic,   *sa_hwe_t]
+    - [saucy,   amd64,   hwe-t,    generic,   *sa_hwe_t]
+ - version: 12.04
+   release: precise
+   default_kernel: {armhf: linux-highbank}
+   kernels:
+    - [precise, i386,    hwe-p,    generic,   *sa_hwe_p]
+    - [precise, amd64,   hwe-p,    generic,   *sa_hwe_p]
+    - [precise, armhf,   highbank, highbank,  [highbank]]
+    - [quantal, i386,    hwe-q,    generic,   *sa_hwe_q]
+    - [quantal, amd64,   hwe-q,    generic,   *sa_hwe_q]
+    - [raring,  i386,    hwe-r,    generic,   *sa_hwe_r]
+    - [raring,  amd64,   hwe-r,    generic,   *sa_hwe_r]
+    - [saucy,   i386,    hwe-s,    generic,   *sa_hwe_s]
+    - [saucy,   amd64,   hwe-s,    generic,   *sa_hwe_s]
 
 ## Notes:
 ##  * there are no hwe installer kernels for armhf
