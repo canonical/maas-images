@@ -317,7 +317,6 @@ def mine_md(url, release):
             if data is None:
                 continue
 
-            #data['size'] = get_url_len("/".join((curp, path,)))
             data['size'] = get_url_len("/".join((curp, path,)))
             data['url'] = curp + "/" + path
             data['pubdate'] = pubdate
