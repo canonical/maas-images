@@ -1,97 +1,34 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from simplestreams import util as sutil
 from simplestreams import contentsource
+from simplestreams import log
 from simplestreams import objectstores
 from simplestreams import mirrors
+from simplestreams import filters
+import argparse
 import copy
 import hashlib
 import errno
 import json
 import os
-import tempfile
 import shutil
 import subprocess
 import sys
+import tempfile
+import yaml
 
-SRC_MIRROR = "http://maas.ubuntu.com/images/ephemeral/daily/"
-if os.environ.get("HTTPS"):
-   SRC_MIRROR = "https://maas.ubuntu.com/images/ephemeral/daily/"
-SRC_PATH = "streams/v1/com.ubuntu.maas.daily:download.json"
-PROD_PRE = "com.ubuntu.maas:boot"
-CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
+CLOUD_IMAGES_DAILY = "http://cloud-images.ubuntu.com/daily/streams/v1/com.ubuntu.cloud:daily:download.json"
+MAAS_EPHEM2_DAILY =  "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
 
-DI_KRD_TSV = "di-krd.tsv"
-DI_KRD_FIELDS = ("arch", "release", "krel", "ftype", "flavor", "di-version", "size", "sha256", "url")
-
-HWE_SUBARCHES = ['hwe-p', 'hwe-q', 'hwe-r', 'hwe-s', 'hwe-t']
-SA_HWE_P = HWE_SUBARCHES[0:1]
-SA_HWE_Q = HWE_SUBARCHES[0:2]
-SA_HWE_R = HWE_SUBARCHES[0:3]
-SA_HWE_S = HWE_SUBARCHES[0:4]
-SA_HWE_T = HWE_SUBARCHES[0:5]
-SA_ARM_T = ["highbank"]
-HBANK = "highbank"
-GLPAE = "generic-lpae"
-
-SUBARCHES = {
-#    keyname           arch       subarch  kflavor    krel      subarches
-    'i386/hwe-p':    ('i386',    'hwe-p', 'generic', 'precise', SA_HWE_P),
-    'amd64/hwe-p':   ('amd64',   'hwe-p', 'generic', 'precise', SA_HWE_P),
-    'armhf/hbankp':  ('armhf',   HBANK,   HBANK,     'precise', SA_HWE_P),
-    'i386/hwe-q':    ('i386',    'hwe-q', 'generic', 'quantal', SA_HWE_Q),
-    'amd64/hwe-q':   ('amd64',   'hwe-q', 'generic', 'quantal', SA_HWE_Q),
-    'i386/hwe-r':    ('i386',    'hwe-r', 'generic', 'raring',  SA_HWE_R),
-    'amd64/hwe-r':   ('amd64',   'hwe-r', 'generic', 'raring',  SA_HWE_R),
-    'armhf/glpae-s': ('armhf',   GLPAE,   GLPAE,     'saucy',   [GLPAE]),
-    'armhf/hwe-s':   ('armhf',   'hwe-s', 'generic', 'saucy',   SA_HWE_S + [HBANK]),
-    'i386/hwe-s':    ('i386',    'hwe-s', 'generic', 'saucy',   SA_HWE_S),
-    'amd64/hwe-s':   ('amd64',   'hwe-s', 'generic', 'saucy',   SA_HWE_S),
-    'ppc64el/hwe-t': ('ppc64el', 'hwe-t', 'generic', 'trusty',  SA_HWE_T),
-    'armhf/glpae-t': ('armhf',   GLPAE,   GLPAE,     'trusty',  [GLPAE]),
-    'armhf/hwe-t':   ('armhf',   'hwe-t', 'generic', 'trusty',  SA_HWE_T + [HBANK]),
-    'i386/hwe-t':    ('i386',    'hwe-t', 'generic', 'trusty',  SA_HWE_T),
-    'amd64/hwe-t':   ('amd64',   'hwe-t', 'generic', 'trusty',  SA_HWE_T),
+DEFAULT_ARCHES = {
+    'i386': ['i386'],
+    'x86_64': ['i386', 'amd64', 'armhf'],
+    'ppc64le': ['ppc64el'],
+    'armhf': ['armhf'],
 }
 
-PRODUCTS_MAP = {
-  "trusty": {
-     'version': "14.04",
-     'release': "trusty",
-     'subarches': ["armhf/hwe-t", "armhf/glpae-t", "i386/hwe-t", "amd64/hwe-t", "ppc64el/hwe-t"]
-  },
-  "saucy": {
-     'version': "13.10",
-     'release': "saucy",
-     'subarches': ["armhf/hwe-s", "armhf/glpae-s", "i386/hwe-s", "amd64/hwe-s"]
-  },
-  "precise": {
-     'version': "12.04",
-     'release': "precise",
-     'subarches': [
-         'i386/hwe-p', 'amd64/hwe-p', 'armhf/hbankp',
-         'i386/hwe-q', 'amd64/hwe-q',
-         'i386/hwe-r', 'amd64/hwe-r',
-         'i386/hwe-s', 'amd64/hwe-s',
-     ]
-  },
-}
-
-
-def get_krd_info(arch, release, krel, ftype, flavor="generic"):
-    ftype = ftype.replace('di-','')
-    with open(DI_KRD_TSV) as fp:
-	for line in fp:
-            if line.startswith("#"):
-                continue
-            toks = line.split()
-            x = {DI_KRD_FIELDS[i]: toks[i] for i in range(0, len(toks))}
-            if (x['arch'] == arch and x['release'] == release and
-                x['krel'] == krel and x['ftype'] == ftype and
-                x['flavor'] == flavor):
-                return({'size': int(x['size']), 'url': x['url'],
-                        'di-version': x['di-version'], 'sha256': x['sha256']})
-    return None
+CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
 
 
 def get_path(item, name, version):
@@ -111,18 +48,28 @@ def insert_item(item, fstore):
                   checksums={'sha256': item['sha256']})
 
 
-def v2tov1_products(prodtree):
-    ret = empty_iid_products("com.ubuntu.maas.daily:download")
+def v2_to_cloudimg_products(prodtree):
+    # this turns a v2 products tree into a cloud-image products tree.
+    # it pays attention only to products with krel == release
+    # (in an attempt to only get "primary")
+    ret = empty_iid_products("com.ubuntu.cloud:daily:download")
     for product in prodtree.get('products'):
-        tprod = ("com.ubuntu.maas.daily:ephemeral:%(version)s:%(arch)s"
-                 % prodtree['products'][product])
+        if not (prodtree['products'][product].get('krel') ==
+                prodtree['products'][product].get('release')):
+            continue
+
+        # com.ubuntu.maas:boot:12.04:amd64:hwe-s =>
+        # com.ubuntu.cloud.daily:server:12.04:amd64
+        tprod = ("com.ubuntu.cloud.daily:server:%(version)s:%(arch)s" %
+                 prodtree['products'][product])
+        
         if tprod not in ret['products']:
             ret['products'][tprod] = {'versions': {}}
         for vername in prodtree['products'][product].get('versions'):
             if vername not in ret['products'][tprod]['versions']:
                 ret['products'][tprod]['versions'][vername] = {}
         
-    print "returning: %s" % ret
+    print("returning: %s" % ret)
     return ret
 
 
@@ -221,7 +168,7 @@ def get_eph_items(ephtgz, url, out_d, kernel, initrd):
 
     mrootgz = ['./make-rootgz', url, out_d, ephtgz['path'],
                kernel['path'], initrd['path']]
-    print "call: %s" % ' '.join(mrootgz)
+    print("call: %s" % ' '.join(mrootgz))
     subprocess.check_call(mrootgz)
     for i in (ephtgz, kernel, initrd):
         fill_item_from_fs(out_d, i)
@@ -267,11 +214,11 @@ class V2mirror(mirrors.BasicMirrorWriter):
 
         # we wont be updating the 'target' passed in, but rather this.
         self.content_t = my_prods
-        return v2tov1_products(my_prods)
+        return v2_to_cloudimg_products(my_prods)
         
 
     def insert_item(self, data, src, target, pedigree, contentsource):
-        print "target=%s" % target
+        print("target=%s" % target)
         flat = sutil.products_exdata(src, pedigree)
         rel = flat['release']
         ver = flat['version']
@@ -351,7 +298,7 @@ class V2mirror(mirrors.BasicMirrorWriter):
         tree['updated'] = tsnow
         dpath = self._cidpath(tree['content_id'])
 
-        print "writing to %s" % dpath
+        print("writing to %s" % dpath)
         self.fstore.insert_content(dpath, sutil.dump_data(tree))
 
 
@@ -386,28 +333,109 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
     return ret
 
 
-def main():
-    url = SRC_MIRROR
-    print "using mirror: %s" % SRC_MIRROR + SRC_PATH
-    out_d = sys.argv[1]
-    mirror_config = {'max_items': 1}
+class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
+    def __init__(self, config, out_d, target, v2config):
+        super(CloudImg2Meph2Sync, self).__init__(config=config)
+        self.out_d = out_d
+        self.target = target
+        self.v2config = v2config
+        self.filters = self.config.get('filters', [])
 
-    initial_path = SRC_PATH
+        with open(v2config) as fp:
+            cfgdata = yaml.load(fp)
+        self.releases = [k['release'] for k in cfgdata['releases']]
+        arches = set()
+        for r in cfgdata['releases']:
+            for k in r['kernels']:
+                arches.add(k[1])
+        self.arches = list(arches)
+
+    def load_products(self, path=None, content_id=None):
+        if content_id != "com.ubuntu.cloud:daily:download":
+            raise ValueError("Not expecting to sync with content_id: %s" % content_id)
+
+        with contentsource.UrlContentSource(self.target) as tcs:
+            my_prods = self.tmirror_products = sutil.load_content(tcs.read())
+
+        self.content_t = my_prods
+        return v2_to_cloudimg_products(my_prods)
+
+    def filter_item(self, data, src, target, pedigree):
+        if data['ftype'] != "tar.gz":
+            return False
+        return filters.filter_item(self.filters, data, src, pedigree)
+
+    def insert_item(self, data, src, target, pedigree, contentsource):
+        flat = sutil.products_exdata(src, pedigree)
+        fields = ("release", "arch", "version_name", "ftype")
+        print("/".join([flat[t] for t in fields]))
+
+    def filter_product(self, data, src, target, pedigree):
+        flat = sutil.products_exdata(src, pedigree)
+        if flat['release'] not in self.releases:
+            return False
+        if flat['arch'] not in self.arches:
+            return False
+        return True
+
+
+def main():
+    defcfg = os.path.abspath(
+        os.path.join(os.path.dirname(__file__),
+                     "..", "conf", "meph-v2.yaml"))
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--max', type=int, default=1,
+                        help='store at most MAX items in the target')
+    parser.add_argument('--dry-run', action='store_true', default=False,
+                        help='only report what would be done')
+    parser.add_argument('--arches', action='append',
+                        default=[], help='which arches to build, "," delim')
+    parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
+                        help='cloud images mirror')
+    parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
+                        help='maas ephemeral v2 mirror')
+    parser.add_argument('--config', default=defcfg, help='v2 config')
+    parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument('--log-file', default=sys.stderr,
+                        type=argparse.FileType('w'))
+
+    parser.add_argument('output_d')
+    parser.add_argument('filters', nargs='*', default=[])
+
+    args = parser.parse_args()
+
+    if len(args.arches) == 0:
+        arches = DEFAULT_ARCHES[os.uname()[4]]
+    else:
+        arches = []
+        for f in args.arches:
+            arches.extend(f.split(","))
+
+    arch_filter = "arch~(" + "|".join(arches) + ")"
+
+    filter_list = filters.get_filters([arch_filter] + args.filters)
+
+    (source_url, initial_path) = sutil.path_from_mirror_url(args.source, None)
+
     def policy(content, path):  # pylint: disable=W0613
         if initial_path.endswith('sjson'):
-            return util.read_signed(content, keyring=args.keyring)
+            return sutil.read_signed(content, keyring=args.keyring)
         else:
             return content
 
-    smirror = mirrors.UrlMirrorReader(url, policy=policy)
-    tmirror = V2mirror(out_d=out_d, config=mirror_config)
+    mirror_config = {'max_items': args.max, 'filters': filter_list}
+
+    level = (log.ERROR, log.INFO, log.DEBUG)[min(args.verbose, 2)]
+    log.basicConfig(stream=args.log_file, level=level)
+
+    smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
+
+    tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
+                          target=args.target, v2config=args.config)
 
     tmirror.sync(smirror, initial_path)
-    streams_d = os.path.join(out_d, "streams/v1")
-    index = create_index(streams_d)
-    with open(os.path.join(streams_d, "index.json"), "w") as fp:
-        fp.write(sutil.dump_data(index))
-
 
 
 if __name__ == '__main__':
