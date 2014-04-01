@@ -6,6 +6,9 @@ from simplestreams import log
 from simplestreams import objectstores
 from simplestreams import mirrors
 from simplestreams import filters
+
+from meph2.netinst import NetbootMirrorReader
+
 import argparse
 import copy
 import hashlib
@@ -29,7 +32,17 @@ DEFAULT_ARCHES = {
 }
 
 CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
+PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 
+PCOMMON = "%(release)s/%(arch)s/"
+PATH_FORMATS = {
+    'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
+    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel",
+    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd",
+    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd",
+    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel",
+}
+PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
 def get_path(item, name, version):
     if item['ftype'] in ("root-image.tgz", "root-image.gz"):
@@ -69,7 +82,6 @@ def v2_to_cloudimg_products(prodtree):
             if vername not in ret['products'][tprod]['versions']:
                 ret['products'][tprod]['versions'][vername] = {}
         
-    print("returning: %s" % ret)
     return ret
 
 
@@ -333,6 +345,40 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
     return ret
 
 
+def get_di_kernelinfo(releases=None, arches=None, asof=None):
+    # this returns a dict tree like
+    # items['precise']['amd64']['generic']['saucy']['kernel']
+    # where nodes are flattened to have data (including url)
+    smirror = NetbootMirrorReader(releases=releases, arches=arches)
+    netproducts = smirror._get_products()
+
+    # TODO: implement 'asof' to get the right date, right now only returns
+    # latest.
+
+    items = {}
+    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release')
+
+    def fillitems(item, tree, pedigree):
+        flat = sutil.products_exdata(tree, pedigree)
+        path = [flat[t] for t in tree_order]
+        cur = items
+        for tok in path:
+            if tok not in cur:
+                cur[tok] = {}
+            cur = cur[tok]
+
+        flat['url'] = smirror.source(item['path']).url
+        ftype = flat['ftype']
+        if (ftype not in cur or
+            cur[ftype]['version_name'] < flat['version_name']):
+            cur['di-' + ftype] = flat.copy()
+
+
+    sutil.walk_products(netproducts, cb_item=fillitems)
+
+    return (smirror, items)
+
+
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
@@ -343,12 +389,25 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
-        self.releases = [k['release'] for k in cfgdata['releases']]
+        self.releases = {k['release']: k for k in cfgdata['releases']}
         arches = set()
-        for r in cfgdata['releases']:
+        for r in self.releases.values():
             for k in r['kernels']:
                 arches.add(k[1])
         self.arches = list(arches)
+        self._di_kinfo = {}
+        self.content_t = None
+
+    def _get_di_kinfo(self, release, arch):
+        if not (release in self._di_kinfo and
+                arch in self._di_kinfo[release]):
+            if release not in self._di_kinfo:
+                self._di_kinfo[release] = {}
+            (mirror, data) = get_di_kernelinfo(
+                releases=[release], arches=[arch])
+            self._di_kinfo[release][arch] = (mirror, data[release][arch])
+
+        return self._di_kinfo[release][arch]
 
     def load_products(self, path=None, content_id=None):
         if content_id != "com.ubuntu.cloud:daily:download":
@@ -368,7 +427,85 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def insert_item(self, data, src, target, pedigree, contentsource):
         flat = sutil.products_exdata(src, pedigree)
         fields = ("release", "arch", "version_name", "ftype")
-        print("/".join([flat[t] for t in fields]))
+
+        # create the ephemeral root
+        arch = flat['arch']
+        release = flat['release']
+
+        # 'default_kernel' is a release dict in config
+        # that contains the 'builtin' kernel to use
+        dks = self.releases[flat['release']].get('default_kernel', {})
+        builtin_kernel = dks.get(flat['arch'], 'linux-generic')
+
+        (dimirror, dikinfo) = self._get_di_kinfo(release, arch)
+
+        newitems = []
+        #pfmt = "%(release)s/%(arch)s/%(version_name)s/root-image"
+        #rootimg = pfmt % flat
+        #rootimg_fp = os.path.sep.join((self.out_d, rootimg,))
+        #cmd = [
+        #    "maas-cloudimg2ephemeral", 
+        #    "--arch=%s" % arch, "--kernel=%s" % builtin_kernel,
+        #    contentsource.url, rootimg_fp
+        #]
+        #print(' '.join(cmd))
+
+        #bkfmt = "%(release)s/%(arch)s/%(version_name)s/%(krel)s/%(flavor)s"
+        #difmt = "%(release)s/%(arch)s/%(di_version)s/%(krel)s/%(flavor)s"
+        
+        ikeys = ('boot-kernel', 'boot-initrd', 'di-initrd', 'di-kernel',
+                 'root-image.gz')
+        mykinfo = self.releases[release]['kernels']
+        for (krel, karch, psubarch, flavor, kpkg, subarches) in mykinfo:
+            if karch != arch:
+                continue
+            curdi = dikinfo[flavor][krel]
+            vername = flat['version_name']
+            subs = {'release': release, 'arch': arch,
+                    'version_name': vername,
+                    'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
+                    'version': flat['version'],
+                    'psubarch': psubarch,
+                    'di_version': curdi['di-kernel']['version_name']}
+            prodname = PRODUCT_FORMAT % subs
+
+            common = {'subarches': ','.join(subarches), 'krel': krel}
+
+            items = {}
+            for i in ikeys:
+                items[i] = {'ftype': i,
+                            'path': PATH_FORMATS[i] % subs,
+                            'size': None,
+                            'sha256': None}
+                items[i].update(common)
+
+            for key in ('di-kernel', 'di-initrd'):
+                items[key]['sha256'] = curdi[key]['sha256']
+                items[key]['size'] = int(curdi[key]['size'])
+                items[key]['_opath'] = curdi[key]['path']
+
+            print(prodname)
+            sutil.products_set(self.content_t, items, [prodname, vername])
+
+            #cmd = ['create-krd', kpkg, kpath, ipath]
+            #print(' '.join(cmd))
+
+            print(curdi['di-kernel'])
+            #curdi = dikinfo[flavor][krel]
+            #subs.update({'di_version': curdi['kernel']['version_name']})
+            #for i in ('kernel', 'initrd'):
+            #    print(' %s => %s' % (curdi[i]['url'],
+            #                         difmt % subs + '/di-' + i))
+            newitems.extend(items.values())
+
+
+
+        import pprint; pprint.pprint(newitems)
+        #cmd = [ 'gzip', '-9', '--rsyncable', rootimg_fp ]
+        #print(' '.join(cmd))
+            
+#   kernel-release, arch, primary-subarch, flavor, subarches
+        #print("/".join([flat[t] for t in fields]))
 
     def filter_product(self, data, src, target, pedigree):
         flat = sutil.products_exdata(src, pedigree)
