@@ -78,8 +78,9 @@ get_img_file() {
 
 main() {
     local short_opts="hk:p:v"
-    local long_opts="help,kernel:,krd-pack:,verbose"
-    local getopt_out=$(getopt --name "${0##*/}" \
+    local long_opts="help,kernel:,krd-pack:,no-gzip,verbose"
+    local getopt_out=""
+    getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; return; }
