@@ -1,0 +1,43 @@
+#!/bin/bash
+
+TEMP_D=""
+img="$1"
+kpkg="$2"
+kern_out=${3:-kernel}
+initrd_out=${4:-initrd}
+
+cleanup() { [ -n "$TEMP_D" ] && rm -Rf "${TEMP_D}"; }
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
+TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
+trap cleanup EXIT
+
+myimg="${TEMP_D}/my.img"
+cp --sparse=always "$img" "$myimg" || error "failed cp $img"
+
+gid=$(id -g)
+uid=$(id -u)
+chown_to="$gid:$uid"
+
+sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
+   "http_proxy=$http_proxy" LANG=C PACKAGES="$kpkg" \
+   chown_to="$chown_to" "kout=${kern_out}" "iout=${initrd_out}" \
+   mount-image-callback --system-mounts \
+      --system-resolvconf "$myimg" -- sh <<"ENDCALLBACK"
+set -e
+DEBIAN_FRONTEND=noninteractive \
+  chroot "$MOUNTPOINT" /bin/sh -ec '
+    rm -f /boot/vmlin* /boot/initrd*
+    ${KPACK_SKIP_APT_UPDATE} || apt-get update -q
+    apt-get install --assume-yes --quiet "$@"
+    chmod ugo+r /boot/*
+  ' -- $PACKAGES </dev/null
+chown "$chown_to" "$MOUNTPOINT/boot/initr"*
+chown "$chown_to" "$MOUNTPOINT/boot/vmlin"*
+mv "$MOUNTPOINT/boot/initr"* "$kout"
+mv "$MOUNTPOINT/boot/vmlin"* "$iout"
+chmod ugo+r "$kout" "$iout"
+ENDCALLBACK
+
+error "wrote to ${kern_out}, ${initrd_out}"

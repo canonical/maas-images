@@ -1,0 +1,168 @@
+#!/bin/bash
+
+#['maas-cloudimg2eph2', '--arch=armhf', '--kernel=linux-generic', 'http://cloud-images.ubuntu.com/daily/server/trusty/20140402/trusty-server-cloudimg-armhf.tar.gz', 'trusty/armhf/20140402/root-image.gz', '--krd-pack=linux-generic,trusty/armhf/20140402/trusty/generic/boot-kernel,trusty/armhf/20140402/trusty/generic/boot-initrd', '--krd-pack=linux-generic-lpae,trusty/armhf/20140402/trusty/generic-lpae/boot-kernel,trusty/armhf/20140402/trusty/generic-lpae/boot-initrd']
+
+VERBOSITY=0
+TEMP_D=""
+
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
+Usage() {
+    cat <<EOF
+Usage: ${0##*/} [ options ] source-image output-image.gz
+
+   convert 'source-image' into a ephemeral image and put
+   output into output-image.gz.
+
+   source-image can be url or file path that is either .tar.gz or .img.
+
+   options:
+         --no-gzip     do not gzip output image
+    -k | --kernel K    keep/install the kernel package 'k' inside image
+    -p | --krd-pack P  create a kernel / ramdisk pack
+                       P is ',' delimited: kernel-name,kernel,ramdisk
+    -v | --verbose     increase verbosity
+
+   Example:
+     ${0##*/} --kernel=linux-generic \\
+        --krd-pack=linux-generic,output/kernel,output/initrd \\
+        trusty-server-cloudimg-armhf.tar.gz \\
+        output/root-image.gz
+EOF
+}
+
+bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return 1; }
+cleanup() {
+    [ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
+}
+
+debug() {
+    local level=${1}; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "${@}"
+}
+
+get_img_from_tar() {
+    local img="$1" out="$2" tempd="$3"
+    local mtmp=$(mktemp -d "${tempd}/img_from_tar.XXXXXX")
+    tar -C "$mtmp" -Sxf "$img" ||
+        { error "failed to extract $img"; return 1; }
+    local f="" found=""
+    for f in "${mtmp}/"*; do
+        [ ! -f "$f" -o "${f%.img}" = "$f" ] && continue
+        [ -z "$found" ] ||
+            { error "multiple .img found in $img"; return 1; }
+        found="$f"
+    done
+    [ -n "$found" ] || { error "no .img in $img"; return 1; }
+    mv "$found" "$out" && rm -Rf "$mtmp"
+}
+
+get_img_file() {
+    local fout="" input="$1" output="$2" tempd="$3"
+    fout=$(LANG=C file "$input") || { error "failed: file $input"; return 1; }
+    case "$fout" in
+        gzip\ compressed*)
+            fout=$(zcat "$input" | file -)
+            case "$fout" in
+                POSIX\ tar*) get_img_from_tar "$input" "$output" "$tempd";;
+                *) zcat -c "$fout" > "$output";;
+            esac
+            ;;
+        POSIX\ tar*)
+            get_img_from_tar "$input" "$output" "$tempd";;
+        *) ln -s "$(readlink -f "$input")" "$output";
+    esac
+}
+
+main() {
+    local short_opts="hk:p:v"
+    local long_opts="help,kernel:,krd-pack:,verbose"
+    local getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return; }
+
+    local cur="" next="" output="" gzip=true kpkg=""
+    local kpacks="" src_in="" src=""
+    kpacks=( )
+
+    while [ $# -ne 0 ]; do
+        cur="$1"; next="$2";
+        case "$cur" in
+            -h|--help) Usage ; exit 0;;
+            -k|--kernel) kpkg=$next;;
+            -p|--krd-pack) kpacks[${#kpacks[@]}]="$next";;
+               --no-gzip) gzip=false;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            --) shift; break;;
+        esac
+        shift;
+    done
+
+    [ $# -eq 2 ] || { bad_Usage "must provide source and target"; return; }
+    src_in="$1"
+    output="$2"
+
+    PATH="$(dirname "$0"):$PATH"
+    command -v "maas-cloudimg2ephemeral" ||
+        { error "do not have maas-cloudimg2ephemeral in path"; return 1; }
+
+    TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
+        { error "failed to make tempdir"; return 1; }
+    trap cleanup EXIT
+
+    if [ -f "$src_in" ]; then
+        src="$1"
+    else
+        case "$src_in" in
+            http://*|https://*|ftp://*)
+                src="${TEMP_D}/${src_in##*/}"
+                wget "$src_in" --dot-style=mega -O "$src" ||
+                    { error "failed download $src_in"; return 1; }
+                ;;
+            file://*)
+                [ -f "${src_in#file://}" ] ||
+                    { error "$src_in: not a file"; return 1; }
+                src="${src_in#file://}"
+                ;;
+            *) error "Unable to handle src: $src_in"; return 1;;
+        esac
+    fi
+
+    # now src is either a .tar.gz file, or a .img file
+    local imgfile="${TEMP_D}/root.img"
+    get_img_file "$src" "$imgfile" "${TEMP_D}" ||
+        { error "failed to get image file from $src"; return 1; }
+
+    # now imgfile has the root filesystem image to adjust
+    local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
+    local manif="${TEMP_D}/manifest"
+    maas-cloudimg2ephemeral "$imgfile" "$kpkg" \
+        "$pkout" "$piout" "$manifest" ||
+        { error "failed to turn $imgfile to ephemeral"; return 1; }
+
+    local i="" ckpkg="" ckout="" ciout="" oifs="$IFS"
+    for i in "${kpacks[@]}"; do
+        IFS=","; set -- $i; IFS="$oifs"
+        ckpkg="$1"; tkout="$2"; tiout="$3"
+        ckout="${TEMP_D}/$ckpkg-kernel"
+        ciout="${TEMP_D}/$ckpkg-initrd"
+        if [ -f "$ckout" -a -f "$ciout" ]; then
+            debug 1 "already have $kpkg output"
+        else
+            KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
+                "$ckpkg" "$ckout" "$ciout" ||
+                { error "failed to get $ckpkg output"; return 1; }
+        fi
+        cp "$ckout" "$tkout" &&
+            cp "$ciout" "$tiout" ||
+            { error "failed copying files"; return 1; }
+    done
+
+    return 0
+}
+
+main "$@"
+# vi: ts=4 expandtab

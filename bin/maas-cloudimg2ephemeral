@@ -1,0 +1,311 @@
+#!/bin/bash
+#
+# maas-cloudimg2ephemeral - update a cloud image to make it sufficient
+#                           for use as a maas ephemeral image
+#
+# Copyright (C) 2011-2012 Canonical
+#
+# Authors:
+#    Scott Moser <scott.moser@canonical.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+VERBOSITY=0
+TOP_D="${0%/*}"
+
+error() { echo "$@" 1>&2; }
+errorp() { printf "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+failp() { [ $# -eq 0 ] || errorp "$@"; exit 1; }
+
+Usage() {
+    cat <<EOF
+Usage: ${0##*/} [ options ] disk kpkg kernel initrd [manifest]
+
+   Update the image 'disk', installing 'kpkg'
+   copy out kernel and initramfs tothe kernel 'kernel' and initrd 'initrd'
+   If manifest is given, a (dpkg --show) manifest will be written.
+   
+   Expects to receive in a cloudimg disk image with no partition
+   table, and will update it for maas ephemeral use.
+
+   options:
+      -v | --verbose      increase verbosity
+EOF
+}
+
+bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; exit 1; }
+
+debug() {
+    local level=${1}; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "$(date -R):" "${@}"
+}
+
+disable_services() {
+    local dir="$1"
+    cat > "$dir/usr/sbin/policy-rc.d" <<"EOF"
+#!/bin/sh
+while true; do
+    case "$1" in
+        -*) shift ;;
+        makedev) exit 0 ;;
+        x11-common) exit 0 ;;
+        *) exit 101 ;;
+    esac
+done
+EOF
+    [ $? -eq 0 ] && chmod 755 "$dir/usr/sbin/policy-rc.d" ||
+        { error "failed to write policy-rc.d"; return 1; }
+}
+
+undisable_services() {
+    local dir="$1"
+    rm -f "$dir/usr/sbin/policy-rc.d"
+}
+
+apply_updates() {
+    # apply_updates(dir, kernel_out, initramfs_out)
+    # update directory given, and pull out kernel and initramfs
+    # to given locations
+    local dir=$1 kpkg=$2 kernel_out=$3 initrd_out=$4 manifest=$5
+    local tab="    "
+
+    disable_services "$dir" || return
+    
+    # we expect /etc/lsb-release to be shell syntax with DISTRIB_CODENAME
+    local rel="" fout arch host_arch
+    rel=$(. "$dir/etc/lsb-release" && echo "${DISTRIB_CODENAME}") &&
+        [ -n "$rel" ] ||
+        fail "failed to read DISTRIB_CODENAME from $dir/etc/lsb-release"
+
+    # not pretty, use 'file' to determine arch
+    fout=$(file -L "$dir/bin/sh") ||
+        { error "'file' on $dir/bin/sh failed"; return 1; }
+    case "$fout" in
+        *\ x86-64,*) arch="x86_64";;
+        *\ 80386,*)   arch="i386";;
+        *\ ARM,*)   arch="arm";;
+        *\ 64-bit\ PowerPC*) arch="ppc64el";;
+        *) fail "unknown arch for fileoutput: $fout"; return 1;;
+    esac
+
+    case "$(uname -m)" in
+        i?86) host_arch="i386";;
+        x86_64) host_arch="x86_64";;
+        arm) host_arch="arm";;
+        ppc64le) host_arch="ppc64el";;
+    esac
+
+    debug 1 "arch: $arch. rel: $rel host_arch: $host_arch"
+    if [ "$arch" = "$host_arch" ] ||
+       [ "${host_arch}:${arch}" = "x86_64:i386" ]; then
+        debug 1 "no qemu-static needed to execute $arch on ${host_arch}"
+    else
+        local fmt="${QEMU_STATIC_FMT:-/usr/bin/qemu-%a-static}" exe=""
+        exe=${fmt//%a/$arch}
+        cp "$exe" "$dir/usr/bin/qemu-$arch-static" || {
+            error "failed to copy qemu-static [$exe] for $arch";
+            error "install qemu-user-static or set QEMU_STATIC_FMT";
+            return 1;
+        }
+        debug 1 "copied $exe into filesystem /usr/bin/qemu-$arch-static"
+    fi
+
+    local prox="" apt_opts=""
+    out=$(apt-config shell prox Acquire::HTTP::Proxy) &&
+        eval $out && [ -n "$prox" ] &&
+        apt_opts="--option=Acquire::HTTP::Proxy=${prox}"
+
+    apt_opts="${apt_opts} --option=Dpkg::Options::=--force-confold"
+    [ -n "${apt_opts}" ] &&
+        debug 1 "using apt options ${apt_opts} for install"
+
+
+    # FIXME: remove this after no longer necessary
+    local ppa_file="" ppa_url=""
+    if [ "$rel" = "precise" ]; then
+        # chroot and apt-add-repository failed when trying quantal amd64 with
+        # qemu-static.  Instead, do it manually.
+        ppa_file="/etc/apt/sources.list.d/maas-ephemeral-images.list"
+        ppa_url="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/ubuntu"
+        echo "deb $ppa_url $rel main" | sudo tee "$dir/${ppa_file}"
+        chroot $dir apt-key add - <<"EOF"
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: SKS 1.0.10
+
+mI0ETxf8lwEEAMAqtJVUnlCVzjTOsohaE/M4mGHFl4Py1cuE9ryOgmTWje+6BrNjtWLSfTQJ
+Kp1V6hViUoxPBck1qkZoAz7VU5nDuBWDybCsolliUX4zzTYNiDnPS74fs4CDUWx9qpl5Sdb6
+7aygIid/mFXubhJnTPR6Bq9ptGmc0Ks6ttNs3WJ/ABEBAAG0IkxhdW5jaHBhZCBQUEEgZm9y
+IE1hYVMgTWFpbnRhaW5lcnOIuAQTAQIAIgUCTxf8lwIbAwYLCQgHAwIGFQgCCQoLBBYCAwEC
+HgECF4AACgkQXP8eqZPujMU2zQP/W9OCzaU7HvFrqEt6nHGej2PEanIunxo7J8D5OR+Yl578
+FpRkHRgvcdQnGuZUpdBnOFatDDFME7ClN9qUrD1wDN1r9ip2luaKiO2cZOW4Uu5Z0n/3Qc6J
+eh9TNspyDMuHVVZ5GiAk+GXgF1m7ps5lCnOCZK/pXUEEUOS8AWnt3sM=
+=1RpZ
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+    fi
+
+    LC_ALL=C FLASH_KERNEL_SKIP=1 DEBIAN_FRONTEND=noninteractive \
+        apt_opts="${apt_opts}" kpkg="$kpkg" \
+        PPA_CLEAR="$ppa_file" \
+        chroot "$dir" sh -c '
+        _apt() {
+            echo apt-get ${apt_opts} -q --assume-yes "$@" 1>&2;
+            apt-get ${apt_opts} -q --assume-yes "$@";
+        }
+        aptin() { _apt install "$@"; }
+        aptrm() { _apt remove --purge "$@"; }
+        aptupgrade() { _apt dist-upgrade "$@"; }
+        aptautoremove() { _apt autoremove; }
+
+        rel=$(lsb_release -sc)
+
+        # ensure mellanox mlx4_en gets loaded (LP: #1115710)
+        if [ ! -f "/etc/modprobe.d/mlx4.conf" ]; then
+            # packaged version would be mlx4.conf, to avoid conflict
+            # we install a different file here.
+            printf "%s\n%s; %s\n" \
+                "# mlx4_core should load mlx4_en (LP: #1115710)." \
+                "install mlx4_core /sbin/modprobe --ignore-install mlx4_core" \
+                "/sbin/modprobe mlx4_en" \
+                > "/etc/modprobe.d/mlx4.ephemeral.conf"
+        fi
+        arch="$(dpkg --print-architecture)" || exit
+
+        mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs &&
+        apt-get -q ${apt_opts} update || exit
+
+        removes="linux-.*"
+        apkgs=""
+        if [ "$arch" = "armhf" ]; then
+            apkgs="u-boot-tools"
+        fi
+
+        set -f;
+        toremove=""
+        for r in $removes; do
+            dpkg-query --show | grep -q "^$r" &&
+                toremove="$toremove $r"
+        done
+        aptrm $toremove
+        set +f
+        aptautoremove || exit
+
+        aptupgrade || exit
+        pkgs="$apkgs $kpkg cloud-initramfs-dyn-netconf maas-enlist open-iscsi overlayroot"
+        aptin $pkgs || exit
+
+        if [ -n "$PPA_CLEAR" -a -f "$PPA_CLEAR" ]; then
+            sed -i "s,^,#," "$PPA_CLEAR" || exit
+        fi
+
+        if dpkg --print-foreign-architectures | grep -q i386; then
+            # precise used multiarch file
+            dpkg --remove-architecture i386 >/dev/null 2>&1 ||
+                rm /etc/dpkg/dpkg.cfg.d/multiarch
+            dpkg --print-foreign-architectures | grep i386 &&
+                { echo "failed to remove i386 foreign arch"; exit 1; }
+            echo "removed foreign arch i386"
+        fi
+        
+        apt-get clean && apt-get update || exit
+        f=/etc/network/interfaces
+        mv "$f" "$f.dist" &&
+            ln -sf ../../run/network/dynamic-interfaces "$f" || exit
+        k=""
+        for i in /boot/vmlinu?-*; do
+            [ "${i%-virtual}" = "${i}" ] && k=${i}; done
+        ver=${k##*/vmlinu?-}
+        update-initramfs -u -k $ver &&
+        cp /boot/initrd.img-$ver /tmp/initrd.img &&
+            cp /boot/vmlinu?-$ver /tmp/kernel.img &&
+            chmod ugo+r /tmp/kernel.img &&
+            dpkg-query --show > /tmp/manifest' </dev/null
+    [ $? -eq 0 ] || {
+        error "failed to install packages or mkinitramfs in chroot";
+        return 1;
+    }
+
+    mv "$dir/tmp/kernel.img" "$kernel_out" &&
+        mv "$dir/tmp/initrd.img" "$initrd_out" ||
+        { error "failed to copy kernels out"; return 1; }
+
+    # LP: #1034116: disable rescuevol and overlayroot's diskcfg
+    if grep -q "^cloud-initramfs-rescuevol${tab}" "$dir/tmp/manifest"; then
+        # if cloud-initramfs-resuevol is installed, disable it
+        echo "# cloud-initramfs-rescuevol is disabled by ${0##*/}" \
+            > "$dir/etc/rescuevol-ignore" ||
+        { error "failed to disable rescuevol"; return 1; }
+    fi
+
+    if grep -q "^overlayroot${tab}" "$dir/tmp/manifest"; then
+        printf "%s\n%s\n%s\n" "# overlayroot_cfgdisk disabled by ${0##*/}" \
+            "overlayroot_cfgdisk=disabled" "overlayroot=tmpfs" \
+            > "$dir/etc/overlayroot.local.conf"
+    fi
+
+    if [ -n "$manifest" ]; then 
+        mv "$dir/tmp/manifest" "$manifest" || fail "failed to move manifest"
+    else
+        rm "$dir/tmp/manifest" ||
+            fail "failed to rm manifest"
+    fi
+    
+    undisable_services "$dir"
+
+    dd bs=1M if=/dev/zero of="$dir/tmp/zero"
+    rm -f "$dir/tmp/zero"
+
+    return 0
+}
+
+if [ "$1" = "apply_updates" ]; then
+    apply_updates "$@"
+else
+    short_opts="hv"
+    long_opts="help,verbose"
+    getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        bad_Usage
+
+    while [ $# -ne 0 ]; do
+        cur=${1}; next=${2};
+        case "$cur" in
+            -h|--help) Usage ; exit 0;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            --) shift; break;;
+        esac
+        shift;
+    done
+
+    [ $# -eq 4 -o $# -eq 5 ] ||
+        bad_Usage "expected image, kernel, ramdisk [,manifest]"
+
+    img="$1"
+    kpkg="$2"
+    kernel="$3"
+    initrd="$4"
+    manifest="$5"
+
+    mount-image-callback --system-mounts --system-resolvconf \
+        "$img" -- "$0" apply_updates \
+        _MOUNTPOINT_ "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
+        fail "failed to apply updates to $img"
+
+    chown "--reference=$img" "$kernel" "$initrd" ${manifest:+"${manifest}"}
+    exit 0
+
+fi
+# vi: ts=4 expandtab
