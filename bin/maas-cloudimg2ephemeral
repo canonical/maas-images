@@ -271,7 +271,7 @@ EOF
 }
 
 if [ "$1" = "apply_updates" ]; then
-    apply_updates "$@"
+    "$@"
 else
     short_opts="hv"
     long_opts="help,verbose"
