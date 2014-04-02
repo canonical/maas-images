@@ -76,6 +76,15 @@ get_img_file() {
     esac
 }
 
+ensure_file_d() {
+    local f="" d=""
+    for f in "$@"; do
+        d=$(dirname "$f")
+        mkdir -p "$d" || return
+    done
+    return 0
+}
+
 main() {
     local short_opts="hk:p:v"
     local long_opts="help,kernel:,krd-pack:,no-gzip,verbose"
@@ -115,7 +124,7 @@ main() {
     trap cleanup EXIT
 
     if [ -f "$src_in" ]; then
-        src="$1"
+        src="$src_in"
     else
         case "$src_in" in
             http://*|https://*|ftp://*)
@@ -137,6 +146,16 @@ main() {
     get_img_file "$src" "$imgfile" "${TEMP_D}" ||
         { error "failed to get image file from $src"; return 1; }
 
+    if [ "$src" -ef "$src_in" ]; then
+        src="${TEMP_D}/src.img"
+        rm -f "$imgfile"
+        cp --sparse=always "$src_in" "$imgfile" ||
+            { error "failed to copy $src_in to temp"; return 1; }
+    fi
+
+    ensure_file_d "$output" ||
+        { error "failed to create dir for $output"; return 1; }
+
     # now imgfile has the root filesystem image to adjust
     local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
     local manif="${TEMP_D}/manifest"
@@ -157,11 +176,20 @@ main() {
                 "$ckpkg" "$ckout" "$ciout" ||
                 { error "failed to get $ckpkg output"; return 1; }
         fi
+        ensure_file_d "$tkout" "$tiout" ||
+            { error "failed to make dirs for $tkout or $tiout"; return 1; }
         cp "$ckout" "$tkout" &&
             cp "$ciout" "$tiout" ||
             { error "failed copying files"; return 1; }
     done
 
+    if gzip; then
+        debug 1 "gzipping image file"
+        gzip "$imgfile" && mv "$imgfile.gz" "$output" ||
+            { error "failed gzip"; return 1; }
+    else
+        mv "$imgfile" "$output"
+    fi
     return 0
 }
 
