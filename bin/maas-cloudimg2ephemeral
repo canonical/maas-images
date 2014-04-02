@@ -186,7 +186,7 @@ EOF
         mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs &&
         apt-get -q ${apt_opts} update || exit
 
-        removes="linux-.*"
+        removes="^linux-.*"
         apkgs=""
         if [ "$arch" = "armhf" ]; then
             apkgs="u-boot-tools"
@@ -195,8 +195,9 @@ EOF
         set -f;
         toremove=""
         for r in $removes; do
-            dpkg-query --show | grep -q "^$r" &&
-                toremove="$toremove $r"
+            pinst=$(dpkg-query --show |
+                    awk "\$1 ~ pm { printf(\"%s \",\$1); }" "pm=$r")
+            toremove="$toremove $pinst"
         done
         aptrm $toremove
         set +f
