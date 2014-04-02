@@ -345,6 +345,25 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
     return ret
 
 
+def get_file_info(path, sums=None):
+    buflen = 1024*1024
+
+    if sums is None:
+        sums = ['sha256']
+    sumers = {k: hashlib.new(k) for k in sums}
+
+    ret = {'size': os.path.getsize(path)}
+    with open(path, "rb") as fp:
+        while True:
+            buf = fp.read(buflen)
+            for sumer in sumers.values():
+                sumer.update(buf)
+            if len(buf) != buflen:
+                break
+
+    ret.update({k: sumers[k].hexdigest() for k in sumers})
+    return ret
+
 def get_di_kernelinfo(releases=None, arches=None, asof=None):
     # this returns a dict tree like
     # items['precise']['amd64']['generic']['saucy']['kernel']
@@ -439,44 +458,39 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         (dimirror, dikinfo) = self._get_di_kinfo(release, arch)
 
-        newitems = []
-        #pfmt = "%(release)s/%(arch)s/%(version_name)s/root-image"
-        #rootimg = pfmt % flat
-        #rootimg_fp = os.path.sep.join((self.out_d, rootimg,))
-        #cmd = [
-        #    "maas-cloudimg2ephemeral", 
-        #    "--arch=%s" % arch, "--kernel=%s" % builtin_kernel,
-        #    contentsource.url, rootimg_fp
-        #]
-        #print(' '.join(cmd))
-
-        #bkfmt = "%(release)s/%(arch)s/%(version_name)s/%(krel)s/%(flavor)s"
-        #difmt = "%(release)s/%(arch)s/%(di_version)s/%(krel)s/%(flavor)s"
+        newitems = {}
         
         ikeys = ('boot-kernel', 'boot-initrd', 'di-initrd', 'di-kernel',
                  'root-image.gz')
         mykinfo = self.releases[release]['kernels']
+
+        vername = flat['version_name']
+        subs = {'release': release, 'arch': arch,
+                'version_name': vername, 'version': flat['version']}
+
+        rootimg_path = PATH_FORMATS['root-image.gz'] % subs
+
+        gencmd = ["maas-cloudimg2eph2", "--arch=%s" % arch,
+                  "--kernel=%s" % builtin_kernel,
+                  contentsource.url, rootimg_path]
+        krd_packs = []
+        newpaths = set((rootimg_path,))
+
         for (krel, karch, psubarch, flavor, kpkg, subarches) in mykinfo:
             if karch != arch:
                 continue
             curdi = dikinfo[flavor][krel]
-            vername = flat['version_name']
-            subs = {'release': release, 'arch': arch,
-                    'version_name': vername,
-                    'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                    'version': flat['version'],
-                    'psubarch': psubarch,
-                    'di_version': curdi['di-kernel']['version_name']}
-            prodname = PRODUCT_FORMAT % subs
+            subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
+                         'psubarch': psubarch,
+                         'di_version': curdi['di-kernel']['version_name']})
 
+            prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel}
 
             items = {}
             for i in ikeys:
-                items[i] = {'ftype': i,
-                            'path': PATH_FORMATS[i] % subs,
-                            'size': None,
-                            'sha256': None}
+                items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
+                            'size': None, 'sha256': None}
                 items[i].update(common)
 
             for key in ('di-kernel', 'di-initrd'):
@@ -484,21 +498,28 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
 
-            print(prodname)
+            krd_packs.append((kpkg, items['boot-kernel']['path'],
+                              items['boot-initrd']['path'],))
+            newpaths.add(items['boot-kernel']['path'])
+            newpaths.add(items['boot-initrd']['path'])
+
+            newitems[prodname] = items
+
+        for pack in krd_packs:
+            gencmd.append('--krd-pack=' + ','.join(pack))
+        print(gencmd)
+
+        print(newpaths)
+        # get checksum and size of new files created
+        file_info = {}
+        for path in newpaths:
+            file_info[path] = get_file_info(os.path.join(self.out_d, path))
+
+        for prodname in newitems:
+            items = newitems[prodname]
+            for item in items:
+                item.update(file_info.get(item['path'], {}))
             sutil.products_set(self.content_t, items, [prodname, vername])
-
-            #cmd = ['create-krd', kpkg, kpath, ipath]
-            #print(' '.join(cmd))
-
-            print(curdi['di-kernel'])
-            #curdi = dikinfo[flavor][krel]
-            #subs.update({'di_version': curdi['kernel']['version_name']})
-            #for i in ('kernel', 'initrd'):
-            #    print(' %s => %s' % (curdi[i]['url'],
-            #                         difmt % subs + '/di-' + i))
-            newitems.extend(items.values())
-
-
 
         import pprint; pprint.pprint(newitems)
         #cmd = [ 'gzip', '-9', '--rsyncable', rootimg_fp ]
