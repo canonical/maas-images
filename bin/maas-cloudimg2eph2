@@ -169,17 +169,13 @@ main() {
         ckpkg="$1"; tkout="$2"; tiout="$3"
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
-        if [ -f "$ckout" -a -f "$ciout" ]; then
-            debug 1 "already have $kpkg output"
-        else
-            KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
-                "$ckpkg" "$ckout" "$ciout" ||
-                { error "failed to get $ckpkg output"; return 1; }
-        fi
+        KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
+            "$ckpkg" "$ckout" "$ciout" ||
+            { error "failed to get $ckpkg output"; return 1; }
         ensure_file_d "$tkout" "$tiout" ||
             { error "failed to make dirs for $tkout or $tiout"; return 1; }
-        cp "$ckout" "$tkout" &&
-            cp "$ciout" "$tiout" ||
+        mv "$ckout" "$tkout" &&
+            mv "$ciout" "$tiout" ||
             { error "failed copying files"; return 1; }
     done
 
