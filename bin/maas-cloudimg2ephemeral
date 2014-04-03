@@ -265,7 +265,7 @@ EOF
     
     undisable_services "$dir"
 
-    dd bs=1M if=/dev/zero of="$dir/tmp/zero"
+    dd bs=1M if=/dev/zero of="$dir/tmp/zero" >/dev/null 2>&1
     rm -f "$dir/tmp/zero"
 
     return 0
@@ -300,7 +300,7 @@ else
     initrd="$4"
     manifest="$5"
 
-    mount-image-callback --system-mounts --system-resolvconf \
+    sudo mount-image-callback --system-mounts --system-resolvconf \
         "$img" -- "$0" apply_updates \
         _MOUNTPOINT_ "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"

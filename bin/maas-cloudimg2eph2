@@ -102,8 +102,8 @@ main() {
         cur="$1"; next="$2";
         case "$cur" in
             -h|--help) Usage ; exit 0;;
-            -k|--kernel) kpkg=$next;;
-            -p|--krd-pack) kpacks[${#kpacks[@]}]="$next";;
+            -k|--kernel) kpkg=$next; shift;;
+            -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
             --) shift; break;;
@@ -185,7 +185,7 @@ main() {
 
     if gzip; then
         debug 1 "gzipping image file"
-        gzip "$imgfile" && mv "$imgfile.gz" "$output" ||
+        gzip -9 --rsyncable "$imgfile" && mv "$imgfile.gz" "$output" ||
             { error "failed gzip"; return 1; }
     else
         mv "$imgfile" "$output"
