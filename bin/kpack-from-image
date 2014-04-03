@@ -37,7 +37,7 @@ DEBIAN_FRONTEND=noninteractive \
       { echo "copymods not available"; copymods=""; }
     [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
     which eatmydata >/dev/null 2>&1 && emd=eatmydata || emd=""
-    $emd apt-get install --assume-yes --quiet $copymods "$@"
+    $emd apt-get install --reinstall --assume-yes --quiet $copymods "$@"
     chmod ugo+r /boot/*
   ' -- $PACKAGES </dev/null
 chown "$chown_to" "$MOUNTPOINT/boot/initr"*
