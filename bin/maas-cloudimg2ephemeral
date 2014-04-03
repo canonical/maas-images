@@ -305,7 +305,7 @@ else
     manifest="$5"
 
     sudo "FIX_PERMS_REF=$img" \
-        mount-image-callback --system-mounts --system-resolvconf "$img" -- \
+        mount-image-callback --sys --proc --system-resolvconf "$img" -- \
         "$0" apply_updates _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"

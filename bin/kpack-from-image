@@ -23,7 +23,7 @@ chown_to="$gid:$uid"
 sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
    "http_proxy=$http_proxy" LANG=C PACKAGES="$kpkg" \
    chown_to="$chown_to" "kout=${kern_out}" "iout=${initrd_out}" \
-   mount-image-callback --system-mounts \
+   mount-image-callback --sys --proc \
       --system-resolvconf "$myimg" -- sh <<"ENDCALLBACK"
 set -e
 DEBIAN_FRONTEND=noninteractive \
@@ -35,8 +35,8 @@ DEBIAN_FRONTEND=noninteractive \
   ' -- $PACKAGES </dev/null
 chown "$chown_to" "$MOUNTPOINT/boot/initr"*
 chown "$chown_to" "$MOUNTPOINT/boot/vmlin"*
-mv "$MOUNTPOINT/boot/initr"* "$kout"
-mv "$MOUNTPOINT/boot/vmlin"* "$iout"
+mv "$MOUNTPOINT/boot/vmlin"* "$kout"
+mv "$MOUNTPOINT/boot/initrd"* "$iout"
 chmod ugo+r "$kout" "$iout"
 ENDCALLBACK
 
