@@ -28,7 +28,7 @@ sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
 set -e
 DEBIAN_FRONTEND=noninteractive \
   chroot "$MOUNTPOINT" /bin/sh -ec '
-    rm -f /boot/vmlin* /boot/initrd*
+    kpkg="$1"
     ${KPACK_SKIP_APT_UPDATE} || apt-get update -q
     zzgrub=/etc/kernel/postinst.d/zz-update-grub
 
@@ -37,14 +37,31 @@ DEBIAN_FRONTEND=noninteractive \
       { echo "copymods not available"; copymods=""; }
     [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
     which eatmydata >/dev/null 2>&1 && emd=eatmydata || emd=""
-    $emd apt-get install --reinstall --assume-yes --quiet $copymods "$@"
-    chmod ugo+r /boot/*
+    $emd apt-get install --assume-yes --quiet $copymods "$@"
+
+    kernel=""
+    for f in /boot/vmlin*; do
+        [ -f "$f" ] || continue
+        out=$(dpkg -S "$f")
+        pkg=${out%%:*}
+        [ "$pkg" = "$kpkg" ] && kernel="$f" && break
+        if apt-cache rdepends "$pkg" | grep -q " $kpkg$"; then
+            kernel="$f"
+            break
+        fi
+    done
+    [ -z "$kernel" ] && { echo "no kernel found!" 1>&2; exit 1; }
+    verflav=${kernel#/boot/*-}
+    initrd=/boot/initrd.img-$initrd
+    [ -f "$initrd" ] || { echo "no initrd for $verflav 1>&2; exit 1; }
+    chmod ugo+r "$kernel" "$initrd"
+    cp "$kernel" /tmp/kernel
+    cp "$initrd" /tmp/initrd
   ' -- $PACKAGES </dev/null
-chmod ugo+r "$MOUNTPOINT/boot/initr"* "$MOUNTPOINT/boot/vmlin"*
-chown "$chown_to" "$MOUNTPOINT/boot/initr"*
-chown "$chown_to" "$MOUNTPOINT/boot/vmlin"*
-mv "$MOUNTPOINT/boot/vmlin"* "$kout"
-mv "$MOUNTPOINT/boot/initrd"* "$iout"
+chown "$chown_to" "$MOUNTPOINT/tmp/kernel"
+chown "$chown_to" "$MOUNTPOINT/tmp/initrd"
+mv "$MOUNTPOINT/tmp/kernel" "$kout"
+mv "$MOUNTPOINT/tmp/initrd" "$iout"
 ENDCALLBACK
 ret=$?
 [ $ret -eq 0 ] || exit $ret
