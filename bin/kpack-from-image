@@ -52,7 +52,7 @@ DEBIAN_FRONTEND=noninteractive \
     done
     [ -z "$kernel" ] && { echo "no kernel found!" 1>&2; exit 1; }
     verflav=${kernel#/boot/*-}
-    initrd=/boot/initrd.img-$initrd
+    initrd="/boot/initrd.img-$verflav"
     [ -f "$initrd" ] || { echo "no initrd for $verflav 1>&2; exit 1; }
     chmod ugo+r "$kernel" "$initrd"
     cp "$kernel" /tmp/kernel
