@@ -30,7 +30,13 @@ DEBIAN_FRONTEND=noninteractive \
   chroot "$MOUNTPOINT" /bin/sh -ec '
     rm -f /boot/vmlin* /boot/initrd*
     ${KPACK_SKIP_APT_UPDATE} || apt-get update -q
-    apt-get install --assume-yes --quiet "$@"
+    zzgrub=/etc/kernel/postinst.d/zz-update-grub
+
+    copymods="cloud-initramfs-copymods"
+    apt-cache show cloud-initramfs-copymods >/dev/null 2>&1 ||
+        copymods=""
+    [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
+    apt-get install --assume-yes --quiet $copymods "$@"
     chmod ugo+r /boot/*
   ' -- $PACKAGES </dev/null
 chown "$chown_to" "$MOUNTPOINT/boot/initr"*
