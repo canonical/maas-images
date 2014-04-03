@@ -238,6 +238,10 @@ EOF
         return 1;
     }
 
+    [ -n "$FIX_PERMS_REF" ] &&
+        chown "--reference=$FIX_PERMS_REF" \
+            "$dir/tmp/kernel.img" "$dir/tmp/initrd.img" "$dir/tmp/manifest"
+
     mv "$dir/tmp/kernel.img" "$kernel_out" &&
         mv "$dir/tmp/initrd.img" "$initrd_out" ||
         { error "failed to copy kernels out"; return 1; }
@@ -300,12 +304,12 @@ else
     initrd="$4"
     manifest="$5"
 
-    sudo mount-image-callback --system-mounts --system-resolvconf \
-        "$img" -- "$0" apply_updates \
-        _MOUNTPOINT_ "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
+    sudo "FIX_PERMS_REF=$img" \
+        mount-image-callback --system-mounts --system-resolvconf "$img" -- \
+        "$0" apply_updates _MOUNTPOINT_ \
+            "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"
 
-    chown "--reference=$img" "$kernel" "$initrd" ${manifest:+"${manifest}"}
     exit 0
 
 fi
