@@ -183,12 +183,14 @@ main() {
             { error "failed copying files"; return 1; }
     done
 
-    if gzip; then
+    if $gzip; then
         debug 1 "gzipping image file"
-        gzip -9 --rsyncable "$imgfile" && mv "$imgfile.gz" "$output" ||
+        gzip -9 --rsyncable "$imgfile" &&
+            mv --force "$imgfile.gz" "$output" ||
             { error "failed gzip"; return 1; }
     else
-        mv "$imgfile" "$output"
+        mv --force "$imgfile" "$output" ||
+            { error "failed move to $output"; return 1; }
     fi
     return 0
 }
