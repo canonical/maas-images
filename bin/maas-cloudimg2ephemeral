@@ -161,8 +161,9 @@ EOF
         PPA_CLEAR="$ppa_file" \
         chroot "$dir" sh -c '
         _apt() {
-            echo apt-get ${apt_opts} -q --assume-yes "$@" 1>&2;
-            apt-get ${apt_opts} -q --assume-yes "$@";
+            local emd=$(which eatmydata 2>/dev/null || :)
+            echo $emd apt-get ${apt_opts} -q --assume-yes "$@" 1>&2;
+            $emd apt-get ${apt_opts} -q --assume-yes "$@";
         }
         aptin() { _apt install "$@"; }
         aptrm() { _apt remove --purge "$@"; }
