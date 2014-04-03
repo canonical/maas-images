@@ -45,7 +45,7 @@ DEBIAN_FRONTEND=noninteractive \
         out=$(dpkg -S "$f")
         pkg=${out%%:*}
         [ "$pkg" = "$kpkg" ] && kernel="$f" && break
-        if apt-cache rdepends "$pkg" | grep -q " $kpkg$"; then
+        if apt-get --dry-run remove $pkg | grep "Remv $kpkg "; then
             kernel="$f"
             break
         fi
@@ -53,7 +53,7 @@ DEBIAN_FRONTEND=noninteractive \
     [ -z "$kernel" ] && { echo "no kernel found!" 1>&2; exit 1; }
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
-    [ -f "$initrd" ] || { echo "no initrd for $verflav 1>&2; exit 1; }
+    [ -f "$initrd" ] || { echo "no initrd for $verflav" 1>&2; exit 1; }
     chmod ugo+r "$kernel" "$initrd"
     cp "$kernel" /tmp/kernel
     cp "$initrd" /tmp/initrd
