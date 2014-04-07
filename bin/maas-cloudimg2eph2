@@ -62,15 +62,15 @@ get_img_from_tar() {
 get_img_file() {
     local fout="" input="$1" output="$2" tempd="$3"
     fout=$(LANG=C file "$input") || { error "failed: file $input"; return 1; }
-    case "$fout" in
-        gzip\ compressed*)
+    case "${fout#$input: }" in
+        "gzip compressed"*)
             fout=$(zcat "$input" | file -)
-            case "$fout" in
+            case "${fout#*: }" in
                 POSIX\ tar*) get_img_from_tar "$input" "$output" "$tempd";;
-                *) zcat -c "$fout" > "$output";;
+                *) zcat -c "$input" > "$output";;
             esac
             ;;
-        POSIX\ tar*)
+        "POSIX tar"*)
             get_img_from_tar "$input" "$output" "$tempd";;
         *) ln -s "$(readlink -f "$input")" "$output";
     esac
