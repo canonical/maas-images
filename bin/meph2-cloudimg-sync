@@ -471,9 +471,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
-        gencmd = ["maas-cloudimg2eph2", "--arch=%s" % arch,
+        gencmd = ["maas-cloudimg2eph2",
                   "--kernel=%s" % builtin_kernel,
-                  contentsource.url, rootimg_path]
+                  contentsource.url,
+                  os.path.join(self.out_d, rootimg_path)]
         krd_packs = []
         newpaths = set((rootimg_path,))
 
@@ -499,8 +500,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
 
-            krd_packs.append((kpkg, items['boot-kernel']['path'],
-                              items['boot-initrd']['path'],))
+            krd_packs.append((kpkg,
+                      os.path.join(self.out_d, items['boot-kernel']['path']),
+                      os.path.join(self.out_d, items['boot-initrd']['path'])))
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
 
@@ -509,6 +511,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         for pack in krd_packs:
             gencmd.append('--krd-pack=' + ','.join(pack))
         print(gencmd)
+        subprocess.check_call(gencmd)
 
         print(newpaths)
         # get checksum and size of new files created
