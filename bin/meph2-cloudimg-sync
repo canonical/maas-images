@@ -3,6 +3,7 @@
 from simplestreams import util as sutil
 from simplestreams import contentsource
 from simplestreams import log
+from simplestreams.log import LOG
 from simplestreams import objectstores
 from simplestreams import mirrors
 from simplestreams import filters
