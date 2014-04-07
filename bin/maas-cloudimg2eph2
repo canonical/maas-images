@@ -116,7 +116,7 @@ main() {
     output="$2"
 
     PATH="$(dirname "$0"):$PATH"
-    command -v "maas-cloudimg2ephemeral" ||
+    command -v "maas-cloudimg2ephemeral" >/dev/null 2>&1 ||
         { error "do not have maas-cloudimg2ephemeral in path"; return 1; }
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
