@@ -45,16 +45,6 @@ PATH_FORMATS = {
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
-def get_path(item, name, version):
-    if item['ftype'] in ("root-image.tgz", "root-image.gz"):
-        toks = (item['release'], item['arch'], version, name)
-    elif item['ftype'] in ("di-kernel", "di-initrd"):
-        toks = (item['release'], item['arch'], 'di', item['di-version'], item['krel'], item['kflavor'], name)
-    elif item['ftype'] in ("boot-kernel", "boot-initrd"):
-        toks = (item['release'], item['arch'], version, item['krel'], item['kflavor'], name)
-    return '/'.join(toks)
-
-
 def insert_item(item, fstore):
     src = contentsource.UrlContentSource(item['url'])
     fstore.insert(item['path'], contentsource.UrlContentSource(item['url']),
@@ -86,12 +76,6 @@ def v2_to_cloudimg_products(prodtree):
     return ret
 
 
-def empty_iid_products(content_id):
-    return {'content_id': content_id, 'products': {},
-            'datatype': 'image-ids', 'format': 'products:1.0'}
-    pass
-
-
 def get_products(release, arch):
     data = None
     for rel, d in PRODUCTS_MAP.items():
@@ -119,207 +103,10 @@ def get_products(release, arch):
         products[pid] = d
     return products
 
-def insert_fake_item(item, fstore):
-    content = item['path'] + "\n"
-    item['size'] = len(content)
-    fstore.insert_content(path=item['path'], content=content)
-    item['_fake'] = 'fake-data: ' + item['path']
-
-
-def read_sums(out_d):
-    cfile = os.path.join(out_d, '.CHECKSUMS.json')
-    if not os.path.isfile(cfile):
-        return {}
-    with open(cfile, "r") as fp:
-        return json.load(fp)
-
-def write_sums(out_d, sums=None):
-    cfile = os.path.join(out_d, '.CHECKSUMS.json')
-    if sums is None:
-        return
-
-    with open(cfile, "w") as fp:
-        return json.dump(sums, fp)
-    
-
-def fill_item_from_fs(out_d, item):
-    if not item.get('size'):
-        item['size'] = os.path.getsize(os.path.join(out_d, item['path']))
-
-    if not item.get('sha256'):
-        sums = read_sums(out_d)
-        cached = sums.get(item['path'])
-        if cached:
-            item['sha256'] = cached
-        else:
-            with open(os.path.join(out_d, item['path']), "r") as fp:
-                buflen = 1024*1024
-                cs = hashlib.new('sha256')
-                while True:
-                    buf = fp.read(buflen)
-                    cs.update(buf)
-                    if len(buf) != buflen:
-                        break
-            item['sha256'] = cs.hexdigest()
-            sums[item['path']] = item['sha256']
-            write_sums(out_d, sums)
-
-    return
-
-
-def get_eph_items(ephtgz, url, out_d, kernel, initrd):
-    missing = []
-    for i in (ephtgz, kernel, initrd):
-       target = os.path.join(out_d, i['path'])
-       if os.path.isfile(target):
-           fill_item_from_fs(out_d, i)
-       else:
-           missing.append(i)
-
-    if not missing:
-        return
-
-    mrootgz = ['./make-rootgz', url, out_d, ephtgz['path'],
-               kernel['path'], initrd['path']]
-    print("call: %s" % ' '.join(mrootgz))
-    subprocess.check_call(mrootgz)
-    for i in (ephtgz, kernel, initrd):
-        fill_item_from_fs(out_d, i)
-    return
-
-
-def is_v1_included_kernel(arch, rel, krel, kflavor):
-    if krel != rel:
-        return False
-    if (arch == "armhf" and kflavor == "highbank" and
-        rel in ('precise', 'quantal', 'raring')):
-            return True
-    return (kflavor == "generic")
-
 
 def empty_iid_products(content_id):
     return {'content_id': content_id, 'products': {},
             'datatype': 'image-ids', 'format': 'products:1.0'}
-
-
-class V2mirror(mirrors.BasicMirrorWriter):
-
-    def __init__(self, *args, **kwargs):
-        super(V2mirror, self).__init__(config=kwargs.get('config'))
-        self.out_d = kwargs.get('out_d')
-        self.fstore = objectstores.FileStore(prefix=self.out_d)
-        self.content_id = CONTENT_ID
-
-    def _cidpath(self, content_id):
-        return "streams/v1/%s.json" % content_id
-    
-    def load_products(self, path=None, content_id=None):
-        if content_id != "com.ubuntu.maas.daily:download":
-            raise ValueError("Not expecting to sync with content_id: %s" % content_id)
-
-        try:
-            path = self._cidpath(self.content_id)
-            my_prods = sutil.load_content(self.fstore.source(path).read())
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            my_prods = empty_iid_products(self.content_id)
-
-        # we wont be updating the 'target' passed in, but rather this.
-        self.content_t = my_prods
-        return v2_to_cloudimg_products(my_prods)
-        
-
-    def insert_item(self, data, src, target, pedigree, contentsource):
-        print("target=%s" % target)
-        flat = sutil.products_exdata(src, pedigree)
-        rel = flat['release']
-        ver = flat['version']
-        arch = flat['arch']
-        version_name = flat['version_name']
-        products = get_products(release=rel, arch=arch)
-        #print "%s: %s" % (flat['product_name'], products.keys())
-        ephtgz = {'ftype': 'root-image.gz',
-                  'release': rel, 'arch': arch, 'version': ver}
-        ephtgz['path'] = get_path(ephtgz, 'root-image.gz', version_name)
-        eph_krds = []
-        included = {}
-
-        my_prods = self.content_t
-        for pid, pdata in products.items():
-            items = {}
-            pdata['label'] = "daily"
-            sutil.products_set(my_prods, pdata, (pid,))
-            # get di-kernels/d-initrd
-            common = {'release': rel, 'krel': pdata['krel'],
-                      'arch': arch, 'subarch': pdata['subarch'],
-                      'kflavor': pdata['kflavor'], 'version': ver}
-
-            for item_name in ('di-kernel', 'di-initrd'):
-                item = common.copy()
-                item['ftype'] = item_name
-
-                kinfo = get_krd_info(arch=arch, release=rel,
-                                     krel=pdata['krel'], ftype=item_name,
-                                     flavor=pdata['kflavor'])
-                if kinfo is None:
-                    raise Exception("No %s for %s / %s / %s" %
-                                    (item_name, pid, arch, rel))
-                item.update(kinfo)
-               
-                item['path'] = get_path(item, item_name, version_name)
-                items[item_name] = item
-                insert_item(item, self.fstore)
-                sutil.products_set(my_prods, item, (pid, version_name, item_name,))
-
-            for item_name in ('boot-kernel', 'boot-initrd'):
-                item = common.copy()
-                item['ftype'] = item_name
-                item['path'] = get_path(item, item_name, version_name)
-                items[item_name] = item
-
-                if is_v1_included_kernel(arch, rel, pdata['krel'], pdata['kflavor']):
-                    if included.get(item_name):
-                        raise Exception("%s reset: %s => %s" %
-                                        (item_name, included[item_name], item))
-                    included[item_name] = item
-                else:
-                    insert_fake_item(item, self.fstore)
-                    fill_item_from_fs(self.out_d, item)
-
-                sutil.products_set(my_prods, item, (pid, version_name, item_name,))
-
-                eph_krds.append(item)
-
-            sutil.products_set(my_prods, ephtgz, (pid, version_name, 'root-image.gz',))
-
-        if not included:
-            raise Exception("No %s for %s / %s / %s" %
-                            ('in_image_kernel', flat['product_name'], arch, rel))
-        
-        get_eph_items(ephtgz, contentsource.url, self.out_d,
-                      included['boot-kernel'], included['boot-initrd'])
-        #print data
-        #print contentsource.url
-            
-    def insert_products(self, path, target, content):
-        tree = copy.deepcopy(self.content_t)
-        sutil.products_prune(tree)
-        sticky = ['ftype', 'sha256', 'size', 'name', 'id', 'di-version']
-        sutil.products_condense(tree, sticky)
-        tsnow = sutil.timestamp()
-        tree['updated'] = tsnow
-        dpath = self._cidpath(tree['content_id'])
-
-        print("writing to %s" % dpath)
-        self.fstore.insert_content(dpath, sutil.dump_data(tree))
-
-
-    def filter_product(self, data, src, target, pedigree):
-        flat = sutil.products_exdata(src, pedigree)
-        if flat['release'] in ('quantal', 'raring'):
-            return False
-        return True
 
 
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
@@ -525,12 +312,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 item.update(file_info.get(item['path'], {}))
             sutil.products_set(self.content_t, items, [prodname, vername])
 
-        import pprint; pprint.pprint(newitems)
-        #cmd = [ 'gzip', '-9', '--rsyncable', rootimg_fp ]
-        #print(' '.join(cmd))
-            
-#   kernel-release, arch, primary-subarch, flavor, subarches
-        #print("/".join([flat[t] for t in fields]))
+        # TODO: insert the item into tree
 
     def filter_index_entry(self, data, src, pedigree):
         prods = data.get('products', [])
