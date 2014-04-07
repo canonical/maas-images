@@ -521,7 +521,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         for prodname in newitems:
             items = newitems[prodname]
-            for item in items:
+            for item in items.values():
                 item.update(file_info.get(item['path'], {}))
             sutil.products_set(self.content_t, items, [prodname, vername])
 
