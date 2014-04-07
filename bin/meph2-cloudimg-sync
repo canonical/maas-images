@@ -528,6 +528,14 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 #   kernel-release, arch, primary-subarch, flavor, subarches
         #print("/".join([flat[t] for t in fields]))
 
+    def filter_index_entry(self, data, src, pedigree):
+        prods = data.get('products', [])
+    
+        if pedigree[0] != "com.ubuntu.cloud:daily:download":
+            LOG.info("skipping index entry %s" % '/'.join(pedigree))
+            return False
+        return True
+
     def filter_product(self, data, src, target, pedigree):
         flat = sutil.products_exdata(src, pedigree)
         if flat['release'] not in self.releases:
