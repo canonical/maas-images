@@ -146,7 +146,7 @@ main() {
     get_img_file "$src" "$imgfile" "${TEMP_D}" ||
         { error "failed to get image file from $src"; return 1; }
 
-    if [ "$src" -ef "$src_in" ]; then
+    if [ "$src" -ef "$imgfile" ]; then
         src="${TEMP_D}/src.img"
         rm -f "$imgfile"
         cp --sparse=always "$src_in" "$imgfile" ||
