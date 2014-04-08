@@ -311,7 +311,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                                          srcfd.url, item['_opath'])
                     del(item['_opath'])
 
-            sutil.products_set(self.content_t, items, [prodname, vername])
+            for i in items:
+                sutil.products_set(self.content_t, items[i],
+                                   (prodname, vername, i))
 
     def insert_products(self, path, target, content):
         tree = copy.deepcopy(self.content_t)
