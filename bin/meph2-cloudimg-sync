@@ -87,7 +87,7 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
         optcopy = ('datatype', 'updated', 'format')
         item = {k: data.get(k) for k in optcopy if data.get(k)}
         if data.get('format') == "products:1.0":
-            item['products'] = [p for p in data['products'].keys()]
+            item['products'] = sorted([p for p in data['products'].keys()])
 
         item['path'] = path_prefix + f
 
