@@ -231,6 +231,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         # create the ephemeral root
         arch = flat['arch']
         release = flat['release']
+        version = flat['version']
 
         # 'default_kernel' is a release dict in config
         # that contains the 'builtin' kernel to use
@@ -247,7 +248,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         vername = flat['version_name']
         subs = {'release': release, 'arch': arch,
-                'version_name': vername, 'version': flat['version']}
+                'version_name': vername, 'version': version}
 
         rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
@@ -267,7 +268,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                          'di_version': curdi['di-kernel']['version_name']})
 
             prodname = PRODUCT_FORMAT % subs
-            common = {'subarches': ','.join(subarches), 'krel': krel}
+            common = {'subarches': ','.join(subarches), 'krel': krel,
+                      'release': release, 'version': version, 'arch': arch}
 
             items = {}
             for i in ikeys:
