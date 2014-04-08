@@ -194,6 +194,31 @@ def copy_fh(src, target, buflen=1024*8):
             return
 
 
+def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
+    summer = sutil.checksummer(cksums)
+    out_d = os.path.dirname(path)
+    if makedirs:
+        try:
+            os.makedirs(out_d)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+    tf = tempfile.NamedTemporaryFile(dir=out_d, delete=False)
+    try:
+        while True:
+            buf = src.read(buflen)
+            summer.update(buf)
+            tf.write(buf)
+            if len(buf) != buflen:
+                break
+    finally:
+        if summer.check():
+            os.rename(tf.name, path)
+        else:
+            os.unlink(tf.name)
+            raise ValueError("Invalid checksum")
+
+
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
@@ -313,16 +338,21 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             items = newitems[prodname]
             for item in items.values():
                 item.update(file_info.get(item['path'], {}))
-                lpath = os.path.join(self.out_d, item['path'])
 
+                lpath = os.path.join(self.out_d, item['path'])
                 if ('_opath' in item and not os.path.exists(lpath)):
                     if not os.path.exists(os.path.dirname(lpath)):
                         os.makedirs(os.path.dirname(lpath))
-                    copy_fh(dimirror.source(item['_opath']), open(lpath, "wb"))
-                    del(item['_opath'])
-            sutil.products_set(self.content_t, items, [prodname, vername])
 
-        # TODO: insert the item into tree
+                    try:
+                        srcfd = dimirror.source(item['_opath'])
+                        copy_fh(src=srcfd, path=lpath, cksums=item)
+                    except ValueError as e:
+                        raise ValueError("%s had bad checksum (%s)",
+                                         srcfd.url, item['_opath'])
+                    del(item['_opath'])
+
+            sutil.products_set(self.content_t, items, [prodname, vername])
 
     def filter_index_entry(self, data, src, pedigree):
         prods = data.get('products', [])
