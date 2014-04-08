@@ -313,8 +313,27 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             sutil.products_set(self.content_t, items, [prodname, vername])
 
     def insert_products(self, path, target, content):
-        # TODO: have to actually write the updated target
-        pass
+        tree = copy.deepcopy(target)
+        sutil.products_prune(tree)
+        # stop these items from copying up when we call condense
+        sutil.products_condense(tree)
+
+        tsnow = sutil.timestamp()
+        tree['updated'] = tsnow
+        tree['datatype'] = 'image-downloads'
+
+        dpath = "streams/v1/" + CONTENT_ID + ".json"
+        fdpath = os.path.join(self.out_d, dpath)
+        LOG.info("writing data: %s", dpath)
+
+        if not os.path.isdir(os.path.dirname(fdpath)):
+            os.makedirs(os.path.dirname(fdpath))
+
+        with open(fdpath, "wb") as fp:
+            fp.write(sutil.dump_data(tree))
+
+        # now insert or update an index
+        LOG.info("updating index in %s" % self.out_d)
 
     def filter_index_entry(self, data, src, pedigree):
         if pedigree[0] != "com.ubuntu.cloud:daily:download":
