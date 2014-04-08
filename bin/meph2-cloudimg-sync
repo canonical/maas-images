@@ -170,8 +170,9 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
         if summer.check():
             try:
                 os.rename(tf.name, path)
-            finally:
+            except:
                 os.unlink(tf.name)
+                raise
         else:
             os.unlink(tf.name)
             raise ValueError("Invalid checksum")
