@@ -354,6 +354,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
             sutil.products_set(self.content_t, items, [prodname, vername])
 
+    def insert_products(self, path, target, content):
+        # TODO: have to actually write the updated target
+        pass
+
     def filter_index_entry(self, data, src, pedigree):
         prods = data.get('products', [])
     
