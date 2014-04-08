@@ -181,9 +181,11 @@ main() {
 
     if $gzip; then
         debug 1 "gzipping image file"
+        local stime=$SECONDS
         gzip -9 --rsyncable "$imgfile" &&
             mv --force "$imgfile.gz" "$output" ||
             { error "failed gzip"; return 1; }
+        debug 1 "gzip took $(($SECONDS-$stime))s"
     else
         mv --force "$imgfile" "$output" ||
             { error "failed move to $output"; return 1; }
