@@ -314,7 +314,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             sutil.products_set(self.content_t, items, [prodname, vername])
 
     def insert_products(self, path, target, content):
-        tree = copy.deepcopy(target)
+        tree = copy.deepcopy(self.content_t)
         sutil.products_prune(tree)
         # stop these items from copying up when we call condense
         sutil.products_condense(tree)
