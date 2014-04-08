@@ -345,6 +345,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         # now insert or update an index
         LOG.info("updating index in %s" % self.out_d)
+        create_index(self.out_d)
 
     def filter_index_entry(self, data, src, pedigree):
         if pedigree[0] != "com.ubuntu.cloud:daily:download":
