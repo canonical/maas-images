@@ -4,7 +4,6 @@ from simplestreams import util as sutil
 from simplestreams import contentsource
 from simplestreams import log
 from simplestreams.log import LOG
-from simplestreams import objectstores
 from simplestreams import mirrors
 from simplestreams import filters
 
@@ -14,16 +13,14 @@ import argparse
 import copy
 import hashlib
 import errno
-import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
 import yaml
 
 CLOUD_IMAGES_DAILY = "http://cloud-images.ubuntu.com/daily/streams/v1/com.ubuntu.cloud:daily:download.json"
-MAAS_EPHEM2_DAILY =  "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
+MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
 
 DEFAULT_ARCHES = {
     'i386': ['i386'],
@@ -45,12 +42,6 @@ PATH_FORMATS = {
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
-def insert_item(item, fstore):
-    src = contentsource.UrlContentSource(item['url'])
-    fstore.insert(item['path'], contentsource.UrlContentSource(item['url']),
-                  mutable=False, size=item['size'],
-                  checksums={'sha256': item['sha256']})
-
 
 def v2_to_cloudimg_products(prodtree):
     # this turns a v2 products tree into a cloud-image products tree.
@@ -66,42 +57,14 @@ def v2_to_cloudimg_products(prodtree):
         # com.ubuntu.cloud.daily:server:12.04:amd64
         tprod = ("com.ubuntu.cloud.daily:server:%(version)s:%(arch)s" %
                  prodtree['products'][product])
-        
+
         if tprod not in ret['products']:
             ret['products'][tprod] = {'versions': {}}
         for vername in prodtree['products'][product].get('versions'):
             if vername not in ret['products'][tprod]['versions']:
                 ret['products'][tprod]['versions'][vername] = {}
-        
+
     return ret
-
-
-def get_products(release, arch):
-    data = None
-    for rel, d in PRODUCTS_MAP.items():
-        if d['release'] == release:
-            data = d
-    if data is None:
-        return data
-
-    products = {}
-    for s in data['subarches']:
-        tup = SUBARCHES[s]
-        d = data.copy()
-        d.update({'arch': tup[0], 'subarch': tup[1], 'kflavor': tup[2],
-                  'krel': tup[3], 'subarches': tup[4]})
-        if d['arch'] != arch:
-            continue
-
-        # if this is 'hwe-X' subarch, then support 'generic'
-        if d['subarch'] == "hwe-" + release[0:1]:
-            d['subarches'] = ['generic'] + d['subarches']
-
-        d['subarches'] = ','.join(sorted(d['subarches']))
-
-        pid = ':'.join([PROD_PRE, d['version'], d['arch'], d['subarch']])
-        products[pid] = d
-    return products
 
 
 def empty_iid_products(content_id):
@@ -152,6 +115,7 @@ def get_file_info(path, sums=None):
     ret.update({k: sumers[k].hexdigest() for k in sumers})
     return ret
 
+
 def get_di_kernelinfo(releases=None, arches=None, asof=None):
     # this returns a dict tree like
     # items['precise']['amd64']['generic']['saucy']['kernel']
@@ -177,21 +141,12 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None):
         flat['url'] = smirror.source(item['path']).url
         ftype = flat['ftype']
         if (ftype not in cur or
-            cur[ftype]['version_name'] < flat['version_name']):
+                cur[ftype]['version_name'] < flat['version_name']):
             cur['di-' + ftype] = flat.copy()
-
 
     sutil.walk_products(netproducts, cb_item=fillitems)
 
     return (smirror, items)
-
-
-def copy_fh(src, target, buflen=1024*8):
-    while True:
-        buf = src.read(buflen)
-        target.write(buf)
-        if len(buf) != buflen:
-            return
 
 
 def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
@@ -213,7 +168,10 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
                 break
     finally:
         if summer.check():
-            os.rename(tf.name, path)
+            try:
+                os.rename(tf.name, path)
+            finally:
+                os.unlink(tf.name)
         else:
             os.unlink(tf.name)
             raise ValueError("Invalid checksum")
@@ -251,17 +209,17 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
     def load_products(self, path=None, content_id=None):
         if content_id != "com.ubuntu.cloud:daily:download":
-            raise ValueError("Not expecting to sync with content_id: %s" % content_id)
+            raise ValueError("Not expecting to sync with content_id: %s" %
+                             content_id)
 
         with contentsource.UrlContentSource(self.target) as tcs:
-            my_prods = self.tmirror_products = sutil.load_content(tcs.read())
+            my_prods = sutil.load_content(tcs.read())
 
         self.content_t = my_prods
         return v2_to_cloudimg_products(my_prods)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         flat = sutil.products_exdata(src, pedigree)
-        fields = ("release", "arch", "version_name", "ftype")
 
         # create the ephemeral root
         arch = flat['arch']
@@ -275,7 +233,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         (dimirror, dikinfo) = self._get_di_kinfo(release, arch)
 
         newitems = {}
-        
+
         ikeys = ('boot-kernel', 'boot-initrd', 'di-initrd', 'di-kernel',
                  'root-image.gz')
         mykinfo = self.releases[release]['kernels']
@@ -315,9 +273,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
 
-            krd_packs.append((kpkg,
-                      os.path.join(self.out_d, items['boot-kernel']['path']),
-                      os.path.join(self.out_d, items['boot-initrd']['path'])))
+            krd_packs.append(
+                (kpkg, os.path.join(self.out_d, items['boot-kernel']['path']),
+                 os.path.join(self.out_d, items['boot-initrd']['path'])))
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
 
@@ -347,7 +305,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     try:
                         srcfd = dimirror.source(item['_opath'])
                         copy_fh(src=srcfd, path=lpath, cksums=item)
-                    except ValueError as e:
+                    except ValueError:
                         raise ValueError("%s had bad checksum (%s)",
                                          srcfd.url, item['_opath'])
                     del(item['_opath'])
@@ -359,8 +317,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         pass
 
     def filter_index_entry(self, data, src, pedigree):
-        prods = data.get('products', [])
-    
         if pedigree[0] != "com.ubuntu.cloud:daily:download":
             LOG.info("skipping index entry %s" % '/'.join(pedigree))
             return False
@@ -378,7 +334,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         if data['ftype'] != "tar.gz":
             return False
         return filters.filter_item(self.filters, data, src, pedigree)
-
 
 
 def main():
@@ -435,7 +390,7 @@ def main():
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
-                          target=args.target, v2config=args.config)
+                                 target=args.target, v2config=args.config)
 
     tmirror.sync(smirror, initial_path)
 
@@ -444,4 +399,3 @@ if __name__ == '__main__':
     main()
 
 # vi: ts=4 expandtab syntax=python
-
