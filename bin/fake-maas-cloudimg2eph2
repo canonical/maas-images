@@ -1,0 +1,20 @@
+#!/bin/sh
+
+kern=$1
+input=$2
+root_gz=$3
+
+ensure_d() { local d=""; d=$(dirname "$1"); mkdir -p "$d"; }
+
+ensure_d "$root_gz"
+dd if=/dev/zero of=- bs=1024 count=1024 2>/dev/null | gzip -c > "$root_gz"
+shift 3 
+OIFS="$IFS"
+for kpack in "$@"; do
+    kpack=${kpack#--krd-pack=}
+    IFS=","; set -- $kpack ; IFS="$OIFS"
+    ensure_d "$2"
+    ensure_d "$3" 
+    echo "kernel: $1" > "$2"
+    echo "initrd: $1" > "$3"
+done

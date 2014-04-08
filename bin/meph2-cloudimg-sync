@@ -251,7 +251,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
-        gencmd = ["maas-cloudimg2eph2",
+        gencmd = [os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2"),
                   "--kernel=%s" % builtin_kernel,
                   contentsource.url,
                   os.path.join(self.out_d, rootimg_path)]
