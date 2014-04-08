@@ -217,7 +217,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             my_prods = sutil.load_content(tcs.read())
 
         # need the list syntax to not update the dict in place
-        for p in [p for p in my_prods['products']]
+        for p in [p for p in my_prods['products']]:
             if "daily:v2" not in p:
                 LOG.warn("skipping old product %s" % p)
                 del(my_prods['products'][p])
