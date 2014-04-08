@@ -186,6 +186,14 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None):
     return (smirror, items)
 
 
+def copy_fh(src, target, buflen=1024*8):
+    while True:
+        buf = src.read(buflen)
+        target.write(buf)
+        if len(buf) != buflen:
+            return
+
+
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
@@ -225,11 +233,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         self.content_t = my_prods
         return v2_to_cloudimg_products(my_prods)
-
-    def filter_item(self, data, src, target, pedigree):
-        if data['ftype'] != "tar.gz":
-            return False
-        return filters.filter_item(self.filters, data, src, pedigree)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         flat = sutil.products_exdata(src, pedigree)
@@ -310,6 +313,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             items = newitems[prodname]
             for item in items.values():
                 item.update(file_info.get(item['path'], {}))
+                lpath = os.path.join(self.out_d, item['path'])
+
+                if ('_opath' in item and not os.path.exists(lpath)):
+                    if not os.path.exists(os.path.dirname(lpath)):
+                        os.makedirs(os.path.dirname(lpath))
+                    copy_fh(dimirror.source(item['_opath']), open(lpath, "wb"))
+                    del(item['_opath'])
             sutil.products_set(self.content_t, items, [prodname, vername])
 
         # TODO: insert the item into tree
@@ -329,6 +339,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         if flat['arch'] not in self.arches:
             return False
         return True
+
+    def filter_item(self, data, src, target, pedigree):
+        if data['ftype'] != "tar.gz":
+            return False
+        return filters.filter_item(self.filters, data, src, pedigree)
+
 
 
 def main():
