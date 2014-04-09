@@ -22,6 +22,7 @@ chown_to="$gid:$uid"
 
 sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
    "http_proxy=$http_proxy" LANG=C PACKAGES="$kpkg" \
+   FLASH_KERNEL_SKIP=1 \
    chown_to="$chown_to" "kout=${kern_out}" "iout=${initrd_out}" \
    mount-image-callback --sys --proc \
       --system-resolvconf "$myimg" -- sh <<"ENDCALLBACK"
