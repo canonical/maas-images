@@ -29,6 +29,8 @@ DEFAULT_ARCHES = {
     'armhf': ['armhf'],
 }
 
+ALL_ITEM_TAGS = {'label': 'daily'}
+
 CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 
@@ -270,6 +272,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel,
                       'release': release, 'version': version, 'arch': arch}
+            common.update(ALL_ITEM_TAGS)
 
             items = {}
             for i in ikeys:
