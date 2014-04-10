@@ -150,12 +150,12 @@ apply_updates() {
     if $cross; then
         local fmt="${QEMU_STATIC_FMT:-/usr/bin/qemu-%a-static}" exe=""
         exe=${fmt//%a/$qemu_arch}
-        cp "$exe" "$dir/usr/bin/qemu-$arch-static" || {
-            error "failed to copy qemu-static [$exe] for $arch";
+        cp "$exe" "$dir/usr/bin/qemu-${qemu_arch}-static" || {
+            error "failed to copy qemu-static [$exe] for ${qemu_arch}";
             error "install qemu-user-static or set QEMU_STATIC_FMT";
             return 1;
         }
-        debug 1 "copied $exe into filesystem /usr/bin/qemu-$arch-static"
+        debug 1 "copied $exe into filesystem /usr/bin/qemu-${qemu_arch}-static"
     else
         debug 1 "no qemu-static needed to execute $debian_arch on ${host_arch}"
     fi
@@ -324,13 +324,14 @@ else
         eval set -- "${getopt_out}" ||
         { bad_Usage; exit 1; }
     arch=""
+    vargs=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
         case "$cur" in
             -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
-            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            -v|--verbose) vargs="${vargs}v"
             --) shift; break;;
         esac
         shift;
@@ -347,7 +348,7 @@ else
 
     sudo \
         mount-image-callback --sys --proc --system-resolvconf "$img" -- \
-        "$0" apply_updates "--fix-perms-ref=$img" \
+        "$0" apply_updates ${vargs:+-$vargs} "--fix-perms-ref=$img" \
             ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"
