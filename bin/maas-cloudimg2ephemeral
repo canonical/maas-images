@@ -118,6 +118,8 @@ apply_updates() {
         case "$fout" in
             *\ x86-64,*) debian_arch="amd64";;
             *\ 80386,*)   debian_arch="i386";;
+            *\ ARM\ aarch64,*) debian_arch="arm64";;
+            *\ ARM,*)   debian_arch="armhf";;
             *\ ARM,*)   debian_arch="armhf";;
             *\ 64-bit\ PowerPC*) debian_arch="ppc64el";;
             *) fail "unknown arch for fileoutput: $fout"; return 1;;
@@ -131,17 +133,12 @@ apply_updates() {
         *) qemu_arch="$debian_arch";;
     esac
 
-    case "$(uname -m)" in
-        i?86) host_arch="i386";;
-        x86_64) host_arch="x86_64";;
-        arm) host_arch="arm";;
-        ppc64le) host_arch="ppc64el";;
-    esac
-
     local cross=true
     case "$host_arch:$qemu_arch" in
         $host_arch:$host_arch) cross=false;;
         x86_64:i386) cross=false;;
+        ppc64le:ppc64el) cross=false;;
+        aarm64:arm64) cross=false;;
         arm*:arm*) cross=false;;
     esac
 
