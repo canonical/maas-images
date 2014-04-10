@@ -17,7 +17,7 @@ CROSS_DEPS="qemu-user-static"
 me=$(readlink -f "$0")
 myd=$(dirname "$me")
 if [ -f "$myd/bin/meph2-cloudimg-sync" ]; then
-    MEPH2_D="$PWD"
+    MEPH2_D="$myd"
 elif [ -f "$PWD/maas-ephemerals-v2/bin/meph2-cloudimg-sync" ]; then
     MEPH2_D="$PWD/maas-ephemerals-v2"
 fi
@@ -72,7 +72,7 @@ fi
 
 apt_install "${deps[@]}"
 
-if [ -z "$MEPH_D" ]; then
+if [ -z "$MEPH2_D" ]; then
     error "getting $MEPH2_BRANCH to $PWD/maas-ephemerals-v2"
     bzr branch "$MEPH2_BRANCH" maas-ephemerals-v2 ||
         fail "failed branch $MEPH2_BRANCH"
