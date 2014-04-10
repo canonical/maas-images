@@ -292,8 +292,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         for pack in krd_packs:
             gencmd.append('--krd-pack=' + ','.join(pack))
-        print(gencmd)
-        subprocess.check_call(gencmd)
+
+        if len([p for p in newpaths 
+                if not os.path.exists(os.path.join(self.out_d, p))]) == 0:
+            print("All paths existed, not re-generating: %s" % newpaths)
+        else:
+            print(gencmd)
+            subprocess.check_call(gencmd)
 
         print(newpaths)
         # get checksum and size of new files created
