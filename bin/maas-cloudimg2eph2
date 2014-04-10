@@ -86,8 +86,8 @@ ensure_file_d() {
 }
 
 main() {
-    local short_opts="hk:p:v"
-    local long_opts="help,kernel:,krd-pack:,no-gzip,verbose"
+    local short_opts="a:hk:p:v"
+    local long_opts="arch:,help,kernel:,krd-pack:,no-gzip,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -95,13 +95,14 @@ main() {
         { bad_Usage; return; }
 
     local cur="" next="" output="" gzip=true kpkg=""
-    local kpacks="" src_in="" src=""
+    local kpacks="" src_in="" src="" arch=""
     kpacks=( )
 
     while [ $# -ne 0 ]; do
         cur="$1"; next="$2";
         case "$cur" in
             -h|--help) Usage ; exit 0;;
+            -a|--arch) arch="$next"; shift;;
             -k|--kernel) kpkg=$next; shift;;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
@@ -159,7 +160,7 @@ main() {
     # now imgfile has the root filesystem image to adjust
     local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
     local manif="${TEMP_D}/manifest"
-    maas-cloudimg2ephemeral "$imgfile" "$kpkg" \
+    maas-cloudimg2ephemeral ${arch:+"--arch=$arch"} "$imgfile" "$kpkg" \
         "$pkout" "$piout" "$manifest" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
