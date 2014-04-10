@@ -149,7 +149,7 @@ apply_updates() {
     debug 1 "qemu_arch=$qemu_arch cross=$cross"
     if $cross; then
         local fmt="${QEMU_STATIC_FMT:-/usr/bin/qemu-%a-static}" exe=""
-        exe=${fmt//%a/$arch}
+        exe=${fmt//%a/$qemu_arch}
         cp "$exe" "$dir/usr/bin/qemu-$arch-static" || {
             error "failed to copy qemu-static [$exe] for $arch";
             error "install qemu-user-static or set QEMU_STATIC_FMT";
@@ -323,7 +323,7 @@ else
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; exit 1; }
-    local arch=""
+    arch=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
