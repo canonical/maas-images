@@ -44,7 +44,7 @@ Usage: ${0##*/} [ options ] disk kpkg kernel initrd [manifest]
 EOF
 }
 
-bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; exit 1; }
+bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return; }
 
 debug() {
     local level=${1}; shift;
@@ -78,26 +78,57 @@ apply_updates() {
     # apply_updates(dir, kernel_out, initramfs_out)
     # update directory given, and pull out kernel and initramfs
     # to given locations
+    short_opts="a:hv"
+    long_opts="arch:,fix-perms-ref:,help,verbose"
+    getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return 1; }
+    local debian_arch="" perms_ref="" qemu_arch=""
+
+    while [ $# -ne 0 ]; do
+        cur=${1}; next=${2};
+        case "$cur" in
+            -a|--arch) debian_arch="$next"; shift;;
+               --fix-perms-ref) perms_ref="$next"; shift;;
+            -h|--help) Usage ; exit 0;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            --) shift; break;;
+        esac
+        shift;
+    done
+
+    [ $# -eq 4 -o $# -eq 5 ] ||
+        { bad_Usage "expected image, kernel, ramdisk [,manifest]"; return 1; }
     local dir=$1 kpkg=$2 kernel_out=$3 initrd_out=$4 manifest=$5
     local tab="    "
 
     disable_services "$dir" || return
     
     # we expect /etc/lsb-release to be shell syntax with DISTRIB_CODENAME
-    local rel="" fout arch host_arch
+    local rel="" fout host_arch
     rel=$(. "$dir/etc/lsb-release" && echo "${DISTRIB_CODENAME}") &&
         [ -n "$rel" ] ||
         fail "failed to read DISTRIB_CODENAME from $dir/etc/lsb-release"
 
-    # not pretty, use 'file' to determine arch
-    fout=$(file -L "$dir/bin/sh") ||
-        { error "'file' on $dir/bin/sh failed"; return 1; }
-    case "$fout" in
-        *\ x86-64,*) arch="x86_64";;
-        *\ 80386,*)   arch="i386";;
-        *\ ARM,*)   arch="arm";;
-        *\ 64-bit\ PowerPC*) arch="ppc64el";;
-        *) fail "unknown arch for fileoutput: $fout"; return 1;;
+    if [ -z "$debian_arch" ]; then
+        # not pretty, use 'file' to determine arch
+        fout=$(file -L "$dir/bin/sh") ||
+            { error "'file' on $dir/bin/sh failed"; return 1; }
+        case "$fout" in
+            *\ x86-64,*) debian_arch="amd64";;
+            *\ 80386,*)   debian_arch="i386";;
+            *\ ARM,*)   debian_arch="armhf";;
+            *\ 64-bit\ PowerPC*) debian_arch="ppc64el";;
+            *) fail "unknown arch for fileoutput: $fout"; return 1;;
+        esac
+    fi
+
+    case "$debian_arch" in
+        x86_64|amd64) qemu_arch="x86_64";;
+        arm*) qemu_arch="arm";;
+        ppc64le) qemu_arch="ppc64";;
+        *) qemu_arch="$debian_arch";;
     esac
 
     case "$(uname -m)" in
@@ -107,11 +138,16 @@ apply_updates() {
         ppc64le) host_arch="ppc64el";;
     esac
 
-    debug 1 "arch: $arch. rel: $rel host_arch: $host_arch"
-    if [ "$arch" = "$host_arch" ] ||
-       [ "${host_arch}:${arch}" = "x86_64:i386" ]; then
-        debug 1 "no qemu-static needed to execute $arch on ${host_arch}"
-    else
+    local cross=true
+    case "$host_arch:$qemu_arch" in
+        $host_arch:$host_arch) cross=false;;
+        x86_64:i386) cross=false;;
+        arm*:arm*) cross=false;;
+    esac
+
+    debug 1 "arch: $debian_arch rel: $rel host_arch: $host_arch"
+    debug 1 "qemu_arch=$qemu_arch cross=$cross"
+    if $cross; then
         local fmt="${QEMU_STATIC_FMT:-/usr/bin/qemu-%a-static}" exe=""
         exe=${fmt//%a/$arch}
         cp "$exe" "$dir/usr/bin/qemu-$arch-static" || {
@@ -120,6 +156,8 @@ apply_updates() {
             return 1;
         }
         debug 1 "copied $exe into filesystem /usr/bin/qemu-$arch-static"
+    else
+        debug 1 "no qemu-static needed to execute $debian_arch on ${host_arch}"
     fi
 
     local prox="" apt_opts=""
@@ -239,8 +277,8 @@ EOF
         return 1;
     }
 
-    [ -n "$FIX_PERMS_REF" ] &&
-        chown "--reference=$FIX_PERMS_REF" \
+    [ -n "$perms_ref" ] &&
+        chown "--reference=$perms_ref" \
             "$dir/tmp/kernel.img" "$dir/tmp/initrd.img" "$dir/tmp/manifest"
 
     mv "$dir/tmp/kernel.img" "$kernel_out" &&
@@ -279,16 +317,18 @@ EOF
 if [ "$1" = "apply_updates" ]; then
     "$@"
 else
-    short_opts="hv"
-    long_opts="help,verbose"
+    short_opts="a:hv"
+    long_opts="arch:,help,verbose"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
-        bad_Usage
+        { bad_Usage; exit 1; }
+    local arch=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
         case "$cur" in
+            -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
             --) shift; break;;
@@ -297,7 +337,7 @@ else
     done
 
     [ $# -eq 4 -o $# -eq 5 ] ||
-        bad_Usage "expected image, kernel, ramdisk [,manifest]"
+        { bad_Usage "expected image, kernel, ramdisk [,manifest]"; exit 1; }
 
     img="$1"
     kpkg="$2"
@@ -305,9 +345,10 @@ else
     initrd="$4"
     manifest="$5"
 
-    sudo "FIX_PERMS_REF=$img" \
+    sudo \
         mount-image-callback --sys --proc --system-resolvconf "$img" -- \
-        "$0" apply_updates _MOUNTPOINT_ \
+        "$0" apply_updates "--fix-perms-ref=$img" \
+            ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"
 
