@@ -271,7 +271,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
             prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel,
-                      'release': release, 'version': version, 'arch': arch}
+                      'release': release, 'version': version, 'arch': arch,
+                      'subarch': psubarch, 'kflavor': flavor}
             common.update(ALL_ITEM_TAGS)
 
             items = {}
