@@ -1,17 +1,42 @@
-#!/bin/sh
+#!/bin/bash
+set -f
 
-kern=$1
-input=$2
-root_gz=$3
+short_opts="a:k:p:v"
+long_opts="arch:,kernel:,krd-pack:,verbose"
+getopt_out=$(getopt --name "${0##*/}" \
+    --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+    eval set -- "${getopt_out}" ||
+    { echo "bad arguments to $0"; exit 1; }
+
+gzip=true
+arch=""
+kernel=""
+kpacks=( )
+while [ $# -ne 0 ]; do
+	cur=$1
+	next=$2
+	case "$cur" in
+		-a|--arch) arch="$next"; shift;;
+		-k|--kernel) kernel=$next; shift;;
+		-p|--krd-pack) kpacks[${#kpacks[@]}]=$next; shift;;
+		   --no-gzip) gzip=false;;
+		--) shift; break;;
+	esac
+	shift;
+done
+
+src=$1
+root_gz=$2
 
 ensure_d() { local d=""; d=$(dirname "$1"); mkdir -p "$d"; }
 
 ensure_d "$root_gz"
-dd if=/dev/zero of=- bs=1024 count=1024 2>/dev/null | gzip -c > "$root_gz"
-shift 3 
+$gzip && gzip_prog="gzip -c" || gzip_prog="cat"
+
+dd if=/dev/zero of=- bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
+
 OIFS="$IFS"
-for kpack in "$@"; do
-    kpack=${kpack#--krd-pack=}
+for kpack in "${kpacks[@]}"; do
     IFS=","; set -- $kpack ; IFS="$OIFS"
     ensure_d "$2"
     ensure_d "$3" 
