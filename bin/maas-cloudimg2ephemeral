@@ -331,7 +331,7 @@ else
         case "$cur" in
             -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
-            -v|--verbose) vargs="${vargs}v"
+            -v|--verbose) vargs="${vargs}v";;
             --) shift; break;;
         esac
         shift;
