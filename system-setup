@@ -5,7 +5,7 @@ MEPH2_BRANCH="lp:~smoser/maas/maas-ephemerals-v2"
 MEPH2_D=""
 DEPS=(
     bzr
-    cloud-guest-utils      # for mount-image-callback
+    cloud-image-utils      # for mount-image-callback
     python3-distro-info
     python3-requests
     python3-simplestreams
