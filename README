@@ -5,4 +5,4 @@ from stuff on
   http://cloud-images.ubuntu.com/daily
 
 To run:
-  PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync
+  PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
