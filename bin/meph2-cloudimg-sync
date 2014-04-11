@@ -20,7 +20,7 @@ import tempfile
 import yaml
 
 CLOUD_IMAGES_DAILY = "http://cloud-images.ubuntu.com/daily/streams/v1/com.ubuntu.cloud:daily:download.json"
-MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
+MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas.daily:v2:download.json"
 
 DEFAULT_ARCHES = {
     'i386': ['i386'],
