@@ -141,10 +141,10 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None):
             cur = cur[tok]
 
         flat['url'] = smirror.source(item['path']).url
-        ftype = flat['ftype']
+        ftype = 'di-' + flat['ftype']
         if (ftype not in cur or
                 cur[ftype]['version_name'] < flat['version_name']):
-            cur['di-' + ftype] = flat.copy()
+            cur[ftype] = flat.copy()
 
     sutil.walk_products(netproducts, cb_item=fillitems)
 
