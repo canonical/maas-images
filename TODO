@@ -1,2 +1,15 @@
-* split d-i kernel/initrd into its own products
-  That could be created with: lp:~smoser/maas/netinst2ss
+ * enable arm64
+ * meph2t insert --no-sign <stream-1> <stream-2>
+   insert stream1 content into stream2
+   re-generate indexes, sign.
+ * meph2t clean --dry-run --no-sign --max=1 --orphaned-output=foo.js <stream-1>
+   orphaned-output writes a file that contains data
+   on the files that it cleaned.  This allows you to keep a timestamp
+   of when the file was deleted (so you can know that you've kept it
+   for 3 days after metadata de-referenced it).
+ * meph2t purge-orphans --dry-run --orphan-data=foo.js stream1
+   orphan-data.js
+
+ * meph2t promote --no-sign [--version=latest] stream1 stream2 product label
+   promotes [copies] the product at given version from stream1 into stream2
+   and updates metadata in stream2 to reference it.
