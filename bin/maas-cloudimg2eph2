@@ -95,7 +95,7 @@ main() {
         { bad_Usage; return; }
 
     local cur="" next="" output="" gzip=true kpkg=""
-    local kpacks="" src_in="" src="" arch=""
+    local kpacks="" src_in="" src="" arch="" vflags=""
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -106,7 +106,7 @@ main() {
             -k|--kernel) kpkg=$next; shift;;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
-            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
             --) shift; break;;
         esac
         shift;
@@ -115,6 +115,7 @@ main() {
     [ $# -eq 2 ] || { bad_Usage "must provide source and target"; return; }
     src_in="$1"
     output="$2"
+    [ -z "$vflags" ] || vflags="-$vflags"
 
     PATH="$(dirname "$0"):$PATH"
     command -v "maas-cloudimg2ephemeral" >/dev/null 2>&1 ||
@@ -160,8 +161,8 @@ main() {
     # now imgfile has the root filesystem image to adjust
     local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
     local manif="${TEMP_D}/manifest"
-    maas-cloudimg2ephemeral ${arch:+"--arch=$arch"} "$imgfile" "$kpkg" \
-        "$pkout" "$piout" "$manifest" ||
+    maas-cloudimg2ephemeral $vflags ${arch:+"--arch=$arch"} "$imgfile" \
+        "$kpkg" "$pkout" "$piout" "$manifest" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
     local i="" ckpkg="" ckout="" ciout="" oifs="$IFS"
