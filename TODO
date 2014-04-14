@@ -1,4 +1,3 @@
- * enable arm64
  * meph2t insert --no-sign <stream-1> <stream-2>
    insert stream1 content into stream2
    re-generate indexes, sign.
