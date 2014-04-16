@@ -1,10 +1,21 @@
 #!/usr/bin/python3
 
 import argparse
+import os
 import sys
+
+from meph2 import util
+
+from simplestreams import filters
+from simplestreams import mirrors
+from simplestreams import util as sutil
 
 CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
+
+DEF_KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+
+STREAMS_D = "streams/v1/"
 
 LABELS = ('beta1', 'beta2', 'rc', 'release')
 
@@ -23,7 +34,9 @@ COMMON_FLAGS = {
     'src': (('src',), {'help': 'the source streams directory'}),
     'target': (('target',), {'help': 'the target streams directory'}),
     'data_d': (('data_d',),
-        {'help': 'the base data directory ("path"s are relative to this'})
+        {'help': 'the base data directory ("path"s are relative to this'}),
+    'keyring': (('keyring',),
+        {'help': 'gpg keyring to check sjson', 'default': DEF_KEYRING}),
 }
 
 SUBCOMMANDS = {
@@ -31,6 +44,7 @@ SUBCOMMANDS = {
         'help': 'add new items from one stream into another',
         'opts': [
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
         ]
     },
@@ -70,9 +84,60 @@ SUBCOMMANDS = {
 }
 
 
-def main_insert(args):
-    raise NotImplementedError()
+class BareMirrorWriter(mirrors.ObjectFilterMirror):
+    # this does not do reference counting or .data/ storage
+    # it stores data only in the streams
+    def __init__(self, config, objectstore):
+        super(BareMirrorWriter, self).__init__(config=config)
+        self.store = objectstore
+        self.config = config
 
+    def products_data_path(content_id):
+        return "streams/v1/" + content_id + ".json"
+
+    def _noop(*args):
+        return
+
+    remove_item = _noop
+    _inc_rc = _noop
+    _dec_rc = _noop
+
+
+def main_insert(args):
+    (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
+    filter_list = filters.get_filters(args.filters)
+
+    def policy(content, path):
+        if initial_path.endswith('sjson'):
+            return sutil.read_signed(content, keyring=args.keyring)
+        else:
+            return content
+
+    mirror_config = {'max_items': None, 'keep_items': True,
+                     'filters': filter_list}
+    smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
+    tstore = objectstores.FileStore(args.target)
+
+    if args.dry_run:
+        drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,
+                                              objectstore=tstore)
+        for (pedigree, path, size) in items:
+            fmt = "{pedigree} {path}"
+            sys.stderr.write(
+                fmt.format(pedigree='/'.join(pedigree), path=path) + "\n")
+        return 0
+
+    tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
+    tmirror.sync(smirror, src_path)
+
+    md_d = os.path.join(args.target, "streams/v1/")
+    util.create_index(md_d, files=None)
+
+    if not args.no_sign:
+        util.sign_stream_d(md_d)
+
+    return 0
+    
 
 def main_promote(args):
     raise NotImplementedError()
