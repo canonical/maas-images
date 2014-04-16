@@ -9,6 +9,7 @@ from meph2 import util
 from simplestreams import filters
 from simplestreams import mirrors
 from simplestreams import util as sutil
+from simplestreams import objectstores
 
 CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
@@ -35,7 +36,7 @@ COMMON_FLAGS = {
     'target': (('target',), {'help': 'the target streams directory'}),
     'data_d': (('data_d',),
         {'help': 'the base data directory ("path"s are relative to this'}),
-    'keyring': (('keyring',),
+    'keyring': (('--keyring',),
         {'help': 'gpg keyring to check sjson', 'default': DEF_KEYRING}),
 }
 
@@ -46,6 +47,7 @@ SUBCOMMANDS = {
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
             COMMON_FLAGS['keyring'],
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+            ('filters', {'nargs': '*', 'default': []}),
         ]
     },
     'promote': {
@@ -121,7 +123,7 @@ def main_insert(args):
     if args.dry_run:
         drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,
                                               objectstore=tstore)
-        for (pedigree, path, size) in items:
+        for (pedigree, path, size) in drmirror.downloading:
             fmt = "{pedigree} {path}"
             sys.stderr.write(
                 fmt.format(pedigree='/'.join(pedigree), path=path) + "\n")
