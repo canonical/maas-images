@@ -4,5 +4,22 @@ Ie, it creates stuff that goes on
 from stuff on
   http://cloud-images.ubuntu.com/daily
 
+== setup ==
+  Run './system-setup' to set up the system.
+  This will install necessary dependencies.
+
+== Running ==
 To run:
   PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
+
+  You can then add filters to the end, like 'release=trusty' or
+  'arch=amd64'.  The resultant out.d/streams/v1/ will have information
+  copied from maas.ubuntu.com for all other products, but will only
+  create new content for products that match the provided filters.
+
+
+To debug and use the fake 'maas-cloudimg2eph2', run like:
+  env MAAS_CLOUDIMG2EPH2=fake-maas-cloudimg2eph2 \
+     PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
+
+  This will still download di-kernels and di-initramfs.
