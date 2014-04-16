@@ -90,14 +90,6 @@ def main_reap_orphans(args):
     raise NotImplementedError()
 
 
-def subp_add_common(subp, toks, kwup=None):
-    args = toks[0]
-    kwargs = toks[1].copy()
-    if kwup is not None:
-        kwargs.update(kwup)
-    subp.add_argument(*args, **kwargs)
-
-
 def main():
     parser = argparse.ArgumentParser()
 
