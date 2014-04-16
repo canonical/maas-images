@@ -1,0 +1,108 @@
+#!/usr/bin/python3
+
+import argparse
+
+CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
+PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
+
+LABELS = ('beta1', 'beta2', 'rc', 'release')
+COMMON_FLAGS = {
+    'dry-run': (('-n', '--dry-run'),
+                {'help': 'only report what would be done',
+                 'action': 'store_true', 'default': False}),
+    'no-sign': (('-u', '--no-sign'),
+                {'help': 'do not re-sign files',
+                 'action': 'store_true', 'default': False}),
+    'max': (('--max',),
+            {'help': 'keep at most N items per product',
+             'default': 1, 'type': int}),
+}
+
+
+def main_insert(args):
+    raise NotImplementedError()
+
+
+def main_promote(args):
+    raise NotImplementedError()
+
+
+def main_clean_md(args):
+    raise NotImplementedError()
+
+
+def main_find_orphans(args):
+    raise NotImplementedError()
+
+
+def main_reap_orphans(args):
+    raise NotImplementedError()
+
+
+def subp_add_common(subp, toks, kwup=None):
+    args = toks[0]
+    kwargs = toks[1].copy()
+    if kwup is not None:
+        kwargs.update(kwup)
+    subp.add_argument(*args, **kwargs)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers()
+
+    insert = subparsers.add_parser(
+        'insert', help='add new items from one stream into another')
+    subp_add_common(insert, COMMON_FLAGS['dry-run'])
+    subp_add_common(insert, COMMON_FLAGS['no-sign'])
+    insert.add_argument('src')
+    insert.add_argument('target')
+    insert.set_defaults(action=main_insert)
+
+    promote = subparsers.add_parser(
+        'promote', help='promote a product/version from daily to release')
+    subp_add_common(promote, COMMON_FLAGS['dry-run'])
+    subp_add_common(promote, COMMON_FLAGS['no-sign'])
+    promote.add_argument('-l', '--label', default='release', choices=LABELS,
+                         help='the label to promote as')
+    promote.add_argument('src')
+    promote.add_argument('target')
+    promote.add_argument('version', help='the version_id to promote.')
+    promote.add_argument('filters', nargs='+', default=[])
+    promote.set_defaults(action=main_promote)
+
+    clean = subparsers.add_parser(
+        'clean-md', help='clean streams metadata only to keep "max" items')
+    subp_add_common(clean, COMMON_FLAGS['dry-run'])
+    subp_add_common(clean, COMMON_FLAGS['no-sign'])
+    clean.add_argument('max', type=int)
+    clean.add_argument('target')
+    clean.add_argument('filters', nargs='*', default=[])
+    clean.set_defaults(action=main_clean_md)
+
+    forphans = subparsers.add_parser(
+        'find-orphans', help='find files in data_d not referenced in a "path"')
+    forphans.add_argument('orphan-data', help='the orphan data file')
+    forphans.add_argument('data_d')
+    forphans.add_argument('streams_dirs', nargs='*', default=None)
+    forphans.set_defaults(action=main_find_orphans)
+
+    reap = subparsers.add_parser(
+        'reap-orphans', help='reap orphans listed in orphan-data from data_d')
+    reap.add_argument('orphan-data', help='the orphan data file')
+    subp_add_common(reap, COMMON_FLAGS['dry-run'])
+    reap.add_argument('data_d')
+    reap.set_defaults(action=main_reap_orphans)
+
+    args = parser.parse_args()
+    if not hasattr(args, 'action'):
+        parser.print_usage()
+        return
+    args.action(args)
+
+
+if __name__ == '__main__':
+    main()
+
+# vi: ts=4 expandtab syntax=python
