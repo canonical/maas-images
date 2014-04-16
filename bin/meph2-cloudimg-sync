@@ -331,8 +331,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                         raise ValueError("%s had bad checksum (%s)",
                                          srcfd.url, item['_opath'])
 
-            for k in [k for k in item.keys() if k.startswith('_')]:
-                del item[k]
+                for k in [k for k in item.keys() if k.startswith('_')]:
+                    del item[k]
 
             for i in items:
                 sutil.products_set(self.content_t, items[i],
