@@ -11,9 +11,6 @@ from simplestreams import mirrors
 from simplestreams import util as sutil
 from simplestreams import objectstores
 
-CONTENT_ID = "com.ubuntu.maas.daily:v2:download"
-PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
-
 DEF_KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 STREAMS_D = "streams/v1/"
@@ -90,12 +87,38 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
     # this does not do reference counting or .data/ storage
     # it stores data only in the streams
     def __init__(self, config, objectstore):
-        super(BareMirrorWriter, self).__init__(config=config)
+        super(BareMirrorWriter, self).__init__(config=config,
+                                               objectstore=objectstore)
         self.store = objectstore
         self.config = config
+        self.products_touched = set()
 
-    def products_data_path(content_id):
+    def products_data_path(self, content_id):
+        #base = "streams/v1/" + content_id
+        #if os.path.exists(os.path.join(self.store.prefix, base + ".sjson")):
+        #    return base + ".sjson"
         return "streams/v1/" + content_id + ".json"
+
+    def load_products(self, path, content_id):
+        print("content_id=%s path=%s" % (content_id, path))
+        ret = super(BareMirrorWriter, self).load_products(path=path,
+                                                          content_id=content_id)
+        return ret
+
+    def insert_version(self, data, src, target, pedigree):
+        self.products_touched.add((pedigree[0], pedigree[1]))
+        sys.stderr.write("inserting %s" % '/'.join(pedigree))
+        return super(BareMirrorWriter, self).insert_version(data, src,
+                                                            target, pedigree)
+    def insert_products(self, path, target, content):
+        sys.stderr.write("adding products %s\n" % path)
+        # we kept products_touched so that we could flatten them.
+        # and then recondense them.  This may need to be done
+        # in order to address tags that got flattened up but
+        # then need to be moved down.
+        ret = super(BareMirrorWriter, self).insert_products(
+            path=path, target=target, content=content)
+        return ret
 
     def _noop(*args):
         return
@@ -110,25 +133,29 @@ def main_insert(args):
     filter_list = filters.get_filters(args.filters)
 
     def policy(content, path):
-        if initial_path.endswith('sjson'):
+        if src_path.endswith('sjson'):
             return sutil.read_signed(content, keyring=args.keyring)
         else:
             return content
 
-    mirror_config = {'max_items': None, 'keep_items': True,
+    mirror_config = {'max_items': 20, 'keep_items': True,
                      'filters': filter_list}
     smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
-    tstore = objectstores.FileStore(args.target)
 
     if args.dry_run:
+        smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
+        tstore = objectstores.FileStore(args.target)
         drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,
                                               objectstore=tstore)
+        drmirror.sync(smirror, src_path)
         for (pedigree, path, size) in drmirror.downloading:
             fmt = "{pedigree} {path}"
             sys.stderr.write(
                 fmt.format(pedigree='/'.join(pedigree), path=path) + "\n")
         return 0
 
+    smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
+    tstore = objectstores.FileStore(args.target)
     tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
@@ -136,7 +163,7 @@ def main_insert(args):
     util.create_index(md_d, files=None)
 
     if not args.no_sign:
-        util.sign_stream_d(md_d)
+        util.sign_streams_d(md_d)
 
     return 0
     
