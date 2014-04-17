@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import copy
 import os
 import sys
 
@@ -91,7 +92,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
                                                objectstore=objectstore)
         self.store = objectstore
         self.config = config
-        self.products_touched = set()
+        self.tproducts = None
+        self.inserted = []
 
     def products_data_path(self, content_id):
         #base = "streams/v1/" + content_id
@@ -100,24 +102,60 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         return "streams/v1/" + content_id + ".json"
 
     def load_products(self, path, content_id):
-        print("content_id=%s path=%s" % (content_id, path))
-        ret = super(BareMirrorWriter, self).load_products(path=path,
-                                                          content_id=content_id)
+        sys.stderr.write("content_id=%s path=%s\n" % (content_id, path))
+        ret = super(BareMirrorWriter, self).load_products(
+            path=path, content_id=content_id)
+        self.tproducts = copy.deepcopy(ret)
         return ret
 
+    def insert_item(self, data, src, target, pedigree, contentsource):
+        sys.stderr.write("inserting item %s\n" % '/'.join(pedigree))
+        self.inserted.append(
+            (pedigree, sutil.products_exdata(
+                src, pedigree, include_top=False,
+                insert_fieldnames=False)),)
+        return super(BareMirrorWriter, self).insert_item(
+            data, src, target, pedigree, contentsource)
+
     def insert_version(self, data, src, target, pedigree):
-        self.products_touched.add((pedigree[0], pedigree[1]))
-        sys.stderr.write("inserting %s" % '/'.join(pedigree))
+        sys.stderr.write("inserting item %s\n" % '/'.join(pedigree))
         return super(BareMirrorWriter, self).insert_version(data, src,
                                                             target, pedigree)
+
     def insert_products(self, path, target, content):
         sys.stderr.write("adding products %s\n" % path)
-        # we kept products_touched so that we could flatten them.
-        # and then recondense them.  This may need to be done
-        # in order to address tags that got flattened up but
-        # then need to be moved down.
+
+        ptouched = set([i[0][0] for i in self.inserted])
+        srcitems = []
+
+        def get_items(item, tree, pedigree):
+            if pedigree[0] not in ptouched:
+                return
+
+            flat = sutil.products_exdata(tree, pedigree, include_top=False,
+                                         insert_fieldnames=False)
+            srcitems.append([pedigree, flat])
+
+        sutil.walk_products(self.tproducts, cb_item=get_items)
+
+        for pid in ptouched:
+            oprod = self.tproducts['products'][pid]
+            self.tproducts['products'][pid] = {}
+
+        known_ints = ['size']
+        for (pedigree, flatitem) in srcitems + self.inserted:
+            for n in known_ints:
+                if n in flatitem:
+                    flatitem[n] = int(flatitem[n])
+            sutil.products_set(self.tproducts, flatitem, pedigree)
+
+        sutil.products_condense(self.tproducts,
+                                sticky=['di_version', 'kpackage'])
+
+        self.tproducts['updated'] = sutil.timestamp()
+
         ret = super(BareMirrorWriter, self).insert_products(
-            path=path, target=target, content=content)
+            path=path, target=self.tproducts, content=False)
         return ret
 
     def _noop(*args):
@@ -166,7 +204,7 @@ def main_insert(args):
         util.sign_streams_d(md_d)
 
     return 0
-    
+
 
 def main_promote(args):
     raise NotImplementedError()
