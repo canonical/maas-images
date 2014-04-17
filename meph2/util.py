@@ -43,7 +43,7 @@ def create_index(target_d, files=None, path_prefix="streams/v1/"):
     return ret
 
 
-def sign_streams_d(path):
+def sign_streams_d(path, status_cb=None):
     for root, _dirs, files in os.walk(path):
         for f in [f for f in files if f.endswith(".json")]:
             signjson_file(os.path.join(root, f), status_cb=status_cb)
