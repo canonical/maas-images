@@ -29,7 +29,7 @@ COMMON_FLAGS = {
     'max': (('--max',),
             {'help': 'keep at most N items per product',
              'default': 1, 'type': int}),
-    'orphan-data': (('orphan-data',), {'help': 'the orphan data file'}),
+    'orphan-data': (('orphan_data',), {'help': 'the orphan data file'}),
     'src': (('src',), {'help': 'the source streams directory'}),
     'target': (('target',), {'help': 'the target streams directory'}),
     'data_d': (('data_d',),
@@ -208,7 +208,7 @@ class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
         ret = super(ReleasePromoteMirror, self).load_products(
             path=path, content_id=content_id)
         self.tproducts = copy.deepcopy(ret)
-        
+
         return self.rel2daily(ret)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
@@ -353,11 +353,59 @@ def main_clean_md(args):
 
 
 def main_find_orphans(args):
-    raise NotImplementedError()
+    data_d = args.data_d
+    streams_d = args.streams_dirs
+    if not streams_d:
+        streams_d = [data_d]
+
+    known_orphans = {}
+    if os.path.exists(args.orphan_data):
+        known_orphans = util.read_orphan_file(args.orphan_data)
+
+    orphans = []
+
+    stream_files, index_files = util.get_index_files(streams_d)
+    non_orphans = util.get_nonorphan_set(index_files)
+
+    stream_files = [os.path.relpath(stream_f) for stream_f in stream_files]
+    index_files = [os.path.relpath(index_f) for index_f in index_files]
+
+    for (path, dirs, files) in os.walk(data_d):
+        print os.path.realpath(path)
+        if os.path.realpath(path).startswith(
+                os.path.realpath(os.path.join(data_d, 'streams', ''))):
+            continue
+        # maybe add continue for .data as well?
+
+        for file_ in files:
+            location = os.path.join(path, file_)
+            if location not in non_orphans and location not in stream_files \
+                    and location not in index_files:
+                orphans.append(os.path.relpath(location, data_d))
+
+    util.write_orphan_file(args.orphan_data, orphans)
 
 
 def main_reap_orphans(args):
-    raise NotImplementedError()
+    data_d = args.data_d
+    streams_d = [data_d]
+    known_orphans = util.read_orphan_file(args.orphan_data)
+
+    _, index_files = util.get_index_files(streams_d)
+    non_orphans = util.get_nonorphan_set(index_files)
+
+    for orphan, when in known_orphans.items():
+        location = os.path.join(data_d, orphan)
+        if location in non_orphans:
+            raise Exception('Reap of %s failed: not an orphan' % orphan)
+        if args.dry_run:
+            sys.stderr.write('Reaping %s orphaned on %s\n' % (orphan, when))
+        else:
+            sutil.rm_f_file(location)
+            try:
+                os.removedirs(os.path.dirname(location))
+            except:
+                pass
 
 
 def main():
