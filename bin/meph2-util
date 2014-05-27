@@ -71,14 +71,17 @@ SUBCOMMANDS = {
         'help': 'find files in data_d not referenced in a "path"',
         'opts': [
             COMMON_FLAGS['orphan-data'], COMMON_FLAGS['data_d'],
-            ('streams_dirs', {'nargs': '*', 'default': None}),
+            COMMON_FLAGS['keyring'],
+            ('streams_dirs', {'nargs': '*', 'default': []}),
         ],
     },
     'reap-orphans': {
         'help': 'reap orphans listed in orphan-data from data_d',
         'opts': [
             COMMON_FLAGS['orphan-data'], COMMON_FLAGS['dry-run'],
-            COMMON_FLAGS['data_d'],
+            COMMON_FLAGS['data_d'], COMMON_FLAGS['keyring'],
+            ('--older', {'default': '3d',
+                'help': 'only remove files orphaned longer than'}),
         ],
     },
 }
@@ -355,57 +358,61 @@ def main_clean_md(args):
 def main_find_orphans(args):
     data_d = args.data_d
     streams_d = args.streams_dirs
-    if not streams_d:
-        streams_d = [data_d]
+    streams_d.append(data_d)
 
-    known_orphans = {}
+    # used to check validity of existent orphan file at beginning
     if os.path.exists(args.orphan_data):
-        known_orphans = util.read_orphan_file(args.orphan_data)
+        _ = util.read_orphan_file(args.orphan_data)
 
     orphans = []
 
-    stream_files, index_files = util.get_index_files(streams_d)
-    non_orphans = util.get_nonorphan_set(index_files)
-
-    stream_files = [os.path.relpath(stream_f) for stream_f in stream_files]
-    index_files = [os.path.relpath(index_f) for index_f in index_files]
+    non_orphans = util.get_nonorphan_set(streams_d, data_d, args.keyring)
 
     for (path, dirs, files) in os.walk(data_d):
-        print os.path.realpath(path)
-        if os.path.realpath(path).startswith(
-                os.path.realpath(os.path.join(data_d, 'streams', ''))):
+        if os.path.join(path, '').startswith(
+                os.path.join(data_d, 'streams', '')):
             continue
-        # maybe add continue for .data as well?
+        if os.path.join(path, '').startswith(
+                os.path.join(data_d, '.data', '')):
+            continue
 
         for file_ in files:
-            location = os.path.join(path, file_)
-            if location not in non_orphans and location not in stream_files \
-                    and location not in index_files:
-                orphans.append(os.path.relpath(location, data_d))
+            location = os.path.relpath(os.path.join(path, file_), data_d)
+            if location not in non_orphans:
+                orphans.append(location)
 
     util.write_orphan_file(args.orphan_data, orphans)
+    return 0
 
 
 def main_reap_orphans(args):
     data_d = args.data_d
-    streams_d = [data_d]
     known_orphans = util.read_orphan_file(args.orphan_data)
 
-    _, index_files = util.get_index_files(streams_d)
-    non_orphans = util.get_nonorphan_set(index_files)
+    non_orphans = util.get_nonorphan_set([data_d], data_d, args.keyring)
+
+    now = util.read_timestamp(sutil.timestamp())
+    delta = util.read_timedelta(args.older)
+    reaped = set()
 
     for orphan, when in known_orphans.items():
         location = os.path.join(data_d, orphan)
+        if not util.read_timestamp(when) + delta < now:
+            continue
         if location in non_orphans:
             raise Exception('Reap of %s failed: not an orphan' % orphan)
         if args.dry_run:
             sys.stderr.write('Reaping %s orphaned on %s\n' % (orphan, when))
         else:
             sutil.rm_f_file(location)
+            reaped.add(orphan)
             try:
                 os.removedirs(os.path.dirname(location))
             except:
                 pass
+
+    util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
+    return 0
 
 
 def main():

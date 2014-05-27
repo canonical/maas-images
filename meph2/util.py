@@ -18,10 +18,11 @@
 from simplestreams import util as sutil
 from simplestreams import mirrors
 
+from functools import partial
 import datetime
 import json
-import glob
 import os
+import re
 
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
     if files is None:
@@ -74,78 +75,62 @@ def signjson_file(fname, status_cb=None):
     return
 
 
-def default_policy(content, path, keyring=None, ignore_check=False):
-    if path.endswith('sjson'):
-        if keyring is None and not ignore_check:
-            raise Exception('Must use keyring or ignore keycheck')
+class PathListerMirrorWriter(mirrors.BasicMirrorWriter):
+    paths = set()
+
+    def load_products(self, path=None, content_id=None):
+        return {}
+
+    def insert_item(self, data, src, target, pedigree, contentsource):
+        data = sutil.products_exdata(src, pedigree)
+        if 'path' in data:
+            self.paths.add(data['path'])
+
+
+def endswith_policy(initial_path, keyring, content, path):
+    if initial_path.endswith('sjson'):
         return sutil.read_signed(content, keyring=keyring)
     else:
         return content
 
 
-class LocalMirrorReader(mirrors.MirrorReader):
-    def __init__(self, policy=None):
-        """ policy should be a function which returns the extracted payload or
-        raises an exception if the policy is violated. """
-        if policy is not None:
-            super(LocalMirrorReader, self).__init__(policy=policy)
-        else:
-            super(LocalMirrorReader, self).__init__()
-
-    def source(self, path):
-        return open(path)
-
-
-def get_index_files(streams):
-    def correct_path(index, stream):
-        return os.path.join(os.path.dirname(stream), '..', '..', index)
-
-    possible_files = []
-    stream_files = []
-    index_files = []
-
-    def possible_file_check(stream, suffixes):
-        for suffix in suffixes:
-            possible_files.extend(
-                glob.glob(os.path.join(stream, suffix + '.json'))
-            )
-            possible_files.extend(
-                glob.glob(os.path.join(stream, suffix + '.sjson'))
-            )
-
+def get_nonorphan_set(streams, data_d, keyring=None):
+    non_orphaned = set()
     for stream in streams:
-        if not os.path.isdir(stream):
-            raise Exception('%s not directory as expected' % stream)
-        possible_files = []
-        possible_file_check(stream, ['index', 'v1/index', 'streams/v1/index'])
-        if not possible_files:
-            raise Exception('Cannot find index for stream %s' % stream)
+        (mirror_url, initial_path) = sutil.path_from_mirror_url(stream, None)
+
+        smirror = mirrors.UrlMirrorReader(mirror_url, mirrors=[data_d],
+            policy=partial(endswith_policy, initial_path, keyring))
+        lmirror = PathListerMirrorWriter()
+        lmirror.sync(smirror, initial_path)
+
+        non_orphaned.update(lmirror.paths)
+
+    return non_orphaned
+
+
+def read_timedelta(string):
+    timedelta = datetime.timedelta()
+    for time_portion in re.findall(r'([0-9]+[dhms])', string):
+        num = int(time_portion[:-1])
+        specifier = time_portion[-1]
+        if specifier == 'd':
+            timedelta += datetime.timedelta(days=num)
+        elif specifier == 'h':
+            timedelta += datetime.timedelta(hours=num)
+        elif specifier == 'm':
+            timedelta += datetime.timedelta(minutes=num)
+        elif specifier == 's':
+            timedelta += datetime.timedelta(seconds=num)
         else:
-            stream_files.extend(possible_files)
-    for stream in stream_files:
-        mirror = LocalMirrorReader(policy=default_policy).load_products(stream)
-        index_files.extend(
-            [correct_path(v['path'], stream) for v in mirror['index'].values()]
-        )
-    return stream_files, index_files
+            raise ValueError(
+                'Unexpected specifier for timedelta, given %s' % time_portion)
+
+    return timedelta
 
 
-def get_nonorphan_set(indexes):
-    known_set = set()
-
-    def walker(item, tree, pedigree):
-        if 'path' in item:
-            known_set.add(item['path'])
-
-    for index in indexes:
-        try:
-            tree = json.load(open(index))
-            sutil.walk_products(tree, cb_item=walker)
-        except:
-            print('Malformed stream data input: %s' % index)
-            raise
-
-    return known_set
+def read_timestamp(ts, fmt="%a, %d %b %Y %H:%M:%S %z"):
+    return datetime.datetime.strptime(ts, fmt)
 
 
 def read_orphan_file(filename):
@@ -168,12 +153,12 @@ def write_orphan_file(filename, orphans_list):
     if os.path.exists(filename):
         known_orphans = read_orphan_file(filename)
 
-    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    date = sutil.timestamp()
     orphans = {orphan: date for orphan in orphans_list}
     orphans.update({k: v for k, v in known_orphans.items() if k in orphans})
     try:
         with open(filename, 'w') as orphan_file:
-            json.dump(orphans, orphan_file)
+            json.dump(orphans, orphan_file, indent=1)
     except:
         raise Exception('Cannot write orphan file %s' % filename)
 
