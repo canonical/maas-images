@@ -3,6 +3,7 @@
 import argparse
 import copy
 import os
+from functools import partial
 import sys
 
 from meph2 import util
@@ -267,19 +268,14 @@ class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
         return ret
 
 
-
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
 
-    def policy(content, path):
-        if src_path.endswith('sjson'):
-            return sutil.read_signed(content, keyring=args.keyring)
-        else:
-            return content
-
     mirror_config = {'max_items': 20, 'keep_items': True,
                      'filters': filter_list}
+
+    policy = partial(util.endswith_policy, src_path, args.keyring)
     smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
 
     if args.dry_run:
@@ -315,14 +311,10 @@ def main_promote(args):
     filter_list.extend(filters.get_filters(['version_name=%s' % args.version]))
     print("filter_list=%s" % filter_list)
 
-    def policy(content, path):
-        if src_path.endswith('sjson'):
-            return sutil.read_signed(content, keyring=args.keyring)
-        else:
-            return content
-
     mirror_config = {'max_items': 100, 'keep_items': True,
                      'filters': filter_list}
+
+    policy = partial(util.endswith_policy, src_path, args.keyring)
     smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
 
     if args.dry_run:
