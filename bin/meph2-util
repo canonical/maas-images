@@ -34,9 +34,11 @@ COMMON_FLAGS = {
     'src': (('src',), {'help': 'the source streams directory'}),
     'target': (('target',), {'help': 'the target streams directory'}),
     'data_d': (('data_d',),
-        {'help': 'the base data directory ("path"s are relative to this'}),
+               {'help': ('the base data directory ("'
+                         'path"s are relative to this')}),
     'keyring': (('--keyring',),
-        {'help': 'gpg keyring to check sjson', 'default': DEF_KEYRING}),
+                {'help': 'gpg keyring to check sjson',
+                 'default': DEF_KEYRING}),
 }
 
 SUBCOMMANDS = {
@@ -176,7 +178,7 @@ class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
     # it converts a daily item to a release item and inserts it.
     def __init__(self, config, objectstore, label):
         super(ReleasePromoteMirror, self).__init__(config=config,
-                                               objectstore=objectstore)
+                                                   objectstore=objectstore)
         self.store = objectstore
         self.config = config
         self.tproducts = None
@@ -227,8 +229,8 @@ class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
 
     def insert_version(self, data, src, target, pedigree):
         sys.stderr.write("inserting version %s\n" % '/'.join(pedigree))
-        return super(ReleasePromoteMirror, self).insert_version(data, src,
-                                                            target, pedigree)
+        iv = super(ReleasePromoteMirror, self).insert_version
+        return iv(data, src, target, pedigree)
 
     def insert_products(self, path, target, content):
         path = path.replace(":daily", "")
