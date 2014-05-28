@@ -34,8 +34,8 @@ COMMON_FLAGS = {
     'src': (('src',), {'help': 'the source streams directory'}),
     'target': (('target',), {'help': 'the target streams directory'}),
     'data_d': (('data_d',),
-               {'help': ('the base data directory ("'
-                         'path"s are relative to this')}),
+               {'help': ('the base data directory'
+                         '("path"s are relative to this)')}),
     'keyring': (('--keyring',),
                 {'help': 'gpg keyring to check sjson',
                  'default': DEF_KEYRING}),
