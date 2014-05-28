@@ -52,6 +52,7 @@ SUBCOMMANDS = {
         'help': 'promote a product/version from daily to release',
         'opts': [
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
             (('-l', '--label'),
              {'default': 'release', 'choices': LABELS,
               'help': 'the label to use'}),
