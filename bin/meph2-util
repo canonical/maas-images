@@ -358,7 +358,7 @@ def main_clean_md(args):
 def main_find_orphans(args):
     data_d = args.data_d
     streams_d = args.streams_dirs
-    if os.path.exists(os.path.join(data_d, 'streams/v1')) or not streams_d:
+    if os.path.exists(os.path.join(data_d, 'streams/v1')) and not streams_d:
         streams_d.append(data_d)
 
     # used to check validity of existent orphan file at beginning
