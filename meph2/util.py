@@ -23,6 +23,7 @@ import datetime
 import json
 import os
 import re
+import sys
 
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
     if files is None:
@@ -157,8 +158,13 @@ def write_orphan_file(filename, orphans_list):
     orphans = {orphan: date for orphan in orphans_list}
     orphans.update({k: v for k, v in known_orphans.items() if k in orphans})
     try:
-        with open(filename, 'w') as orphan_file:
-            json.dump(orphans, orphan_file, indent=1)
+        if filename == "-":
+            json.dump(orphans, sys.stdout, indent=1)
+            sys.stdout.write("\n")
+        else:
+            with open(filename, 'w') as orphan_file:
+                json.dump(orphans, orphan_file, indent=1)
+                orphan_file.write("\n")
     except:
         raise Exception('Cannot write orphan file %s' % filename)
 
