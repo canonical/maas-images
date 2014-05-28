@@ -79,7 +79,7 @@ SUBCOMMANDS = {
         'help': 'reap orphans listed in orphan-data from data_d',
         'opts': [
             COMMON_FLAGS['orphan-data'], COMMON_FLAGS['dry-run'],
-            COMMON_FLAGS['data_d'], COMMON_FLAGS['keyring'],
+            COMMON_FLAGS['data_d'],
             ('--older', {'default': '3d',
                 'help': 'only remove files orphaned longer than'}),
         ],
@@ -358,7 +358,8 @@ def main_clean_md(args):
 def main_find_orphans(args):
     data_d = args.data_d
     streams_d = args.streams_dirs
-    streams_d.append(data_d)
+    if os.path.exists(os.path.join(data_d, 'streams/v1')) or not streams_d:
+        streams_d.append(data_d)
 
     # used to check validity of existent orphan file at beginning
     if os.path.exists(args.orphan_data):
@@ -389,8 +390,6 @@ def main_reap_orphans(args):
     data_d = args.data_d
     known_orphans = util.read_orphan_file(args.orphan_data)
 
-    non_orphans = util.get_nonorphan_set([data_d], data_d, args.keyring)
-
     now = util.read_timestamp(sutil.timestamp())
     delta = util.read_timedelta(args.older)
     reaped = set()
@@ -399,8 +398,6 @@ def main_reap_orphans(args):
         location = os.path.join(data_d, orphan)
         if not util.read_timestamp(when) + delta < now:
             continue
-        if location in non_orphans:
-            raise Exception('Reap of %s failed: not an orphan' % orphan)
         if args.dry_run:
             sys.stderr.write('Reaping %s orphaned on %s\n' % (orphan, when))
         else:
