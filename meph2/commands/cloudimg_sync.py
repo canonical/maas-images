@@ -391,7 +391,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 def main():
     defcfg = os.path.abspath(
         os.path.join(os.path.dirname(__file__),
-                     "..", "conf", "meph-v2.yaml"))
+                     "..", "..", "conf", "meph-v2.yaml"))
 
     parser = argparse.ArgumentParser()
 
