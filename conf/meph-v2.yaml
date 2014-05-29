@@ -4,6 +4,9 @@
 #
 # default_kernel is "builtin" kernel.
 # default is 'linux-generic'
+#
+# kernel arrays are
+#   krel, karch, primary-subarch, flavor, kernel-package, [subarches]
 
 subarches:
  - &sa_hwe_p  [generic, hwe-p]
