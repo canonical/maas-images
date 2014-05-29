@@ -403,7 +403,8 @@ def main_reap_orphans(args):
             except:
                 pass
 
-    util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
+    if not args.dry_run:
+        util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
     return 0
 
 
