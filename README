@@ -8,7 +8,7 @@ from stuff on
   Run './system-setup' to set up the system.
   This will install necessary dependencies.
 
-== Running ==
+== building images ==
 To run:
   PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
 
