@@ -24,6 +24,8 @@ MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1
 
 DEFAULT_ARCHES = {
     'i386': ['i386'],
+    'i586': ['i386'],
+    'i686': ['i386'],
     'x86_64': ['i386', 'amd64', 'armhf', 'arm64'],
     'ppc64le': ['ppc64el'],
     'armhf': ['armhf'],
