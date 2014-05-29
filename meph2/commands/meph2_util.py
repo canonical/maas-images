@@ -29,7 +29,7 @@ COMMON_FLAGS = {
                  'action': 'store_true', 'default': False}),
     'max': (('--max',),
             {'help': 'keep at most N items per product',
-             'default': 1, 'type': int}),
+             'default': 2, 'type': int}),
     'orphan-data': (('orphan_data',), {'help': 'the orphan data file'}),
     'src': (('src',), {'help': 'the source streams directory'}),
     'target': (('target',), {'help': 'the target streams directory'}),
@@ -67,6 +67,8 @@ SUBCOMMANDS = {
     'clean-md': {
         'help': 'clean streams metadata only to keep "max" items',
         'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
             ('max', {'type': int}), ('target', {}),
             ('filters', {'nargs': '*', 'default': []}),
         ]
@@ -92,8 +94,9 @@ SUBCOMMANDS = {
 
 
 class BareMirrorWriter(mirrors.ObjectFilterMirror):
-    # this does not do reference counting or .data/ storage
-    # it stores data only in the streams
+    # this explicitly avoids reference counting and .data/ storage
+    # it stores metadata only in the streams/ files
+    # items with path will still be copied.
     def __init__(self, config, objectstore):
         super(BareMirrorWriter, self).__init__(config=config,
                                                objectstore=objectstore)
@@ -102,10 +105,13 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         self.tproducts = None
         self.inserted = []
 
+    def _noop(*args):
+        return
+
+    _inc_rc = _noop
+    _dec_rc = _noop
+
     def products_data_path(self, content_id):
-        #base = "streams/v1/" + content_id
-        #if os.path.exists(os.path.join(self.store.prefix, base + ".sjson")):
-        #    return base + ".sjson"
         return "streams/v1/" + content_id + ".json"
 
     def load_products(self, path, content_id):
@@ -124,17 +130,19 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         return super(BareMirrorWriter, self).insert_item(
             data, src, target, pedigree, contentsource)
 
-    def insert_version(self, data, src, target, pedigree):
-        sys.stderr.write("inserting version %s\n" % '/'.join(pedigree))
-        return super(BareMirrorWriter, self).insert_version(data, src,
-                                                            target, pedigree)
-
     def insert_products(self, path, target, content):
+        # insert_item and insert_products would not be strictly necessary
+        # they're here, though, to keep a list of those things appended.
+        # it allows us to more easily/completely prune a products tree.
+        # and also to aid in ReleasePromoteMirror's translation of product
+        # names.
         sys.stderr.write("adding products %s\n" % path)
 
         ptouched = set([i[0][0] for i in self.inserted])
         srcitems = []
 
+        # collect into srcitems a list of all items in the source
+        # that are in a product that we touched.
         def get_items(item, tree, pedigree):
             if pedigree[0] not in ptouched:
                 return
@@ -145,8 +153,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
 
         sutil.walk_products(self.tproducts, cb_item=get_items)
 
+        # empty products entries in the target tree for all those we modified
         for pid in ptouched:
-            oprod = self.tproducts['products'][pid]
             self.tproducts['products'][pid] = {}
 
         known_ints = ['size']
@@ -165,32 +173,21 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             path=path, target=self.tproducts, content=False)
         return ret
 
-    def _noop(*args):
-        return
 
-    remove_item = _noop
-    _inc_rc = _noop
-    _dec_rc = _noop
+class InsertBareMirrorWriter(BareMirrorWriter):
+    # this just no-ops remove_* so it never will occur
+    remove_item = BareMirrorWriter._noop
+    remove_version = BareMirrorWriter._noop
+    remove_product = BareMirrorWriter._noop
 
 
-class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
+class ReleasePromoteMirror(InsertBareMirrorWriter):
     # this does not do reference counting or .data/ storage
     # it converts a daily item to a release item and inserts it.
     def __init__(self, config, objectstore, label):
         super(ReleasePromoteMirror, self).__init__(config=config,
                                                    objectstore=objectstore)
-        self.store = objectstore
-        self.config = config
-        self.tproducts = None
-        self.inserted = []
         self.label = label
-
-    def _noop(*args):
-        return
-
-    remove_item = _noop
-    _inc_rc = _noop
-    _dec_rc = _noop
 
     def rel2daily(self, ptree):
         ret = copy.deepcopy(ptree)
@@ -204,70 +201,38 @@ class ReleasePromoteMirror(mirrors.ObjectFilterMirror):
     def fixed_pedigree(self, pedigree):
         return tuple([pedigree[0].replace(".daily", "")] + list(pedigree[1:]))
 
-    def products_data_path(self, content_id):
-        #base = "streams/v1/" + content_id
-        #if os.path.exists(os.path.join(self.store.prefix, base + ".sjson")):
-        #    return base + ".sjson"
-        return "streams/v1/" + content_id.replace(":daily", "") + ".json"
-
     def load_products(self, path, content_id):
-        sys.stderr.write("content_id=%s path=%s\n" % (content_id, path))
+        # this loads the released products, but returns it in form
+        # of daily products
         ret = super(ReleasePromoteMirror, self).load_products(
             path=path, content_id=content_id)
-        self.tproducts = copy.deepcopy(ret)
-
         return self.rel2daily(ret)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
-        sys.stderr.write("inserting item %s\n" % '/'.join(pedigree))
-        flat = sutil.products_exdata(src, pedigree, include_top=False,
-                                     insert_fieldnames=False)
-        flat['label'] = self.label
-        self.inserted.append((self.fixed_pedigree(pedigree), flat),)
-        return super(ReleasePromoteMirror, self).insert_item(
+        ret = super(ReleasePromoteMirror, self).insert_item(
             data, src, target, pedigree, contentsource)
-
-    def insert_version(self, data, src, target, pedigree):
-        sys.stderr.write("inserting version %s\n" % '/'.join(pedigree))
-        iv = super(ReleasePromoteMirror, self).insert_version
-        return iv(data, src, target, pedigree)
+        # update the label and pedigree of the item that superclass added.
+        self.inserted[-1][1]['label'] = self.label
+        self.inserted[-1][0] = self.fixed_pedigree(self.inserted[-1][0])
+        return ret
 
     def insert_products(self, path, target, content):
         path = path.replace(":daily", "")
-        sys.stderr.write("adding products %s\n" % path)
-
-        ptouched = set([i[0][0] for i in self.inserted])
-        srcitems = []
-
-        def get_items(item, tree, pedigree):
-            if pedigree[0] not in ptouched:
-                return
-
-            flat = sutil.products_exdata(tree, pedigree, include_top=False,
-                                         insert_fieldnames=False)
-            srcitems.append([self.fixed_pedigree(pedigree), flat])
-
-        sutil.walk_products(self.tproducts, cb_item=get_items)
-
-        for pid in ptouched:
-            oprod = self.tproducts['products'][pid]
-            self.tproducts['products'][pid] = {}
-
-        known_ints = ['size']
-        for (pedigree, flatitem) in srcitems + self.inserted:
-            for n in known_ints:
-                if n in flatitem:
-                    flatitem[n] = int(flatitem[n])
-            sutil.products_set(self.tproducts, flatitem, pedigree)
-
-        sutil.products_condense(self.tproducts,
-                                sticky=['di_version', 'kpackage'])
-
-        self.tproducts['updated'] = sutil.timestamp()
-
         ret = super(ReleasePromoteMirror, self).insert_products(
             path=path, target=self.tproducts, content=False)
         return ret
+
+
+class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
+    removed_versions = []
+
+    def remove_version(self, data, src, target, pedigree):
+        # src and target are top level products:1.0
+        # data is src['products'][ped[0]]['versions'][ped[1]]
+        super(DryRunMirrorWriter, self).remove_version(self,
+            data, src, target, pedigree)
+        self.removed_versions.append(pedigree)
+
 
 
 def main_insert(args):
@@ -283,8 +248,7 @@ def main_insert(args):
     if args.dry_run:
         smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
         tstore = objectstores.FileStore(args.target)
-        drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,
-                                              objectstore=tstore)
+        drmirror = DryRunMirrorWriter(config=mirror_config, objectstore=tstore)
         drmirror.sync(smirror, src_path)
         for (pedigree, path, size) in drmirror.downloading:
             fmt = "{pedigree} {path}"
@@ -294,7 +258,7 @@ def main_insert(args):
 
     smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
     tstore = objectstores.FileStore(args.target)
-    tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
+    tmirror = InsertBareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
     md_d = os.path.join(args.target, "streams/v1/")
@@ -317,13 +281,11 @@ def main_promote(args):
                      'filters': filter_list}
 
     policy = partial(util.endswith_policy, src_path, args.keyring)
-    smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
 
     if args.dry_run:
         smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
         tstore = objectstores.FileStore(args.target)
-        drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,
-                                              objectstore=tstore)
+        drmirror = DryRunMirrorWriter(config=mirror_config, objectstore=tstore)
         drmirror.sync(smirror, src_path)
         for (pedigree, path, size) in drmirror.downloading:
             fmt = "{pedigree} {path}"
@@ -347,7 +309,35 @@ def main_promote(args):
 
 
 def main_clean_md(args):
-    raise NotImplementedError()
+    (mirror_url, mirror_path) = sutil.path_from_mirror_url(args.target, None)
+    filter_list = filters.get_filters(args.filters)
+
+    mirror_config = {'max_items': args.max, 'keep_items': False,
+                     'filters': filter_list}
+
+    policy = partial(util.endswith_policy, mirror_path, args.keyring)
+
+    if args.dry_run:
+        smirror = mirrors.UrlMirrorReader(mirror_url, policy=policy)
+        tstore = objectstores.FileStore(mirror_url)
+        drmirror = DryRunMirrorWriter(config=mirror_config, objectstore=tstore)
+        drmirror.sync(smirror, mirror_path)
+        for pedigree in drmirror.removed_versions:
+            sys.stderr.write("remove " + '/'.join(pedigree) + "\n")
+        return 0
+
+    smirror = mirrors.UrlMirrorReader(mirror_url, policy=policy)
+    tstore = objectstores.FileStore(mirror_url)
+    tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
+    tmirror.sync(smirror, mirror_path)
+
+    md_d = os.path.join(mirror_url, "streams/v1/")
+    util.create_index(md_d, files=None)
+
+    if not args.no_sign:
+        util.sign_streams_d(md_d)
+
+    return 0
 
 
 def main_find_orphans(args):
