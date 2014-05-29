@@ -8,9 +8,13 @@ from stuff on
   Run './system-setup' to set up the system.
   This will install necessary dependencies.
 
+  the tools expect that the 'bin' dir is in $PATH.
+
+    export PATH=$PWD/bin
+
 == building images ==
 To run:
-  PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
+  meph2-cloudimg-sync out.d
 
   You can then add filters to the end, like 'release=trusty' or
   'arch=amd64'.  The resultant out.d/streams/v1/ will have information
@@ -19,7 +23,99 @@ To run:
 
 
 To debug and use the fake 'maas-cloudimg2eph2', run like:
-  env MAAS_CLOUDIMG2EPH2=fake-maas-cloudimg2eph2 \
-     PYTHONPATH=$PWD PATH=$PWD/bin:$PATH ./bin/meph2-cloudimg-sync out.d
+  env MAAS_CLOUDIMG2EPH2=fake-maas-cloudimg2eph2 meph2-cloudimg-sync out.d
 
   This will still download di-kernels and di-initramfs.
+
+== streams management ==
+Building as above will create out.d that has *metadata* describing
+everything that is in the source stream and also the things that were
+just built.  data (images) will only be present for the newly built things.
+
+So after building new data and metadata, you'll then insert the new data into
+an existing stream.  This option (meph2-util insert) is additive only.
+
+
+=== insert data ===
+Given output of a meph2-cloudimg-sync command above in build-output.d
+and local daily stream directory daily-stream.d you can add the new data
+with:
+
+  meph2-util insert build-output.d daily-stream.d
+
+If you do not want to sign (create .gpg and .sjson files), then you will
+have to use '--no-sign'.
+
+You can use '--dry-run' to only report what would be done.
+
+
+== cleaning old images ==
+Cleaning is done in 2 parts:
+  * cleaning meta-data (removing entries from the products files)
+  * finding orphans: identify which files in the tree are no longer referenced.
+  * purging orphans: removing files that are known to have been orpaned for
+                     a given amount of time (3 days).
+
+=== cleaning meta-data ===
+
+ TODO
+
+=== finding orphans ===
+
+finding orphans creates a json formated file that contains a entry for each
+file that is no longer referenced, and a timestamp of "now" (when it was first
+found to be orphaned).
+
+Example usage:
+ The following will populate my-orphans.json.  Subsequent runs will update
+ my-orphans.json with any new items, but will not update first-orphaned
+ timestamp.
+
+  $ meph2-util find-orphans my-orphans.json ./daily/ ./daily/streams/v1/*.json
+
+More complex usage:
+ Its possible that 2 streams dirs could share a data directory, similar
+ to the 'pool' concept of apt for debian packages.  For example, the following
+ directory tree layout (note, 'path' elements would have 'data' in them in
+ this example):
+
+   daily/
+     data -> ../data/
+     streams/v1/index.json
+     streams/v1/daily.json
+   released/
+     data -> ../data
+     streams/v1/index.json
+     streams/v1/released.json
+   data/
+     trusty/...
+     utopic/...
+
+ Then, we could run meph-util find-orphans with:
+
+   $ meph2-util find-orphans my-orphans.json ./data/ \
+       ./daily/streams/v1/index.json released/streams/v1/index.json
+
+ That will look through files in data/ that are not referenced by path
+ elements in either the daily/streams/v1/ or released/streams/v1/ files.
+
+ There is no --dry-run for finding orphans as it is non-destructive.
+
+
+=== cleaning / reaping orphans ===
+Reaping orphans is what actually removes files.  There is a '--dry-run' to
+indicate what would be done.
+ 
+its usage is fairly simple.
+
+  $ meph2-util reap-orphans --older 7d my-orphans.json ./data/
+
+'--older' takes input like:
+   Ni
+ Where N is a number and i can be one of:
+   d: days
+   h: hours
+   m: minutes
+   s: seconds
+
+The default is '3d'.
