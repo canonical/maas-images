@@ -59,6 +59,9 @@ SUBCOMMANDS = {
             (('-l', '--label'),
              {'default': 'release', 'choices': LABELS,
               'help': 'the label to use'}),
+            (('--skip-file-copy',),
+             {'help': 'do not copy files, only metadata [TEST_ONLY]',
+              'action': 'store_true', 'default': False}),
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
             ('version', {'help': 'the version_id to promote.'}),
             ('filters', {'nargs': '+', 'default': []}),
@@ -95,7 +98,7 @@ SUBCOMMANDS = {
 
 class BareMirrorWriter(mirrors.ObjectFilterMirror):
     # this explicitly avoids reference counting and .data/ storage
-    # it stores metadata only in the streams/ files
+    # it stores both metadata (streams/*) and files (path elements).
     # items with path will still be copied.
     def __init__(self, config, objectstore):
         super(BareMirrorWriter, self).__init__(config=config,
@@ -201,6 +204,10 @@ class InsertBareMirrorWriter(BareMirrorWriter):
 class ReleasePromoteMirror(InsertBareMirrorWriter):
     # this does not do reference counting or .data/ storage
     # it converts a daily item to a release item and inserts it.
+
+    # we take care of writing file in insert_products
+    insert_index_entry = BareMirrorWriter._noop
+
     def __init__(self, config, objectstore, label):
         super(ReleasePromoteMirror, self).__init__(config=config,
                                                    objectstore=objectstore)
@@ -208,33 +215,40 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
 
     def rel2daily(self, ptree):
         ret = copy.deepcopy(ptree)
-        ret['content_id'] = ret['content_id'].replace(":daily", "")
+        ret['content_id'] = self.fixed_content_id(ret['content_id'])
 
         for oname in [o for o in ptree.get('products', {})]:
-            newname = oname.replace(".daily:", ":")
+            newname = self.fixed_product_id(oname)
             ptree['products'][newname] = ptree['products'][oname]
             del ptree['products'][oname]
 
+    def fixed_content_id(self, content_id):
+        return(content_id.replace(":daily", ""))
+
     def fixed_pedigree(self, pedigree):
-        return tuple([pedigree[0].replace(".daily", "")] + list(pedigree[1:]))
+        return tuple([self.fixed_product_id(pedigree[0])] + list(pedigree[1:]))
+
+    def fixed_product_id(self, product_id):
+        return product_id.replace(".daily:", ":")
 
     def load_products(self, path, content_id):
         # this loads the released products, but returns it in form
         # of daily products
         ret = super(ReleasePromoteMirror, self).load_products(
-            path=path, content_id=content_id)
+            path=path, content_id=self.fixed_content_id(content_id))
         return self.rel2daily(ret)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         ret = super(ReleasePromoteMirror, self).insert_item(
             data, src, target, pedigree, contentsource)
         # update the label and pedigree of the item that superclass added.
-        self.inserted[-1][1]['label'] = self.label
-        self.inserted[-1][0] = self.fixed_pedigree(self.inserted[-1][0])
+        (ped, item_flat) = self.inserted[-1]
+        item_flat['label'] = self.label
+        self.inserted[-1] = (self.fixed_pedigree(ped), item_flat)
         return ret
 
     def insert_products(self, path, target, content):
-        path = path.replace(":daily", "")
+        path = self.fixed_content_id(path)
         ret = super(ReleasePromoteMirror, self).insert_products(
             path=path, target=self.tproducts, content=False)
         return ret
@@ -305,7 +319,8 @@ def main_promote(args):
     print("filter_list=%s" % filter_list)
 
     mirror_config = {'max_items': 100, 'keep_items': True,
-                     'filters': filter_list}
+                     'filters': filter_list,
+                     'item_download': not args.skip_file_copy}
 
     policy = partial(util.endswith_policy, src_path, args.keyring)
 
