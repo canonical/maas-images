@@ -48,6 +48,26 @@ have to use '--no-sign'.
 
 You can use '--dry-run' to only report what would be done.
 
+=== Promoting Builds ===
+Promoting is done on a specific version of a product.
+You promote a daily build to a released build with a given label.
+Likely that label is 'release'.
+
+   # list the product-ids and version are available for promotion
+   $ sstream-query --output-format="%(product_name)s %(version_name)s" --max=1 \
+      daily.d/streams/v1/index.json arch=i386 | sort -u
+   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-p 20140414
+   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q 20140414
+   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-r 20140414
+   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-s 20140414
+   com.ubuntu.maas.daily:v2:boot:13.10:i386:hwe-s 20140416
+   com.ubuntu.maas.daily:v2:boot:14.04:i386:hwe-t 20140416.1
+
+   # promote the listed version
+   $ meph2-util promote --label=release \
+        daily.d/streams/v1/index.json releases.d/ 20140414 \
+        product_name=com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q
+
 
 == cleaning old images ==
 Cleaning is done in 2 parts:
@@ -58,7 +78,16 @@ Cleaning is done in 2 parts:
 
 === cleaning meta-data ===
 
- TODO
+clean-md is the meph-util subcommand that allows you to keep only a given
+number of builds.  For example, to keep the latest 3 versions of every
+product in the meta-data, you would run:
+
+  meph2-util clean-md --max=3 daily-sream.d/
+
+This *only* modifies the meta-data, it does not delete files, use find-orphans
+and reap-orphans for that.
+
+There is a --dry-run and --no-sign arguments also.
 
 === finding orphans ===
 
