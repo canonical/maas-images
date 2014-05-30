@@ -28,7 +28,7 @@ COMMON_FLAGS = {
                 {'help': 'do not re-sign files',
                  'action': 'store_true', 'default': False}),
     'max': (('--max',),
-            {'help': 'keep at most N items per product',
+            {'help': 'keep at most N versions per product',
              'default': 2, 'type': int}),
     'orphan-data': (('orphan_data',), {'help': 'the orphan data file'}),
     'src': (('src',), {'help': 'the source streams directory'}),
@@ -103,7 +103,9 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         self.store = objectstore
         self.config = config
         self.tproducts = None
+        self.tcontent_id = None
         self.inserted = []
+        self.removed_versions = []
 
     def _noop(*args):
         return
@@ -118,6 +120,7 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         sys.stderr.write("content_id=%s path=%s\n" % (content_id, path))
         ret = super(BareMirrorWriter, self).load_products(
             path=path, content_id=content_id)
+        self.tcontent_id = content_id
         self.tproducts = copy.deepcopy(ret)
         return ret
 
@@ -129,6 +132,17 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
                 insert_fieldnames=False)),)
         return super(BareMirrorWriter, self).insert_item(
             data, src, target, pedigree, contentsource)
+
+    def remove_version(self, data, src, target, pedigree):
+        # sync doesnt filter on things to be removed, so
+        # we have to do that here.
+        if not filters.filter_item(self.filters, data, src, pedigree):
+            return
+
+        self.removed_versions.append(pedigree)
+
+    def remove_item(self, data, src, target, pedigree):
+        return
 
     def insert_products(self, path, target, content):
         # insert_item and insert_products would not be strictly necessary
@@ -163,6 +177,9 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
                 if n in flatitem:
                     flatitem[n] = int(flatitem[n])
             sutil.products_set(self.tproducts, flatitem, pedigree)
+
+        for pedigree in self.removed_versions:
+            sutil.products_del(self.tproducts, pedigree)
 
         sutil.products_condense(self.tproducts,
                                 sticky=['di_version', 'kpackage'])
@@ -225,13 +242,23 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
 
 class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
     removed_versions = []
+    tcontent_id = None
+
+    def load_products(self, path, content_id):
+        self.tcontent_id = content_id
+        return super(DryRunMirrorWriter, self).load_products(path, content_id)
 
     def remove_version(self, data, src, target, pedigree):
         # src and target are top level products:1.0
         # data is src['products'][ped[0]]['versions'][ped[1]]
+
+        # sync doesnt filter on things to be removed, so
+        # we have to do that here..
+        if not filters.filter_item(self.filters, data, src, pedigree):
+            return
         super(DryRunMirrorWriter, self).remove_version(self,
             data, src, target, pedigree)
-        self.removed_versions.append(pedigree)
+        self.removed_versions.append((self.tcontent_id, pedigree,))
 
 
 
@@ -322,8 +349,9 @@ def main_clean_md(args):
         tstore = objectstores.FileStore(mirror_url)
         drmirror = DryRunMirrorWriter(config=mirror_config, objectstore=tstore)
         drmirror.sync(smirror, mirror_path)
-        for pedigree in drmirror.removed_versions:
-            sys.stderr.write("remove " + '/'.join(pedigree) + "\n")
+        for content_id, pedigree in drmirror.removed_versions:
+            sys.stderr.write("remove " + content_id + " " +
+                             '/'.join(pedigree) + "\n")
         return 0
 
     smirror = mirrors.UrlMirrorReader(mirror_url, policy=policy)
