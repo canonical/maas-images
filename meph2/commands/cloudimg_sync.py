@@ -8,6 +8,7 @@ from simplestreams import mirrors
 from simplestreams import filters
 
 from meph2.netinst import NetbootMirrorReader
+from meph2 import util
 
 import argparse
 import copy
@@ -74,30 +75,6 @@ def v2_to_cloudimg_products(prodtree):
 def empty_iid_products(content_id):
     return {'content_id': content_id, 'products': {},
             'datatype': 'image-ids', 'format': 'products:1.0'}
-
-
-def create_index(target_d, files=None, path_prefix="streams/v1/"):
-    if files is None:
-        files = [f for f in os.listdir(target_d) if f.endswith(".json")]
-
-    ret = {'index': {}, 'format': 'index:1.0', 'updated': sutil.timestamp()}
-    for f in files:
-        with open(os.path.join(target_d, f), "r") as fp:
-            data = sutil.load_content(fp.read())
-        fmt = data.get('format')
-        cid = data.get('content_id')
-        if fmt == "index:1.0" or not (fmt and cid):
-            continue
-        optcopy = ('datatype', 'updated', 'format')
-        item = {k: data.get(k) for k in optcopy if data.get(k)}
-        if data.get('format') == "products:1.0":
-            item['products'] = sorted([p for p in data['products'].keys()])
-
-        item['path'] = path_prefix + f
-
-        ret['index'][cid] = item
-
-    return ret
 
 
 def get_file_info(path, sums=None):
@@ -364,9 +341,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         # now insert or update an index
         LOG.info("updating index in %s" % sdir)
-        index = create_index(sdir)
+        index = util.create_index(sdir)
         with open(os.path.join(sdir, "index.json"), "wb") as fp:
-            fp.write(sutil.dump_data(index))
+            fp.write(sutil.dump_data(index) + b"\n")
 
     def filter_index_entry(self, data, src, pedigree):
         if pedigree[0] != "com.ubuntu.cloud:daily:download":

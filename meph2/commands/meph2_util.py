@@ -303,7 +303,9 @@ def main_insert(args):
     tmirror.sync(smirror, src_path)
 
     md_d = os.path.join(args.target, "streams/v1/")
-    util.create_index(md_d, files=None)
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
 
     if not args.no_sign:
         util.sign_streams_d(md_d)
@@ -342,7 +344,9 @@ def main_promote(args):
     tmirror.sync(smirror, src_path)
 
     md_d = os.path.join(args.target, "streams/v1/")
-    util.create_index(md_d, files=None)
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
 
     if not args.no_sign:
         util.sign_streams_d(md_d)
@@ -375,7 +379,9 @@ def main_clean_md(args):
     tmirror.sync(smirror, mirror_path)
 
     md_d = os.path.join(mirror_url, "streams/v1/")
-    util.create_index(md_d, files=None)
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
 
     if not args.no_sign:
         util.sign_streams_d(md_d)
