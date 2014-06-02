@@ -270,7 +270,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 items[key]['kpackage'] = kpkg
 
             krd_packs.append(
-                (kpkg, os.path.join(self.out_d, items['boot-kernel']['path']),
+                (kpkg, psubarch,
+                 os.path.join(self.out_d, items['boot-kernel']['path']),
                  os.path.join(self.out_d, items['boot-initrd']['path'])))
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])

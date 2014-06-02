@@ -21,7 +21,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
          --no-gzip     do not gzip output image
     -k | --kernel K    keep/install the kernel package 'k' inside image
     -p | --krd-pack P  create a kernel / ramdisk pack
-                       P is ',' delimited: kernel-name,kernel,ramdisk
+                       P is ',' delimited: kernel-name,subarch,kernel,ramdisk
     -v | --verbose     increase verbosity
 
    Example:
@@ -165,14 +165,14 @@ main() {
         "$kpkg" "$pkout" "$piout" "$manifest" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
-    local i="" ckpkg="" ckout="" ciout="" oifs="$IFS"
+    local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
-        ckpkg="$1"; tkout="$2"; tiout="$3"
+        ckpkg="$1"; subarch="$2"; tkout="$3"; tiout="$4"
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
-            "$ckpkg" "$ckout" "$ciout" ||
+            "$ckpkg" "$subarch" "$ckout" "$ciout" ||
             { error "failed to get $ckpkg output"; return 1; }
         ensure_file_d "$tkout" "$tiout" ||
             { error "failed to make dirs for $tkout or $tiout"; return 1; }

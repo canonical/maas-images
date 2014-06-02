@@ -3,8 +3,9 @@
 TEMP_D=""
 img="$1"
 kpkg="$2"
-kern_out=${3:-kernel}
-initrd_out=${4:-initrd}
+flags="$3"   # flags here is subarch (explicitly for xgene-uboot)
+kern_out=${4:-kernel}
+initrd_out=${5:-initrd}
 
 cleanup() { [ -n "$TEMP_D" ] && rm -Rf "${TEMP_D}"; }
 error() { echo "$@" 1>&2; }
@@ -24,6 +25,7 @@ sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
    "http_proxy=$http_proxy" LANG=C PACKAGES="$kpkg" \
    FLASH_KERNEL_SKIP=1 \
    chown_to="$chown_to" "kout=${kern_out}" "iout=${initrd_out}" \
+   flags="$flags" \
    mount-image-callback --sys --proc \
       --system-resolvconf "$myimg" -- sh <<"ENDCALLBACK"
 set -e
@@ -58,7 +60,23 @@ DEBIAN_FRONTEND=noninteractive \
     chmod ugo+r "$kernel" "$initrd"
     cp "$kernel" /tmp/kernel
     cp "$initrd" /tmp/initrd
+    echo "$verflav" > /tmp/verflav
   ' -- $PACKAGES </dev/null
+
+if [ "$flags" = "xgene-uboot" ]; then
+    read verflav < "$MOUNTPOINT/tmp/verflav"
+    kpath="$MOUNTPOINT/tmp/kernel"
+    ipath="$MOUNTPOINT/tmp/initrd"
+    mv "$kpath" "$kpath.orig"
+    mv "$ipath" "$ipath.orig"
+    echo "generating uboot kernel and initramfs for xgene"
+    set -x
+    mkimage -A arm -O linux -T kernel  -C none -a 0x80000 -e 0x80000 \
+        -n "kernel $verflav" -d "$kpath.orig" "$kpath"
+    mkimage -A arm -O linux -T ramdisk -C gzip -a 0x0     -e 0x0 \
+        -n "ramdisk $verflav" -d "$ipath.orig" "$ipath"
+    set +x
+fi
 chown "$chown_to" "$MOUNTPOINT/tmp/kernel"
 chown "$chown_to" "$MOUNTPOINT/tmp/initrd"
 mv "$MOUNTPOINT/tmp/kernel" "$kout"
