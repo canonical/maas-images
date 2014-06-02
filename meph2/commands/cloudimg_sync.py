@@ -307,8 +307,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                         srcfd = dimirror.source(item['_opath'])
                         copy_fh(src=srcfd, path=lpath, cksums=item)
                     except ValueError:
-                        raise ValueError("%s had bad checksum (%s)",
-                                         srcfd.url, item['_opath'])
+                        raise ValueError("%s had bad checksum (%s)" %
+                                         (srcfd.url, item['_opath']))
 
                 for k in [k for k in item.keys() if k.startswith('_')]:
                     del item[k]
