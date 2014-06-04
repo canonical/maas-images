@@ -15,7 +15,7 @@ if [[ "$rel" < trusty ]]; then
     error "# WARN:  but meph2-util (index operations) supported" 1>&2
     DEPS=(
         bzr
-        python3-yaml # will also get /usr/bin/python3
+        python3
     )
     distro_simplestreams=false
     meph2_only=true
