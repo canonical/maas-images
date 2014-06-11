@@ -10,7 +10,7 @@ from stuff on
 
   the tools expect that the 'bin' dir is in $PATH.
 
-    export PATH=$PWD/bin
+    export PATH=$PWD/bin:$PATH
 
 == building images ==
 To run:
