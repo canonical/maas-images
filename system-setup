@@ -2,17 +2,36 @@
 
 _APT_UPDATED=false
 MEPH2_BRANCH="lp:~smoser/maas/maas-ephemerals-v2"
-MEPH2_D=""
-DEPS=(
-    bzr
-    cloud-image-utils      # for mount-image-callback
-    python3-distro-info
-    python3-requests
-    python3-simplestreams
-    python3-yaml
-    simplestreams
-)
+SSTREAM_BRANCH="lp:simplestreams"
 CROSS_DEPS="qemu-user-static"
+MEPH2_D=""
+
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 2; }
+
+rel="$(lsb_release -sc)"
+if [[ "$rel" < trusty ]]; then
+    error "# WARN: building not supported prior to trusty" 1>&2
+    error "# WARN:  but meph2-util (index operations) supported" 1>&2
+    DEPS=(
+        bzr
+        python3
+    )
+    distro_simplestreams=false
+    meph2_only=true
+else
+    DEPS=(
+        bzr
+        cloud-image-utils      # for mount-image-callback
+        python3-distro-info
+        python3-requests
+        python3-simplestreams
+        python3-yaml
+        simplestreams
+    )
+    distro_simplestreams=true
+    meph2_only=false
+fi
 
 me=$(readlink -f "$0")
 myd=$(dirname "$me")
@@ -22,8 +41,6 @@ elif [ -f "$PWD/maas-ephemerals-v2/bin/meph2-cloudimg-sync" ]; then
     MEPH2_D="$PWD/maas-ephemerals-v2"
 fi
 
-error() { echo "$@" 1>&2; }
-fail() { [ $# -eq 0 ] || error "$@"; exit 2; }
 
 apt_get() {
     local ret=""
@@ -66,7 +83,7 @@ apt_install() {
 
 arch=$(dpkg --print-architecture)
 deps=( "${DEPS[@]}" )
-if [ "$arch" = "amd64" ]; then
+if [ "$arch" = "amd64" ] && ! $meph2_only; then
     deps=( "${deps[@]}" "${CROSS_DEPS[@]}" )
 fi
 
@@ -77,6 +94,16 @@ if [ -z "$MEPH2_D" ]; then
     bzr branch "$MEPH2_BRANCH" maas-ephemerals-v2 ||
         fail "failed branch $MEPH2_BRANCH"
     MEPH2_D="$PWD/maas-ephemerals-v2"
+fi
+
+if ! $distro_simplestreams; then
+    sstream_d="$MEPH2_D/simplestreams"
+    if [ ! -d "$sstream_d" ] &&
+        ! python -c 'import simplestreams' 2>/dev/null; then
+        error "getting $STREAM_BRANCH to $sstream_d. you will need PYTHONPATH=$sstream_d."
+        bzr branch "$SSTREAM_BRANCH" "$MEPH2_D/simplestreams" ||
+            fail "failed to get $SSTREAM_BRANCH"
+    fi
 fi
 
 # vi: ts=4 expandtab
