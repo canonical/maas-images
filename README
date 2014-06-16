@@ -27,6 +27,21 @@ To debug and use the fake 'maas-cloudimg2eph2', run like:
 
   This will still download di-kernels and di-initramfs.
 
+== forcing image build ==
+If the maas ephemeral data is up to date with the latest cloud image daily
+then meph2-cloudimg-sync will not do anything.  In order to force it to
+do something, point it at out locally crafted ephemeral data that does
+not contain that.
+
+  orig_eurl=http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/index.json
+  sstream-mirror --no-item-download $orig_eurl ./local-ephemeral-v2
+
+  # remove the newest entry for your desired build
+  vi ./local-ephemeral-v2/streams/v1/com.ubuntu.maas:daily:v2:download.json
+
+  # point meph2-cloudimg-sync at the local data
+  meph2-cloudimg-sync --target=./local-ephemeral-v2/streams/v1/index.json out.d
+
 == streams management ==
 Building as above will create out.d that has *metadata* describing
 everything that is in the source stream and also the things that were
