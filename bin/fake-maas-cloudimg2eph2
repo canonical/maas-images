@@ -33,7 +33,7 @@ ensure_d() { local d=""; d=$(dirname "$1"); mkdir -p "$d"; }
 ensure_d "$root_gz"
 $gzip && gzip_prog="gzip -c" || gzip_prog="cat"
 
-dd if=/dev/zero of=- bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
+dd if=/dev/zero bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
 
 OIFS="$IFS"
 for kpack in "${kpacks[@]}"; do
