@@ -168,9 +168,10 @@ main() {
     local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
+        # tkout, tiout = target kernel out, target initrd out
         ckpkg="$1"; subarch="$2"; tkout="$3"; tiout="$4"
-        ckout="${TEMP_D}/$ckpkg-kernel"
-        ciout="${TEMP_D}/$ckpkg-initrd"
+        ckout="${TEMP_D}/$ckpkg-$subarch-kernel"
+        ciout="${TEMP_D}/$ckpkg-$subarch-initrd"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
             "$ckpkg" "$subarch" "$ckout" "$ciout" ||
             { error "failed to get $ckpkg output"; return 1; }

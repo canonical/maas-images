@@ -243,7 +243,7 @@ def get_file_item_data(path, release="base"):
     imgfmt = None
     if len(toks) == 3 and toks[0] == "generic" and toks[2].startswith("uI"):
         path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
-        imgfmt = "uboot"
+        imgfmt = toks[1]
         
     path = re.sub("^netboot/", "%s-netboot/" % release, path)
     if path.find("-netboot/") < 1:
@@ -291,7 +291,7 @@ def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype, imgfmt=None)
         iflavtok = iflavor[0:3]
     flavtok = FLAVOR_COLLISIONS.get(kflavor, kflavor[0:3])
     if imgfmt:
-        fmttok = imgfmt[0:2]
+        fmttok = "." + imgfmt
     else:
         fmttok = ""
     return (release[0:2] + kernel_release[0:2] + flavtok + ftype[0:2] +
@@ -378,6 +378,9 @@ class MineNetbootMetaData(threading.Thread):
                     else:
                         raise Exception("unknown ftype '%s' in '%s'" %
                                         (item['ftype'], item))
+
+                    if 'image-format' in item and item['image-format']:
+                        npath = npath + "." + item['image-format']
 
                     item['path'] = npath
                     data['map'][npath] = item['url']

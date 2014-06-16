@@ -40,10 +40,10 @@ PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 PCOMMON = "%(release)s/%(arch)s/"
 PATH_FORMATS = {
     'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
-    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel",
-    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd",
-    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd",
-    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel",
+    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
+    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
+    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
+    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
@@ -244,9 +244,15 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             if karch != arch:
                 continue
             curdi = dikinfo[flavor][krel]
+
+            suffix = ""
+            if psubarch == "xgene-uboot":
+                suffix = ".xgene"
+
             subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
                          'psubarch': psubarch,
-                         'di_version': curdi['di-kernel']['version_name']})
+                         'di_version': curdi['di-kernel']['version_name'],
+                         'suffix': suffix})
 
             prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel,
