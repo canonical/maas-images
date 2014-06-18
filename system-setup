@@ -28,6 +28,7 @@ else
         python3-simplestreams
         python3-yaml
         simplestreams
+        zerofree
     )
     distro_simplestreams=true
     meph2_only=false

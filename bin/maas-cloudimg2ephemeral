@@ -307,9 +307,6 @@ EOF
     
     undisable_services "$dir"
 
-    dd bs=1M if=/dev/zero of="$dir/tmp/zero" >/dev/null 2>&1
-    rm -f "$dir/tmp/zero"
-
     return 0
 }
 
@@ -317,13 +314,14 @@ if [ "$1" = "apply_updates" ]; then
     "$@"
 else
     short_opts="a:hv"
-    long_opts="arch:,help,verbose"
+    long_opts="arch:,help,verbose,zero"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; exit 1; }
     arch=""
     vargs=""
+    zero=false
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -331,6 +329,7 @@ else
             -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
             -v|--verbose) vargs="${vargs}v";;
+               --zero) zero=true;;
             --) shift; break;;
         esac
         shift;
@@ -351,6 +350,12 @@ else
             ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"
+
+    if $zero; then
+        # this is optional as it will only work on a raw image
+        e2fsck -fy "$img" || { error "failed to e2fsck $img"; exit 1; }
+        zerofree "$img" || { error "failed zerofree $img"; exit 1; }
+    fi
 
     exit 0
 
