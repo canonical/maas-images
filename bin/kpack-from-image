@@ -168,7 +168,6 @@ main() {
 		eval set -- "${getopt_out}" ||
 		{ bad_Usage; return; }
 
-	## <<insert default variables here>>
 	local cur="" next=""
 	local output="" copy=auto chown_to="" gid="" uid=""
 
