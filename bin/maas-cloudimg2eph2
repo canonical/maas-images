@@ -171,8 +171,8 @@ main() {
         ckpkg="$1"; tkout="$2"; tiout="$3"
         shift 3
         flags=( "$@" )
-        ckout="${TEMP_D}/$ckpkg-$subarch-kernel"
-        ciout="${TEMP_D}/$ckpkg-$subarch-initrd"
+        ckout="${TEMP_D}/$ckpkg-kernel"
+        ciout="${TEMP_D}/$ckpkg-initrd"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
             "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
             { error "failed to get $ckpkg output"; return 1; }
