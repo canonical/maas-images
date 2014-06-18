@@ -16,7 +16,7 @@ Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out
   Requires sudo to invoke mount-image-callback.
 
   options:
-     --khelper PROG   invoke PROG with kernel and initrd
+     --kihelper PROG   invoke PROG with kernel and initrd
                       This allows re-packing (ie, mkimage the files)
                       PROG is invoked with 2 arguments:
                         kernel-path initrd-path
