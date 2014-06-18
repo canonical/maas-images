@@ -51,7 +51,7 @@ kernel_from_mp() {
 		{ bad_Usage; return; }
 
 	local cur="" next=""
-	local output="" copy=true chown_to="" gid="" uid="" khelper=""
+	local output="" copy=true chown_to="" gid="" uid="" kihelper=""
 	local ship_update=${KPACK_SKIP_APT_UPDATE:-false}
 
 	while [ $# -ne 0 ]; do
@@ -60,7 +60,7 @@ kernel_from_mp() {
 			   --chown-to) chown_to=$next; shift;;
 			-h|--help) Usage ; exit 0;;
 			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
-			   --kihelper) khelper="$next"; shift;;
+			   --kihelper) kihelper="$next"; shift;;
 			   --skip-update) skip_update=true;;
 			--) shift; break;;
 		esac
@@ -75,11 +75,11 @@ kernel_from_mp() {
 	me=$(readlink -f "$0") && myd="${me%/*}" ||
 		{ error "couldn't figure out full path to $0"; return 1; }
 		
-	if [ -n "$khelper" ]; then
-		if ! command -v "$khelper" >/dev/null 2>&1 ; then
-			[ -x "$myd/$khelper" ] ||
-				{ error "failed to find khelper"; return 1; }
-			khelper="$myd/$khelper"
+	if [ -n "$kihelper" ]; then
+		if ! command -v "$kihelper" >/dev/null 2>&1 ; then
+			[ -x "$myd/$kihelper" ] ||
+				{ error "failed to find kihelper"; return 1; }
+			kihelper="$myd/$kihelper"
 		fi
 	fi
 
@@ -94,13 +94,13 @@ kernel_from_mp() {
 		}
 	fi
 
-	if [ -n "$khelper" ]; then
+	if [ -n "$kihelper" ]; then
 		local verflav=""
     	read verflav < "$mp/tmp/verflav"
-    	debug 1 "using $khelper verflav='$verflav'"
-    	ROOT="$mp" VERSION_FLAVOR="$verflav" "$khelper" \
+    	debug 1 "using $kihelper verflav='$verflav'"
+    	ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
 			"$mp/tmp/kernel" "$mp/tmp/initrd" ||
-		{ error "$khelper failed"; return 1; }
+		{ error "$kihelper failed"; return 1; }
 	fi
 	mv "$mp/tmp/kernel" "$kout" &&
 		mv "$mp/tmp/initrd" "$iout" ||
@@ -161,7 +161,7 @@ chrooted() {
 
 main() {
 	local short_opts="hv"
-	local long_opts="help,khelper:,copy:,verbose"
+	local long_opts="help,kihelper:,copy:,verbose"
 	local getopt_out=""
 	getopt_out=$(getopt --name "${0##*/}" \
 		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -176,7 +176,7 @@ main() {
 		case "$cur" in
 			-h|--help) Usage ; exit 0;;
 			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
-			   --khelper) khelper="$next"; shift;;
+			   --kihelper) kihelper="$next"; shift;;
 			   --copy) copy=$next; shift;;
 			--) shift; break;;
 		esac
@@ -219,7 +219,7 @@ main() {
 		mount-image-callback --sys --proc \
 			--system-resolvconf "$img" -- "$0" "kernel_from_mp" \
 			_MOUNTPOINT_ "--chown-to=$chown_to" \
-			${khelper:+"--khelper=$khelper"} \
+			${kihelper:+"--kihelper=$kihelper"} \
 			"$kern_out" "$initrd_out" "$kpkg" ||
 		{ error "failed"; return 1; }
 
