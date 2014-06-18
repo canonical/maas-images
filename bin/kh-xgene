@@ -20,5 +20,5 @@ mkimage -A arm -O linux -T kernel  -C none -a 0x80000 -e 0x80000 \
     -n "kernel $info" -d "${TEMP_D}/kernel" "$kernel" ||
 	fail "failed mkimage for kernel";
 mkimage -A arm -O linux -T ramdisk -C gzip -a 0x0     -e 0x0 \
-    -n "ramdisk $info" -d "${TEMP_D}/initrd" "$initrd"
-	fail "failed mkimage for kernel";
+    -n "ramdisk $info" -d "${TEMP_D}/initrd" "$initrd" ||
+	fail "failed mkimage for initrd";
