@@ -43,7 +43,7 @@ kernel_from_mp() {
 	# this is the unwrapped function that actually does everything
 	# it essentially gets called by mount-image-callback.
 	local short_opts="hv"
-	local long_opts="chown-to:,help,khelper:,chown-to:,verbose"
+	local long_opts="chown-to:,help,kihelper:,chown-to:,verbose"
 	local getopt_out=""
 	getopt_out=$(getopt --name "${0##*/}" \
 		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -51,9 +51,8 @@ kernel_from_mp() {
 		{ bad_Usage; return; }
 
 	local cur="" next=""
-	local output="" copy=true chown_to="" gid="" uid=""
+	local output="" copy=true chown_to="" gid="" uid="" khelper=""
 	local ship_update=${KPACK_SKIP_APT_UPDATE:-false}
-	pt=()
 
 	while [ $# -ne 0 ]; do
 		cur="$1"; next="$2";
@@ -61,14 +60,15 @@ kernel_from_mp() {
 			   --chown-to) chown_to=$next; shift;;
 			-h|--help) Usage ; exit 0;;
 			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
-			   --khelper) khelper="$next"; shift;;
+			   --kihelper) khelper="$next"; shift;;
 			   --skip-update) skip_update=true;;
 			--) shift; break;;
 		esac
 		shift;
 	done
 
-	[ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
+	[ $# -eq 2 -o $# -eq 4 ] ||
+		{ bad_Usage "expected 4 args, got $# [$*]"; return; }
 	local mp="$1" kout="$2" iout="$3" kpkg="$4"
 
 	local me="" myd=""
