@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#['maas-cloudimg2eph2', '--arch=armhf', '--kernel=linux-generic', 'http://cloud-images.ubuntu.com/daily/server/trusty/20140402/trusty-server-cloudimg-armhf.tar.gz', 'trusty/armhf/20140402/root-image.gz', '--krd-pack=linux-generic,trusty/armhf/20140402/trusty/generic/boot-kernel,trusty/armhf/20140402/trusty/generic/boot-initrd', '--krd-pack=linux-generic-lpae,trusty/armhf/20140402/trusty/generic-lpae/boot-kernel,trusty/armhf/20140402/trusty/generic-lpae/boot-initrd']
-
 VERBOSITY=0
 TEMP_D=""
 
@@ -21,7 +19,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
          --no-gzip     do not gzip output image
     -k | --kernel K    keep/install the kernel package 'k' inside image
     -p | --krd-pack P  create a kernel / ramdisk pack
-                       P is ',' delimited: kernel-name,kernel,ramdisk
+                       P is ',' delimited: kernel-name,kernel,ramdisk[,flags]
     -v | --verbose     increase verbosity
 
    Example:
@@ -166,14 +164,17 @@ main() {
         "$kpkg" "$pkout" "$piout" "$manifest" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
-    local i="" ckpkg="" ckout="" ciout="" oifs="$IFS"
+    local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
+        # tkout, tiout = target kernel out, target initrd out
         ckpkg="$1"; tkout="$2"; tiout="$3"
+        shift 3
+        flags=( "$@" )
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
-            "$ckpkg" "$ckout" "$ciout" ||
+            "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
             { error "failed to get $ckpkg output"; return 1; }
         ensure_file_d "$tkout" "$tiout" ||
             { error "failed to make dirs for $tkout or $tiout"; return 1; }

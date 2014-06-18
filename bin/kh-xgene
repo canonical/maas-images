@@ -1,0 +1,24 @@
+#!/bin/bash
+
+cleanup() { [ -n "$TEMP_D" ] && rm -Rf "${TEMP_D}"; }
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
+TEMP_D=$(mktemp -d "${0##*/}.XXXXXX") &&
+	trap cleanup EXIT || exit 1
+
+kernel="$1"
+initrd="$2"
+info=${VERSION_FLAVOR:-"unknown-ver unknown-flavor"}
+
+cp "$kernel" "${TEMP_D}/kernel" ||
+	fail "failed copy kernel '$kernel'"
+cp "$initrd" "${TEMP_D}/initrd" ||
+	fail "failed copy initrd '$initrd'"
+
+mkimage -A arm -O linux -T kernel  -C none -a 0x80000 -e 0x80000 \
+    -n "kernel $info" -d "${TEMP_D}/kernel" "$kernel" ||
+	fail "failed mkimage for kernel";
+mkimage -A arm -O linux -T ramdisk -C gzip -a 0x0     -e 0x0 \
+    -n "ramdisk $info" -d "${TEMP_D}/initrd" "$initrd" ||
+	fail "failed mkimage for initrd";

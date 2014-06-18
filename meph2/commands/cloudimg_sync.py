@@ -40,10 +40,10 @@ PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 PCOMMON = "%(release)s/%(arch)s/"
 PATH_FORMATS = {
     'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
-    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel",
-    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd",
-    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd",
-    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel",
+    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
+    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
+    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
+    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
@@ -108,7 +108,8 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None):
     # latest.
 
     items = {}
-    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release')
+    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release',
+                  'image-format')
 
     def fillitems(item, tree, pedigree):
         flat = sutil.products_exdata(tree, pedigree)
@@ -240,13 +241,28 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         krd_packs = []
         newpaths = set((rootimg_path,))
 
-        for (krel, karch, psubarch, flavor, kpkg, subarches) in mykinfo:
+        kdata_defaults = {'suffix': "", 'di-format': "default"}
+
+        for info in mykinfo:
+            if len(info) == 6:
+                info.append({})
+            (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
+
+            for i in kdata_defaults:
+                if i not in kdata:
+                    kdata[i] = kdata_defaults[i]
+
             if karch != arch:
                 continue
-            curdi = dikinfo[flavor][krel]
+
+            curdi = dikinfo[flavor][krel][kdata['di-format']]
+
+            suffix = kdata['suffix']
+
             subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
                          'psubarch': psubarch,
-                         'di_version': curdi['di-kernel']['version_name']})
+                         'di_version': curdi['di-kernel']['version_name'],
+                         'suffix': suffix})
 
             prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel,
@@ -269,9 +285,15 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for key in ('boot-kernel', 'boot-initrd'):
                 items[key]['kpackage'] = kpkg
 
-            krd_packs.append(
-                (kpkg, os.path.join(self.out_d, items['boot-kernel']['path']),
-                 os.path.join(self.out_d, items['boot-initrd']['path'])))
+            pack = [kpkg,
+                 os.path.join(self.out_d, items['boot-kernel']['path']),
+                 os.path.join(self.out_d, items['boot-initrd']['path']),
+            ]
+            if 'kihelper' in kdata:
+                pack.append('--kihelper=%s' % kdata['kihelper'])
+
+            krd_packs.append(pack)
+
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
 
