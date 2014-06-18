@@ -173,7 +173,7 @@ main() {
         ckout="${TEMP_D}/$ckpkg-$subarch-kernel"
         ciout="${TEMP_D}/$ckpkg-$subarch-initrd"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
-            "$ckpkg" "$subarch" "$ckout" "$ciout" "${flags[@]}" ||
+            "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
             { error "failed to get $ckpkg output"; return 1; }
         ensure_file_d "$tkout" "$tiout" ||
             { error "failed to make dirs for $tkout or $tiout"; return 1; }
