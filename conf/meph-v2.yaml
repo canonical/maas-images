@@ -30,7 +30,8 @@ releases:
     - [trusty,  amd64,   hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  ppc64el, hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  arm64,   hwe-t,    generic,   linux-generic,            *sa_hwe_t]
-    - [trusty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot]]
+    - [trusty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot],
+       {suffix: .xgene, kihelper: kh-xgene, di-format: 'xgene'}]
  - version: 13.10
    release: saucy
    kernels:

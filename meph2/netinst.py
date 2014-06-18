@@ -240,7 +240,7 @@ def get_file_item_data(path, release="base"):
             path = "netboot/" + toks[0] + "/" + toks[1]
 
     # generic/xgene/uInitrd is generic flavor, xgene-uboot image
-    imgfmt = None
+    imgfmt = "default"
     if len(toks) == 3 and toks[0] == "generic" and toks[2].startswith("uI"):
         path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
         imgfmt = toks[1]

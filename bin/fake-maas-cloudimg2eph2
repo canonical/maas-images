@@ -1,6 +1,8 @@
 #!/bin/bash
 set -f
 
+error() { echo "$@" 1>&2; }
+
 short_opts="a:k:p:v"
 long_opts="arch:,kernel:,krd-pack:,verbose"
 getopt_out=$(getopt --name "${0##*/}" \
@@ -33,13 +35,17 @@ ensure_d() { local d=""; d=$(dirname "$1"); mkdir -p "$d"; }
 ensure_d "$root_gz"
 $gzip && gzip_prog="gzip -c" || gzip_prog="cat"
 
+error "src=$src arch=$arch kernel=$kernel output=$root_gz"
 dd if=/dev/zero bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
 
 OIFS="$IFS"
 for kpack in "${kpacks[@]}"; do
     IFS=","; set -- $kpack ; IFS="$OIFS"
-    ensure_d "$3"
-    ensure_d "$4"
-    echo "kernel: $1" > "$3"
-    echo "initrd: $1" > "$4"
+    pkg=$1; kout=$2; iout=$3;
+    shift 3
+    error "kpack: pkg=$pkg kout=$kout iout=$iout. flags=$*"
+    ensure_d "$kout"
+    ensure_d "$iout"
+    echo "kernel: $pkg" > "$kout"
+    echo "initrd: $pkg" > "$iout"
 done

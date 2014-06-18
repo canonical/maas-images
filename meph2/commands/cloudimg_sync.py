@@ -108,7 +108,8 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None):
     # latest.
 
     items = {}
-    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release')
+    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release',
+                  'image-format')
 
     def fillitems(item, tree, pedigree):
         flat = sutil.products_exdata(tree, pedigree)
@@ -240,14 +241,23 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         krd_packs = []
         newpaths = set((rootimg_path,))
 
-        for (krel, karch, psubarch, flavor, kpkg, subarches) in mykinfo:
+        kdata_defaults = {'suffix': "", 'di-format': "default"}
+
+        for info in mykinfo:
+            if len(info) == 6:
+                info.append({})
+            (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
+
+            for i in kdata_defaults:
+                if i not in kdata:
+                    kdata[i] = kdata_defaults[i]
+
             if karch != arch:
                 continue
-            curdi = dikinfo[flavor][krel]
 
-            suffix = ""
-            if psubarch == "xgene-uboot":
-                suffix = ".xgene"
+            curdi = dikinfo[flavor][krel][kdata['di-format']]
+
+            suffix = kdata['suffix']
 
             subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
                          'psubarch': psubarch,
@@ -275,10 +285,15 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for key in ('boot-kernel', 'boot-initrd'):
                 items[key]['kpackage'] = kpkg
 
-            krd_packs.append(
-                (kpkg, psubarch,
+            pack = [kpkg,
                  os.path.join(self.out_d, items['boot-kernel']['path']),
-                 os.path.join(self.out_d, items['boot-initrd']['path'])))
+                 os.path.join(self.out_d, items['boot-initrd']['path']),
+            ]
+            if 'kihelper' in kdata:
+                pack.append('--kihelper=%s' % kdata['kihelper'])
+
+            krd_packs.append(pack)
+
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
 
