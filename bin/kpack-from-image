@@ -1,46 +1,139 @@
 #!/bin/bash
 
+VERBOSITY=0
 TEMP_D=""
-img="$1"
-kpkg="$2"
-flags="$3"   # flags here is subarch (explicitly for xgene-uboot)
-kern_out=${4:-kernel}
-initrd_out=${5:-initrd}
 
-cleanup() { [ -n "$TEMP_D" ] && rm -Rf "${TEMP_D}"; }
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
-TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
-trap cleanup EXIT
+Usage() {
+	cat <<EOF
+Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out
 
-myimg="${TEMP_D}/my.img"
-cp --sparse=always "$img" "$myimg" || error "failed cp $img"
+  Install kernel-package into image and copy the generated kernel
+  and initrd out into kernel-out and initrd-out.
 
-gid=$(id -g)
-uid=$(id -u)
-chown_to="$gid:$uid"
+  Requires sudo to invoke mount-image-callback.
 
-sudo "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
-   "http_proxy=$http_proxy" LANG=C PACKAGES="$kpkg" \
-   FLASH_KERNEL_SKIP=1 \
-   chown_to="$chown_to" "kout=${kern_out}" "iout=${initrd_out}" \
-   flags="$flags" \
-   mount-image-callback --sys --proc \
-      --system-resolvconf "$myimg" -- sh <<"ENDCALLBACK"
-set -e
-DEBIAN_FRONTEND=noninteractive \
-  chroot "$MOUNTPOINT" /bin/sh -ec '
+  options:
+     --khelper PROG   invoke PROG with kernel and initrd
+                      This allows re-packing (ie, mkimage the files)
+                      PROG is invoked with 2 arguments:
+                        kernel-path initrd-path
+                      it will have in its environment:
+                        ROOT: path to the mounted 'image'
+                        VERSION_FLAVOR: a string like 3.13.0-29-generic 
+    --copy mode       use 'mode' to copy. default: auto
+                      one of: qcow2, cp, none
+EOF
+}
+
+bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return 1; }
+cleanup() {
+	[ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
+}
+
+debug() {
+	local level=${1}; shift;
+	[ "${level}" -gt "${VERBOSITY}" ] && return
+	error "${@}"
+}
+
+kernel_from_mp() {
+	# this is the unwrapped function that actually does everything
+	# it essentially gets called by mount-image-callback.
+	local short_opts="hv"
+	local long_opts="chown-to:,help,khelper:,chown-to:,verbose"
+	local getopt_out=""
+	getopt_out=$(getopt --name "${0##*/}" \
+		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
+		eval set -- "${getopt_out}" ||
+		{ bad_Usage; return; }
+
+	local cur="" next=""
+	local output="" copy=true chown_to="" gid="" uid=""
+	local ship_update=false
+	pt=()
+
+	while [ $# -ne 0 ]; do
+		cur="$1"; next="$2";
+		case "$cur" in
+			   --chown-to) chown_to=$next; shift;;
+			-h|--help) Usage ; exit 0;;
+			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+			   --khelper) khelper="$next"; shift;;
+			   --skip-update) skip_update=true;;
+			--) shift; break;;
+		esac
+		shift;
+	done
+
+	[ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
+	local mp="$1" kout="$2" iout="$3" kpkg="$4"
+
+	local me="" myd=""
+	me=$(readlink -f "$0") && myd="${me%/*}" ||
+		{ error "couldn't figure out full path to $0"; return 1; }
+		
+	if [ -n "$khelper" ]; then
+		if ! command -v "$khelper" >/dev/null 2>&1 ; then
+			[ -x "$myd/$khelper" ] ||
+				{ error "failed to find khelper"; return 1; }
+			khelper="$myd/$khelper"
+		fi
+	fi
+
+	KPACK_SKIP_APT_UPDATE=$skip_update \
+		chroot "$mp" /bin/bash -s chrooted "$kpkg" < "$me" ||
+		{ error "failed chroot and kernel install"; return 1; }
+
+	if [ -n "$chown_to" ]; then
+		( cd "$mp/tmp" && chown "$chown_to" kernel initrd verflav ) || {
+			error "failed chown $mp/tmp/{kernel,initrd,verflav}";
+			return 1;
+		}
+	fi
+
+	if [ -n "$khelper" ]; then
+		local verflav=""
+    	read verflav < "$mp/tmp/verflav"
+    	debug 1 "using $khelper verflav='$verflav'"
+    	ROOT="$mp" VERSION_FLAVOR="$verflav" "$khelper" \
+			"$mp/tmp/kernel" "$mp/tmp/initrd" ||
+		{ error "$khelper failed"; return 1; }
+	fi
+	mv "$mp/tmp/kernel" "$kout" &&
+		mv "$mp/tmp/initrd" "$iout" ||
+		{ error "failed to copy kernel/initrd from $mp"; return 1; }
+}
+
+chrooted() {
+	# this is expected to run chrooted inside the root
+	# installs all packages (arguments), writes kernel
+	# and initramfs and 'verflav' to /tmp/ 
+	local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
+	local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
+	local verflav initrd kernel
+	export LANG=C
+	pkgs=( "$@" )
     kpkg="$1"
-    ${KPACK_SKIP_APT_UPDATE} || apt-get update -q
-    zzgrub=/etc/kernel/postinst.d/zz-update-grub
+
+    $skip_update || apt-get update -q ||
+		{ error "apt-get update failed"; return 1; }
 
     copymods="cloud-initramfs-copymods"
     apt-cache show $copymods >/dev/null 2>&1 ||
-      { echo "copymods not available"; copymods=""; }
+      { error "copymods not available"; copymods=""; }
+
+    zzgrub=/etc/kernel/postinst.d/zz-update-grub
     [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
-    which eatmydata >/dev/null 2>&1 && emd=eatmydata || emd=""
-    $emd apt-get install --assume-yes --quiet $copymods "$@"
+
+    which eatmydata >/dev/null 2>&1 && emd=eatmydata
+
+    DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
+		$emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
+	[ $? -eq 0 ] ||
+		{ error "failed install of $copymods $*"; return 1; }
 
     kernel=""
     for f in /boot/vmlin*; do
@@ -53,36 +146,89 @@ DEBIAN_FRONTEND=noninteractive \
             break
         fi
     done
-    [ -z "$kernel" ] && { echo "no kernel found!" 1>&2; exit 1; }
+    [ -z "$kernel" ] && { error "no kernel found!" 1>&2; return 1; }
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
-    [ -f "$initrd" ] || { echo "no initrd for $verflav" 1>&2; exit 1; }
-    chmod ugo+r "$kernel" "$initrd"
-    cp "$kernel" /tmp/kernel
-    cp "$initrd" /tmp/initrd
-    echo "$verflav" > /tmp/verflav
-  ' -- $PACKAGES </dev/null
+    [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
-if [ "$flags" = "xgene-uboot" ]; then
-    read verflav < "$MOUNTPOINT/tmp/verflav"
-    kpath="$MOUNTPOINT/tmp/kernel"
-    ipath="$MOUNTPOINT/tmp/initrd"
-    mv "$kpath" "$kpath.orig"
-    mv "$ipath" "$ipath.orig"
-    echo "generating uboot kernel and initramfs for xgene"
-    set -x
-    mkimage -A arm -O linux -T kernel  -C none -a 0x80000 -e 0x80000 \
-        -n "kernel $verflav" -d "$kpath.orig" "$kpath"
-    mkimage -A arm -O linux -T ramdisk -C gzip -a 0x0     -e 0x0 \
-        -n "ramdisk $verflav" -d "$ipath.orig" "$ipath"
-    set +x
-fi
-chown "$chown_to" "$MOUNTPOINT/tmp/kernel"
-chown "$chown_to" "$MOUNTPOINT/tmp/initrd"
-mv "$MOUNTPOINT/tmp/kernel" "$kout"
-mv "$MOUNTPOINT/tmp/initrd" "$iout"
-ENDCALLBACK
-ret=$?
-[ $ret -eq 0 ] || exit $ret
+    chmod ugo+r "$kernel" "$initrd" &&
+    	cp "$kernel" /tmp/kernel && cp "$initrd" /tmp/initrd ||
+		{ error "failed to copy $kernel/$initrd to /tmp"; return 1; }
 
-error "wrote to ${kern_out}, ${initrd_out}"
+    echo "$verflav" > /tmp/verflav ||
+		{ error "failed to write verflavor"; return 1; }
+}
+
+main() {
+	local short_opts="hv"
+	local long_opts="help,khelper:,copy:,verbose"
+	local getopt_out=""
+	getopt_out=$(getopt --name "${0##*/}" \
+		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
+		eval set -- "${getopt_out}" ||
+		{ bad_Usage; return; }
+
+	## <<insert default variables here>>
+	local cur="" next=""
+	local output="" copy=auto chown_to="" gid="" uid=""
+
+	while [ $# -ne 0 ]; do
+		cur="$1"; next="$2";
+		case "$cur" in
+			-h|--help) Usage ; exit 0;;
+			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+			   --khelper) khelper="$next"; shift;;
+			   --copy) copy=$next; shift;;
+			--) shift; break;;
+		esac
+		shift;
+	done
+
+	[ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
+	local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
+
+	TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
+		fail "failed to make tempdir"
+	trap cleanup EXIT
+
+	if [ "$copy" = "auto" ]; then
+		command -v qemu-img >/dev/null 2>&1 && copy="qcow" || copy="cp"
+	fi
+
+	local imgfp myimg="${TEMP_D}/my.img"
+	imgfp=$(readlink -f "$img") ||
+		{ error "failed to get full path to $img"; return 1; }
+	debug 1 "copy mode = $copy"
+	case "$copy" in
+		none) ln -s "$imgfp" "$myimg" ||
+			{ error "failed link $imgfp -> $myimg"; return 1; };;
+		cp) cp --sparse=always "$img" "$myimg" ||
+			{ error "failed cp '$img' to tempdir"; return 1; };;
+		qcow) 
+			qemu-img create -f qcow2 -b "$imgfp" "$myimg" ||
+				{ error "failed create qcow2 backed by $img"; return 1; };;
+		*) error "bad copy type. one of [none, cp, qcow, auto]"; return 1;;
+	esac
+
+	gid=$(id -g)
+	uid=$(id -u)
+	chown_to="$gid:$uid"
+
+	sudo \
+		"KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
+		"http_proxy=$http_proxy" PACKAGES="$kpkg" \
+		mount-image-callback --sys --proc \
+			--system-resolvconf "$img" -- "$0" "kernel_from_mp" \
+			_MOUNTPOINT_ "--chown-to=$chown_to" \
+			${khelper:+"--khelper=$khelper"} \
+			"$kern_out" "$initrd_out" "$kpkg" ||
+		{ error "failed"; return 1; }
+
+	error "wrote to $kern_out, $initrd_out"
+	return
+}
+
+[ "$1" = "chrooted" ] && { shift; chrooted "$@"; exit; }
+[ "$1" = "kernel_from_mp" ] && { shift; kernel_from_mp "$@"; exit; }
+main "$@"
+# vi: ts=4 noexpandtab
