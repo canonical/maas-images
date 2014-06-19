@@ -14,13 +14,24 @@ subarches:
  - &sa_hwe_r  [generic, hwe-p, hwe-q, hwe-r]
  - &sa_hwe_s  [generic, hwe-p, hwe-q, hwe-r, hwe-s]
  - &sa_hwe_t  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+ - &sa_hwe_u  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+ - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
 
 misc:
  - &glpae generic-lpae
  - &xguboot xgene-uboot
 
 releases:
+ - version: 14.10
+   release: utopic
+   kernels:
+    - [utopic,  armhf,   hwe-u,    generic,   linux-generic,            *arm_hwe_u]
+    - [utopic,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [utopic,  i386,    hwe-u,    generic,   linux-generic,            *sa_hwe_u]
+    - [utopic,  amd64,   hwe-u,    generic,   linux-generic,            *sa_hwe_u]
+    - [utopic,  ppc64el, hwe-u,    generic,   linux-generic,            *sa_hwe_u]
+    - [utopic,  arm64,   hwe-u,    generic,   linux-generic,            *sa_hwe_u]
  - version: 14.04
    release: trusty
    kernels:
