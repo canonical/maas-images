@@ -80,11 +80,15 @@ get_img_file() {
             # if the above failed (on trusty a .tar.gz file was reported
             # as a Minux file system) then try filename based heuristics
             case "$input" in
-                *.tar.gz|*.tgz|*.tar) get_img_from_tar "$input" "$output" "$tempd";;
-                *.gz) zcat -c "$input" > "$output";;
+                *.tar.gz|*.tgz|*.tar) 
+                    debug 1 "guessing content is tar archive [$fout]"
+                    get_img_from_tar "$input" "$output" "$tempd";;
+                *.gz)
+                    debug 1 "guessing content is gzip [$fout]"
+                    zcat -c "$input" > "$output";;
                 *) 
                     error "WARN: unknown file '$input'. $fout"
-                     ln -s "$(readlink -f "$input")" "$output";;
+                    ln -s "$(readlink -f "$input")" "$output";;
             esac
     esac
 }
