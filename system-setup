@@ -3,7 +3,7 @@
 _APT_UPDATED=false
 MEPH2_BRANCH="lp:~smoser/maas/maas-ephemerals-v2"
 SSTREAM_BRANCH="lp:simplestreams"
-CROSS_DEPS="qemu-user-static u-boot-tools"
+CROSS_DEPS=( qemu-user-static u-boot-tools )
 MEPH2_D=""
 
 error() { echo "$@" 1>&2; }
