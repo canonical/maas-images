@@ -157,7 +157,7 @@ main() {
     if [ "$src" -ef "$imgfile" ]; then
         src="${TEMP_D}/src.img"
         rm -f "$imgfile"
-        cp --sparse=always "$src_in" "$imgfile" ||
+        cp --sparse=always "$src" "$imgfile" ||
             { error "failed to copy $src_in to temp"; return 1; }
     fi
 
