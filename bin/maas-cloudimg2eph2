@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERBOSITY=0
+VERBOSITY=1
 TEMP_D=""
 
 error() { echo "$@" 1>&2; }
@@ -33,6 +33,12 @@ EOF
 bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return 1; }
 cleanup() {
     [ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
+}
+
+ddebug() {
+    local level="$1"; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "$(date -R):" "$@"
 }
 
 debug() {
@@ -128,6 +134,7 @@ main() {
     else
         case "$src_in" in
             http://*|https://*|ftp://*)
+                ddebug 1 "getting source $src_in"
                 src="${TEMP_D}/${src_in##*/}"
                 wget "$src_in" --dot-style=mega -O "$src" ||
                     { error "failed download $src_in"; return 1; }
@@ -143,6 +150,7 @@ main() {
 
     # now src is either a .tar.gz file, or a .img file
     local imgfile="${TEMP_D}/root.img"
+    ddebug 1 "getting .img from $src"
     get_img_file "$src" "$imgfile" "${TEMP_D}" ||
         { error "failed to get image file from $src"; return 1; }
 
@@ -159,12 +167,14 @@ main() {
     # now imgfile has the root filesystem image to adjust
     local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
     local manif="${TEMP_D}/manifest"
+    ddebug 1 "starting maas-cloudimg2ephemeral"
     maas-cloudimg2ephemeral $vflags --zero \
         ${arch:+"--arch=$arch"} "$imgfile" \
         "$kpkg" "$pkout" "$piout" "$manifest" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
     local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
+    ddebug 1 "starting kpacks: ${kpacks[*]}"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
         # tkout, tiout = target kernel out, target initrd out
@@ -173,6 +183,7 @@ main() {
         flags=( "$@" )
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
+        ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
         KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
             "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
             { error "failed to get $ckpkg output"; return 1; }
@@ -182,18 +193,20 @@ main() {
             mv "$ciout" "$tiout" ||
             { error "failed copying files"; return 1; }
     done
+    ddebug 1 "kpacks done"
 
     if $gzip; then
-        debug 1 "gzipping image file"
+        ddebug 1 "gzipping image file"
         local stime=$SECONDS
         gzip -9 --rsyncable "$imgfile" &&
             mv --force "$imgfile.gz" "$output" ||
             { error "failed gzip"; return 1; }
-        debug 1 "gzip took $(($SECONDS-$stime))s"
+        ddebug 1 "gzip took $(($SECONDS-$stime))s"
     else
         mv --force "$imgfile" "$output" ||
             { error "failed move to $output"; return 1; }
     fi
+    ddebug 1 "finished"
     return 0
 }
 
