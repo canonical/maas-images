@@ -134,6 +134,9 @@ chrooted() {
     pkgs=( "$@" )
     kpkg="$1"
 
+    local stamp="/tmp/stamp"
+    touch "$stamp"
+
     $skip_update || apt-get update -q ||
         { error "apt-get update failed"; return 1; }
 
@@ -172,6 +175,12 @@ chrooted() {
     [ -z "$kernel" ] && { error "no kernel found!" 1>&2; return 1; }
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
+
+    if [ "$initrd" -ot "$stamp" ]; then
+        debug 1 "initramfs did not update by package install. regenerating."
+        update-initramfs -c -k "$verflav"
+    fi
+
     [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
     chmod ugo+r "$kernel" "$initrd" &&
@@ -180,6 +189,8 @@ chrooted() {
 
     echo "$verflav" > /tmp/verflav ||
         { error "failed to write verflavor"; return 1; }
+
+    rm -f "$stamp"
 }
 
 main() {
