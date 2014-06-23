@@ -107,6 +107,22 @@ kernel_from_mp() {
         { error "failed to copy kernel/initrd from $mp"; return 1; }
 }
 
+config_addl_modules() {
+    local root="${1:-/}" fname=""
+    fname="${root%/}/etc/initramfs-tools/hooks/kpack_extra"
+    cat > "$fname" <<EOF
+#!/bin/sh
+. /usr/share/initramfs-tools/hook-functions
+
+copy_modules_dir kernel/drivers/char/ipmi # LP: #1333271
+EOF
+    [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
+    chmod 755 "$fname" ||
+        { error "failed setting execute on $fname"; return 1; }
+
+    return 0
+}
+
 chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
@@ -130,6 +146,9 @@ chrooted() {
 
     which eatmydata >/dev/null 2>&1 && emd=eatmydata
 
+    config_addl_modules / ||
+        { error "failed configuring additional modules!"; return 1; }
+
     DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
     [ $? -eq 0 ] ||
@@ -145,7 +164,7 @@ chrooted() {
         out=$(dpkg -S "$f")
         pkg=${out%%:*}
         [ "$pkg" = "$kpkg" ] && kernel="$f" && break
-        if apt-get --dry-run remove $pkg | grep "Remv $kpkg "; then
+        if apt-get --dry-run remove $pkg | grep -q "Remv $kpkg "; then
             kernel="$f"
             break
         fi
