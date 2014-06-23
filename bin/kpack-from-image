@@ -123,7 +123,7 @@ chrooted() {
 
     copymods="cloud-initramfs-copymods"
     apt-cache show $copymods >/dev/null 2>&1 ||
-      { error "copymods not available"; copymods=""; }
+        { error "copymods not available"; copymods=""; }
 
     zzgrub=/etc/kernel/postinst.d/zz-update-grub
     [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
@@ -135,6 +135,10 @@ chrooted() {
     [ $? -eq 0 ] ||
         { error "failed install of $copymods $*"; return 1; }
 
+    # here we look at all kernel files in /boot and get the package that
+    # owns it.  if the package is the kernel that was supplied, then we
+    # found it.  It supports 'kpkg' being a meta package by seeing
+    # if kpkg would be removed if we uninstalled the kernel package.
     kernel=""
     for f in /boot/vmlin*; do
         [ -f "$f" ] || continue
