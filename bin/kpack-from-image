@@ -7,7 +7,7 @@ error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
-	cat <<EOF
+    cat <<EOF
 Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out
 
   Install kernel-package into image and copy the generated kernel
@@ -30,96 +30,96 @@ EOF
 
 bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return 1; }
 cleanup() {
-	[ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
+    [ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
 }
 
 debug() {
-	local level=${1}; shift;
-	[ "${level}" -gt "${VERBOSITY}" ] && return
-	error "${@}"
+    local level=${1}; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "${@}"
 }
 
 kernel_from_mp() {
-	# this is the unwrapped function that actually does everything
-	# it essentially gets called by mount-image-callback.
-	local short_opts="hv"
-	local long_opts="chown-to:,help,kihelper:,chown-to:,verbose"
-	local getopt_out=""
-	getopt_out=$(getopt --name "${0##*/}" \
-		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
-		eval set -- "${getopt_out}" ||
-		{ bad_Usage; return; }
+    # this is the unwrapped function that actually does everything
+    # it essentially gets called by mount-image-callback.
+    local short_opts="hv"
+    local long_opts="chown-to:,help,kihelper:,chown-to:,verbose"
+    local getopt_out=""
+    getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return; }
 
-	local cur="" next=""
-	local output="" copy=true chown_to="" gid="" uid="" kihelper=""
-	local ship_update=${KPACK_SKIP_APT_UPDATE:-false}
+    local cur="" next=""
+    local output="" copy=true chown_to="" gid="" uid="" kihelper=""
+    local ship_update=${KPACK_SKIP_APT_UPDATE:-false}
 
-	while [ $# -ne 0 ]; do
-		cur="$1"; next="$2";
-		case "$cur" in
-			   --chown-to) chown_to=$next; shift;;
-			-h|--help) Usage ; exit 0;;
-			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
-			   --kihelper) kihelper="$next"; shift;;
-			   --skip-update) skip_update=true;;
-			--) shift; break;;
-		esac
-		shift;
-	done
+    while [ $# -ne 0 ]; do
+        cur="$1"; next="$2";
+        case "$cur" in
+               --chown-to) chown_to=$next; shift;;
+            -h|--help) Usage ; exit 0;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+               --kihelper) kihelper="$next"; shift;;
+               --skip-update) skip_update=true;;
+            --) shift; break;;
+        esac
+        shift;
+    done
 
-	[ $# -eq 2 -o $# -eq 4 ] ||
-		{ bad_Usage "expected 4 args, got $# [$*]"; return; }
-	local mp="$1" kout="$2" iout="$3" kpkg="$4"
+    [ $# -eq 2 -o $# -eq 4 ] ||
+        { bad_Usage "expected 4 args, got $# [$*]"; return; }
+    local mp="$1" kout="$2" iout="$3" kpkg="$4"
 
-	local me="" myd=""
-	me=$(readlink -f "$0") && myd="${me%/*}" ||
-		{ error "couldn't figure out full path to $0"; return 1; }
-		
-	if [ -n "$kihelper" ]; then
-		if ! command -v "$kihelper" >/dev/null 2>&1 ; then
-			[ -x "$myd/$kihelper" ] ||
-				{ error "failed to find kihelper"; return 1; }
-			kihelper="$myd/$kihelper"
-		fi
-	fi
+    local me="" myd=""
+    me=$(readlink -f "$0") && myd="${me%/*}" ||
+        { error "couldn't figure out full path to $0"; return 1; }
+        
+    if [ -n "$kihelper" ]; then
+        if ! command -v "$kihelper" >/dev/null 2>&1 ; then
+            [ -x "$myd/$kihelper" ] ||
+                { error "failed to find kihelper"; return 1; }
+            kihelper="$myd/$kihelper"
+        fi
+    fi
 
-	KPACK_SKIP_APT_UPDATE=$skip_update \
-		chroot "$mp" /bin/bash -s chrooted "$kpkg" < "$me" ||
-		{ error "failed chroot and kernel install"; return 1; }
+    KPACK_SKIP_APT_UPDATE=$skip_update \
+        chroot "$mp" /bin/bash -s chrooted "$kpkg" < "$me" ||
+        { error "failed chroot and kernel install"; return 1; }
 
-	if [ -n "$chown_to" ]; then
-		( cd "$mp/tmp" && chown "$chown_to" kernel initrd verflav ) || {
-			error "failed chown $mp/tmp/{kernel,initrd,verflav}";
-			return 1;
-		}
-	fi
+    if [ -n "$chown_to" ]; then
+        ( cd "$mp/tmp" && chown "$chown_to" kernel initrd verflav ) || {
+            error "failed chown $mp/tmp/{kernel,initrd,verflav}";
+            return 1;
+        }
+    fi
 
-	if [ -n "$kihelper" ]; then
-		local verflav=""
-    	read verflav < "$mp/tmp/verflav"
-    	debug 1 "using $kihelper verflav='$verflav'"
-    	ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
-			"$mp/tmp/kernel" "$mp/tmp/initrd" ||
-		{ error "$kihelper failed"; return 1; }
-	fi
-	mv "$mp/tmp/kernel" "$kout" &&
-		mv "$mp/tmp/initrd" "$iout" ||
-		{ error "failed to copy kernel/initrd from $mp"; return 1; }
+    if [ -n "$kihelper" ]; then
+        local verflav=""
+        read verflav < "$mp/tmp/verflav"
+        debug 1 "using $kihelper verflav='$verflav'"
+        ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
+            "$mp/tmp/kernel" "$mp/tmp/initrd" ||
+        { error "$kihelper failed"; return 1; }
+    fi
+    mv "$mp/tmp/kernel" "$kout" &&
+        mv "$mp/tmp/initrd" "$iout" ||
+        { error "failed to copy kernel/initrd from $mp"; return 1; }
 }
 
 chrooted() {
-	# this is expected to run chrooted inside the root
-	# installs all packages (arguments), writes kernel
-	# and initramfs and 'verflav' to /tmp/ 
-	local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
-	local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
-	local verflav initrd kernel
-	export LANG=C
-	pkgs=( "$@" )
+    # this is expected to run chrooted inside the root
+    # installs all packages (arguments), writes kernel
+    # and initramfs and 'verflav' to /tmp/ 
+    local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
+    local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
+    local verflav initrd kernel
+    export LANG=C
+    pkgs=( "$@" )
     kpkg="$1"
 
     $skip_update || apt-get update -q ||
-		{ error "apt-get update failed"; return 1; }
+        { error "apt-get update failed"; return 1; }
 
     copymods="cloud-initramfs-copymods"
     apt-cache show $copymods >/dev/null 2>&1 ||
@@ -131,9 +131,9 @@ chrooted() {
     which eatmydata >/dev/null 2>&1 && emd=eatmydata
 
     DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
-		$emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
-	[ $? -eq 0 ] ||
-		{ error "failed install of $copymods $*"; return 1; }
+        $emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
+    [ $? -eq 0 ] ||
+        { error "failed install of $copymods $*"; return 1; }
 
     kernel=""
     for f in /boot/vmlin*; do
@@ -152,82 +152,82 @@ chrooted() {
     [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
     chmod ugo+r "$kernel" "$initrd" &&
-    	cp "$kernel" /tmp/kernel && cp "$initrd" /tmp/initrd ||
-		{ error "failed to copy $kernel/$initrd to /tmp"; return 1; }
+        cp "$kernel" /tmp/kernel && cp "$initrd" /tmp/initrd ||
+        { error "failed to copy $kernel/$initrd to /tmp"; return 1; }
 
     echo "$verflav" > /tmp/verflav ||
-		{ error "failed to write verflavor"; return 1; }
+        { error "failed to write verflavor"; return 1; }
 }
 
 main() {
-	local short_opts="hv"
-	local long_opts="help,kihelper:,copy:,verbose"
-	local getopt_out=""
-	getopt_out=$(getopt --name "${0##*/}" \
-		--options "${short_opts}" --long "${long_opts}" -- "$@") &&
-		eval set -- "${getopt_out}" ||
-		{ bad_Usage; return; }
+    local short_opts="hv"
+    local long_opts="help,kihelper:,copy:,verbose"
+    local getopt_out=""
+    getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return; }
 
-	local cur="" next=""
-	local output="" copy=auto chown_to="" gid="" uid=""
+    local cur="" next=""
+    local output="" copy=auto chown_to="" gid="" uid=""
 
-	while [ $# -ne 0 ]; do
-		cur="$1"; next="$2";
-		case "$cur" in
-			-h|--help) Usage ; exit 0;;
-			-v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
-			   --kihelper) kihelper="$next"; shift;;
-			   --copy) copy=$next; shift;;
-			--) shift; break;;
-		esac
-		shift;
-	done
+    while [ $# -ne 0 ]; do
+        cur="$1"; next="$2";
+        case "$cur" in
+            -h|--help) Usage ; exit 0;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+               --kihelper) kihelper="$next"; shift;;
+               --copy) copy=$next; shift;;
+            --) shift; break;;
+        esac
+        shift;
+    done
 
-	[ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
-	local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
+    [ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
+    local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
 
-	TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
-		fail "failed to make tempdir"
-	trap cleanup EXIT
+    TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
+        fail "failed to make tempdir"
+    trap cleanup EXIT
 
-	if [ "$copy" = "auto" ]; then
-		command -v qemu-img >/dev/null 2>&1 && copy="qcow" || copy="cp"
-	fi
+    if [ "$copy" = "auto" ]; then
+        command -v qemu-img >/dev/null 2>&1 && copy="qcow" || copy="cp"
+    fi
 
-	local imgfp myimg="${TEMP_D}/my.img"
-	imgfp=$(readlink -f "$img") ||
-		{ error "failed to get full path to $img"; return 1; }
-	debug 1 "copy mode = $copy"
-	case "$copy" in
-		none) ln -s "$imgfp" "$myimg" ||
-			{ error "failed link $imgfp -> $myimg"; return 1; };;
-		cp) cp --sparse=always "$img" "$myimg" ||
-			{ error "failed cp '$img' to tempdir"; return 1; };;
-		qcow) 
-			qemu-img create -f qcow2 -b "$imgfp" "$myimg" ||
-				{ error "failed create qcow2 backed by $img"; return 1; };;
-		*) error "bad copy type. one of [none, cp, qcow, auto]"; return 1;;
-	esac
+    local imgfp myimg="${TEMP_D}/my.img"
+    imgfp=$(readlink -f "$img") ||
+        { error "failed to get full path to $img"; return 1; }
+    debug 1 "copy mode = $copy"
+    case "$copy" in
+        none) ln -s "$imgfp" "$myimg" ||
+            { error "failed link $imgfp -> $myimg"; return 1; };;
+        cp) cp --sparse=always "$img" "$myimg" ||
+            { error "failed cp '$img' to tempdir"; return 1; };;
+        qcow) 
+            qemu-img create -f qcow2 -b "$imgfp" "$myimg" ||
+                { error "failed create qcow2 backed by $img"; return 1; };;
+        *) error "bad copy type. one of [none, cp, qcow, auto]"; return 1;;
+    esac
 
-	gid=$(id -g)
-	uid=$(id -u)
-	chown_to="$gid:$uid"
+    gid=$(id -g)
+    uid=$(id -u)
+    chown_to="$gid:$uid"
 
-	sudo \
-		"KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
-		"http_proxy=$http_proxy" PACKAGES="$kpkg" \
-		mount-image-callback --sys --proc \
-			--system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
-			_MOUNTPOINT_ "--chown-to=$chown_to" \
-			${kihelper:+"--kihelper=$kihelper"} \
-			"$kern_out" "$initrd_out" "$kpkg" ||
-		{ error "failed"; return 1; }
+    sudo \
+        "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
+        "http_proxy=$http_proxy" PACKAGES="$kpkg" \
+        mount-image-callback --sys --proc \
+            --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
+            _MOUNTPOINT_ "--chown-to=$chown_to" \
+            ${kihelper:+"--kihelper=$kihelper"} \
+            "$kern_out" "$initrd_out" "$kpkg" ||
+        { error "failed"; return 1; }
 
-	error "wrote to $kern_out, $initrd_out"
-	return
+    error "wrote to $kern_out, $initrd_out"
+    return
 }
 
 [ "$1" = "chrooted" ] && { shift; chrooted "$@"; exit; }
 [ "$1" = "kernel_from_mp" ] && { shift; kernel_from_mp "$@"; exit; }
 main "$@"
-# vi: ts=4 noexpandtab
+# vi: ts=4 expandtab
