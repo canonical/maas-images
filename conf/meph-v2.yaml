@@ -63,8 +63,6 @@ releases:
     - [raring,  amd64,   hwe-r,    generic,  linux-generic-lts-raring,  *sa_hwe_r]
     - [saucy,   i386,    hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
     - [saucy,   amd64,   hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
-    - [trusty,  i386,    hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
-    - [trusty,  amd64,   hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
 
 ## Notes:
 ##  * there are no hwe installer kernels for armhf
