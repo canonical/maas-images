@@ -108,7 +108,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
                 url=None, content=simplestreams.util.dump_data(
                     self._get_products(path)))
         elif path in self._pathmap:
-            #print("request for %s %s" % (path, self._pathmap[path]))
+            LOG.debug("request for %s %s" % (path, self._pathmap[path]))
             cs = simplestreams.contentsource.UrlContentSource
             return cs(self._pathmap[path])
         raise Exception("Bad path: %s" % path)
