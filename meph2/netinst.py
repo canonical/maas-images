@@ -17,6 +17,7 @@ import urllib.request
 import simplestreams
 from simplestreams import mirrors
 from simplestreams import objectstores
+from simplestreams.log import LOG
 
 
 APACHE_PARSE_RE = re.compile(r'href="([^"]*)".*(..-...-.... '
@@ -162,9 +163,11 @@ def get_file_sums_list(url, keyring=GPG_KEYRING, mfilter=None):
             l_fname = os.path.join(tmpd, fname)
             l_gpgfname = os.path.join(tmpd, gpgfname)
 
+            LOG.debug("downloading %s" % url + fname)
             download(url + fname, l_fname)
 
             if check and keyring:
+                LOG.debug("downloading gpg %s" % url + gpgfname)
                 download(url + gpgfname, l_gpgfname)
                 gpg_check(l_fname, l_gpgfname, keyring=keyring)
 
@@ -349,10 +352,11 @@ def mine_md(url, release):
 
 
 class MineNetbootMetaData(threading.Thread):
-    def __init__(self, in_queue, out_queue):
+    def __init__(self, in_queue, out_queue, name):
         threading.Thread.__init__(self)
         self.in_queue = in_queue
         self.out_queue = out_queue
+        self.name = name
 
     def run(self):
         fprefix = FILES_PREFIX
@@ -362,6 +366,8 @@ class MineNetbootMetaData(threading.Thread):
             release = data['release']
             arch = data['arch']
 
+            LOG.debug("%s mining %s from %s" %
+                      (self.name, release, data['inst_url']))
             found = mine_md(url=data['inst_url'], release=release)
 
             # now create a mapping, "local path" -> full url
@@ -397,11 +403,15 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
     in_queue = queue.Queue()
     out_queue = queue.Queue()
 
-    print("mining %s: %s * %s * %s" %
-          ((len(releases) * len(POCKETS) * len(arches)),
-           releases, [p for p in POCKETS], arches))
-    for _i in range(NUM_THREADS):
-        t = MineNetbootMetaData(in_queue, out_queue)
+    num_places = len(releases) * len(POCKETS) * len(arches)
+    places = "%s * %s * %s" % (releases, [p for p in POCKETS], arches)
+    num_t = min(num_places, NUM_THREADS)
+    
+    LOG.info("mining d-i data from %s places in %s threads. [%s]." %
+             (num_places, num_t, places))
+
+    for i in range(num_t):
+        t = MineNetbootMetaData(in_queue, out_queue, i)
         t.setDaemon(True)
         t.start()
 
@@ -421,6 +431,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
                 }
                 in_queue.put(data)
     in_queue.join()
+    LOG.info("finished mining of %s. now processing." % places)
 
     count = 0
     # now we process data serially.
@@ -455,7 +466,6 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
 
         except queue.Empty:
             out_queue.join()
-            print("finished")
             break
 
     simplestreams.util.products_condense(rdata)

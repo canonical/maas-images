@@ -304,12 +304,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         if len([p for p in newpaths 
                 if not os.path.exists(os.path.join(self.out_d, p))]) == 0:
-            print("All paths existed, not re-generating: %s" % newpaths)
+            LOG.info("All paths existed, not re-generating: %s" % newpaths)
         else:
-            print(gencmd)
+            LOG.info("running: %s" % gencmd)
             subprocess.check_call(gencmd)
+            LOG.info("finished: %s" % gencmd)
 
-        print(newpaths)
         # get checksum and size of new files created
         file_info = {}
         for path in newpaths:
