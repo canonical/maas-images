@@ -140,9 +140,11 @@ def download(url, target):
 
 
 def gpg_check(filepath, gpgpath, keyring=GPG_KEYRING):
-    subprocess.check_output(
-        ['gpg', '--keyring=%s' % keyring, '--verify', gpgpath, filepath],
-        stderr=subprocess.STDOUT)
+    cmd = ['gpg', '--keyring=%s' % keyring, '--verify', gpgpath, filepath]
+    
+    _output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    return
+    
 
 
 def get_file_sums_list(url, keyring=GPG_KEYRING, mfilter=None):
@@ -169,7 +171,13 @@ def get_file_sums_list(url, keyring=GPG_KEYRING, mfilter=None):
             if check and keyring:
                 LOG.debug("downloading gpg %s" % url + gpgfname)
                 download(url + gpgfname, l_gpgfname)
-                gpg_check(l_fname, l_gpgfname, keyring=keyring)
+                try:
+                    gpg_check(l_fname, l_gpgfname, keyring=keyring)
+                except subprocess.CalledProcessError as e:
+                    LOG.warn("Failed gpg check of %s against %s. "
+                             "keyring=%s, output: %s" %
+                             (url + fname, url + gpgfname, keyring, e.output))
+                    raise
 
             with open(l_fname, "r") as fp:
                 sumdata = fp.read()
@@ -368,7 +376,15 @@ class MineNetbootMetaData(threading.Thread):
 
             LOG.debug("%s mining %s from %s" %
                       (self.name, release, data['inst_url']))
-            found = mine_md(url=data['inst_url'], release=release)
+            try:
+                found = mine_md(url=data['inst_url'], release=release)
+            except Exception as e:
+                LOG.warn("%s mining %s at %s failed" %
+                         (self.name, release, data['inst_url']), exc_info=1)
+                data['error'] = e
+                self.out_queue.put(data)
+                self.in_queue.task_done()
+                continue
 
             # now create a mapping, "local path" -> full url
             data['map'] = {}
@@ -393,6 +409,7 @@ class MineNetbootMetaData(threading.Thread):
                     del item['url']
 
             data['versions'] = found
+            data['error'] = False
 
             self.out_queue.put(data)
             self.in_queue.task_done()
@@ -441,11 +458,15 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
     rdata = {'products': {}, 'format': 'products:1.0',
              'content_id': content_id}
     pathmap = {}
+    errors = []
     while True:
         try:
             count = count + 1
             data = out_queue.get(block=False)
             out_queue.task_done()
+            if data['error']:
+                errors.append(data['error'])
+                continue
 
             pname = (dom + ":netboot:%(version)s:%(arch)s" % data)
 
@@ -468,6 +489,10 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
             out_queue.join()
             break
 
+    if len(errors):
+        LOG.warn("There were %s errors, raising first" % len(errors))
+        raise errors[0]
+      
     simplestreams.util.products_condense(rdata)
     return (rdata, pathmap)
 
