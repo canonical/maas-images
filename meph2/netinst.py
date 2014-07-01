@@ -98,6 +98,12 @@ class NetbootMirrorReader(mirrors.MirrorReader):
             return content
 
         super(NetbootMirrorReader, self).__init__(policy=policy)
+
+        # ensure that ~/.gnupg exists.  Otherwise the verify
+        # commands can race on creating it
+        subprocess.check_output(['gpg', '--list-keys'],
+            stderr=subprocess.STDOUT)
+
         self._get_products(path=None)
 
     def source(self, path):
