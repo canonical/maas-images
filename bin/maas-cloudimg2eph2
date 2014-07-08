@@ -200,7 +200,7 @@ main() {
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
         ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
-        KPACK_SKIP_APT_UPDATE=true kpack-from-image "$imgfile" \
+        KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
             "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
             { error "failed to get $ckpkg output"; return 1; }
         ensure_file_d "$tkout" "$tiout" ||
