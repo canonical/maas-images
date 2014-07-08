@@ -76,6 +76,8 @@ get_img_file() {
             ;;
         "POSIX tar"*)
             get_img_from_tar "$input" "$output" "$tempd";;
+        *ext[234]\ filesystem*)
+            ln -s "$(readlink -f "$input")" "$output";;
         *)
             # if the above failed (on trusty a .tar.gz file was reported
             # as a Minux file system) then try filename based heuristics
@@ -87,7 +89,8 @@ get_img_file() {
                     debug 1 "guessing content is gzip [$fout]"
                     zcat -c "$input" > "$output";;
                 *) 
-                    error "WARN: unknown file '$input'. $fout"
+                    error "WARN: unknown file '$input'. Assuming mountable image"
+                    error "file output: $fout"
                     ln -s "$(readlink -f "$input")" "$output";;
             esac
     esac
@@ -168,8 +171,8 @@ main() {
         { error "failed to get image file from $src"; return 1; }
 
     if [ "$src" -ef "$imgfile" ]; then
-        src="${TEMP_D}/src.img"
         rm -f "$imgfile"
+        ddebug 1 "copying $src_in to $imgfile"
         cp --sparse=always "$src" "$imgfile" ||
             { error "failed to copy $src_in to temp"; return 1; }
     fi
