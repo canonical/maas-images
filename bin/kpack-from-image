@@ -52,7 +52,7 @@ kernel_from_mp() {
 
     local cur="" next=""
     local output="" copy=true chown_to="" gid="" uid="" kihelper=""
-    local ship_update=${KPACK_SKIP_APT_UPDATE:-false}
+    local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
 
     while [ $# -ne 0 ]; do
         cur="$1"; next="$2";
