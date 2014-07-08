@@ -20,6 +20,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+IMAGES_PPA_APT_KEY="-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: SKS 1.0.10
+
+mI0ETxf8lwEEAMAqtJVUnlCVzjTOsohaE/M4mGHFl4Py1cuE9ryOgmTWje+6BrNjtWLSfTQJ
+Kp1V6hViUoxPBck1qkZoAz7VU5nDuBWDybCsolliUX4zzTYNiDnPS74fs4CDUWx9qpl5Sdb6
+7aygIid/mFXubhJnTPR6Bq9ptGmc0Ks6ttNs3WJ/ABEBAAG0IkxhdW5jaHBhZCBQUEEgZm9y
+IE1hYVMgTWFpbnRhaW5lcnOIuAQTAQIAIgUCTxf8lwIbAwYLCQgHAwIGFQgCCQoLBBYCAwEC
+HgECF4AACgkQXP8eqZPujMU2zQP/W9OCzaU7HvFrqEt6nHGej2PEanIunxo7J8D5OR+Yl578
+FpRkHRgvcdQnGuZUpdBnOFatDDFME7ClN9qUrD1wDN1r9ip2luaKiO2cZOW4Uu5Z0n/3Qc6J
+eh9TNspyDMuHVVZ5GiAk+GXgF1m7ps5lCnOCZK/pXUEEUOS8AWnt3sM=
+=1RpZ
+-----END PGP PUBLIC KEY BLOCK-----"
+IMAGES_PPA_FILE="/etc/apt/sources.list.d/maas-ephemeral-images.list"
+IMAGES_PPA_URL="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/ubuntu"
+
 VERBOSITY=0
 TOP_D="${0%/*}"
 
@@ -72,6 +87,159 @@ EOF
 undisable_services() {
     local dir="$1"
     rm -f "$dir/usr/sbin/policy-rc.d"
+}
+
+check_required_vars() {
+    local req="" missing=""
+    for req in "$@"; do
+        [ -n "${!req}" ] || missing="${missing} ${req}"
+    done
+    missing=${missing# }
+    _RET="$missing"
+    [ -z "$_RET" ]
+}
+
+show_vars() {
+    local var
+    for var in "$@"; do
+       printf "%s=%s\n" "$var" "${!var}"
+    done
+}
+
+_apt() {
+    local emd=$(which eatmydata 2>/dev/null || :)
+    debug 1 "$emd apt-get ${apt_opts} --quiet --assume-yes $*"
+    $emd apt-get ${apt_opts} -q --assume-yes "$@" </dev/null;
+}
+
+apply_updates_chrooted() {
+    # FIXME: remove this after no longer necessary
+    local required="" known=""
+    local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
+    local ppa_clear=${PPA_CLEAR:-true}
+    required="kpkg"
+    known="apt_opts PPA_CLEAR VERBOSITY"
+
+    export LC_ALL=C FLASH_KERNEL_SKIP=1
+    export DEBIAN_FRONTEND=noninteractive
+
+    check_required_vars ${required} ||
+        { error "$FUNCNAME: missing required vars: $_RET"; return 1; }
+
+    if [ "$VERBOSITY" -ge 1 ]; then
+        show_vars $required $known 1>&2
+    fi
+    
+    release=$(lsb_release -sc) ||
+        { error "failed to get release"; return 1; }
+
+    arch="$(dpkg --print-architecture)" ||
+        { error "failed to get dpkg arch"; return 1; }
+
+    if [ -z "${IMAGES_PPA_APT_KEY}" -o "$release" != "precise" ]; then
+        debug 1 "not adding images ppa to release=$release"
+    else
+        # apt-add-repository failed when trying quantal amd64 with qemu-static.
+        # so instead do this manually.
+        debug 1 "configuring PPA at $IMAGES_PPA_URL"
+        echo "deb $IMAGES_PPA_URL $release main" > "$IMAGES_PPA_FILE" ||
+            { error "failed writing to $IMAGES_PPA_FILE"; return 1; }
+        printf "%s\n" "$IMAGES_PPA_KEY" | apt-key add - ||
+            { error "apt-key add failed!"; return 1; }
+    fi
+
+    # ensure mellanox mlx4_en gets loaded (LP: #1115710)
+    if [ ! -f "/etc/modprobe.d/mlx4.conf" ]; then
+        # packaged version would be mlx4.conf, to avoid conflict
+        # we install a different file here.
+        printf "%s\n%s; %s\n" \
+            "# mlx4_core should load mlx4_en (LP: #1115710)." \
+            "install mlx4_core /sbin/modprobe --ignore-install mlx4_core" \
+            "/sbin/modprobe mlx4_en" \
+            > "/etc/modprobe.d/mlx4.ephemeral.conf"
+    fi
+
+    mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs ||
+        { error "failed to create iscsi.initramfs"; return 1; }
+
+    _apt update || { error "apt-get update failed"; return 1; }
+
+    local removes="^linux-.*"
+    local arch_pkgs="" toremove=""
+    local add_pkgs="cloud-initramfs-dyn-netconf maas-enlist"
+    add_pkgs="${add_pkgs} open-iscsi overlayroot"
+
+    if [ "$arch" = "armhf" ]; then
+        arch_pkgs="u-boot-tools"
+    fi
+
+    toremove=$(set -f; set -o pipefail; set -e;
+        rlist=""
+        inst=$(dpkg-query --show)
+        for r in $removes; do
+            matches=$(printf "%s\n" "$inst" |
+                      awk '$1 ~ pm { printf("%s ",$1); }' "pm=$r")
+            rlist="$rlist $matches"
+        done
+      echo ${rlist}
+    )
+    [ $? -eq 0 ] || { error "failed getting list to remove"; return 1; }
+      
+    if [ -z "$toremove" ]; then
+        error "nothing installed matched: $removes. nothing to remove"
+    else
+        debug 1 "removing: $toremove"
+        ( set -f; _apt remove --purge $toremove ) ||
+            { error "failed to remove $toremove"; return 1; }
+    fi
+
+    _apt autoremove ||
+        { error "failed apt-get autoremove"; return 1; }
+
+    _apt dist-upgrade ||
+        { error "failed apt-get dist-upgrade"; return 1; }
+
+     _apt install $arch_pkgs $kpkg $add_pkgs ||
+         { error "failed installing $arch_pkgs $kpkg $add_pkgs"; return 1; }
+
+    if ${ppa_clear} && [ -f "$IMAGES_PPA_FILE" ]; then
+        debug 1 "disabling ppa in $IMAGES_PPA_FILE."
+        sed -i "s,^,#," "$IMAGES_PPA_FILE" ||
+            { error "failed to clear $IMAGES_PPA_FILE"; return 1; }
+    fi
+
+    if dpkg --print-foreign-architectures | grep -q i386; then
+        # precise used multiarch file
+        dpkg --remove-architecture i386 >/dev/null 2>&1 ||
+            rm /etc/dpkg/dpkg.cfg.d/multiarch
+        dpkg --print-foreign-architectures | grep i386 &&
+            { error "failed to remove i386 foreign arch"; return 1; }
+        debug 1 "removed foreign arch i386"
+    fi
+
+    _apt clean clean && _apt update ||
+        { error "failed apt-get clean and update"; return 1; }
+
+    local f=/etc/network/interfaces
+    mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
+        { error "failed to link dynamic interfaces"; return 1; }
+
+    local k="" i=""
+    for i in /boot/vmlinu?-*; do
+        [ "${i%-virtual}" = "${i}" ] && k=${i};
+    done
+    ver=${k##*/vmlinu?-}
+    debug 1 "updating kernel version '$ver'"
+    update-initramfs -u -k "$ver" ||
+        { error "update-initramfs failed"; return 1; }
+
+    cp /boot/initrd.img-$ver /tmp/initrd.img &&
+        cp /boot/vmlinu?-$ver /tmp/kernel.img &&
+        chmod ugo+r /tmp/kernel.img &&
+        dpkg-query --show > /tmp/manifest ||
+        { error "failed to publish files to /tmp/"; return 1; }
+
+    return 0
 }
 
 apply_updates() {
@@ -168,109 +336,11 @@ apply_updates() {
     [ -n "${apt_opts}" ] &&
         debug 1 "using apt options ${apt_opts} for install"
 
+    local me=$(readlink -f "$0")
 
-    # FIXME: remove this after no longer necessary
-    local ppa_file="" ppa_url=""
-    if [ "$rel" = "precise" ]; then
-        # chroot and apt-add-repository failed when trying quantal amd64 with
-        # qemu-static.  Instead, do it manually.
-        ppa_file="/etc/apt/sources.list.d/maas-ephemeral-images.list"
-        ppa_url="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/ubuntu"
-        echo "deb $ppa_url $rel main" | sudo tee "$dir/${ppa_file}"
-        chroot $dir apt-key add - <<"EOF"
------BEGIN PGP PUBLIC KEY BLOCK-----
-Version: SKS 1.0.10
-
-mI0ETxf8lwEEAMAqtJVUnlCVzjTOsohaE/M4mGHFl4Py1cuE9ryOgmTWje+6BrNjtWLSfTQJ
-Kp1V6hViUoxPBck1qkZoAz7VU5nDuBWDybCsolliUX4zzTYNiDnPS74fs4CDUWx9qpl5Sdb6
-7aygIid/mFXubhJnTPR6Bq9ptGmc0Ks6ttNs3WJ/ABEBAAG0IkxhdW5jaHBhZCBQUEEgZm9y
-IE1hYVMgTWFpbnRhaW5lcnOIuAQTAQIAIgUCTxf8lwIbAwYLCQgHAwIGFQgCCQoLBBYCAwEC
-HgECF4AACgkQXP8eqZPujMU2zQP/W9OCzaU7HvFrqEt6nHGej2PEanIunxo7J8D5OR+Yl578
-FpRkHRgvcdQnGuZUpdBnOFatDDFME7ClN9qUrD1wDN1r9ip2luaKiO2cZOW4Uu5Z0n/3Qc6J
-eh9TNspyDMuHVVZ5GiAk+GXgF1m7ps5lCnOCZK/pXUEEUOS8AWnt3sM=
-=1RpZ
------END PGP PUBLIC KEY BLOCK-----
-EOF
-    fi
-
-    LC_ALL=C FLASH_KERNEL_SKIP=1 DEBIAN_FRONTEND=noninteractive \
-        apt_opts="${apt_opts}" kpkg="$kpkg" \
-        PPA_CLEAR="$ppa_file" \
-        chroot "$dir" sh -c '
-        _apt() {
-            local emd=$(which eatmydata 2>/dev/null || :)
-            echo $emd apt-get ${apt_opts} -q --assume-yes "$@" 1>&2;
-            $emd apt-get ${apt_opts} -q --assume-yes "$@";
-        }
-        aptin() { _apt install "$@"; }
-        aptrm() { _apt remove --purge "$@"; }
-        aptupgrade() { _apt dist-upgrade "$@"; }
-        aptautoremove() { _apt autoremove; }
-
-        rel=$(lsb_release -sc)
-
-        # ensure mellanox mlx4_en gets loaded (LP: #1115710)
-        if [ ! -f "/etc/modprobe.d/mlx4.conf" ]; then
-            # packaged version would be mlx4.conf, to avoid conflict
-            # we install a different file here.
-            printf "%s\n%s; %s\n" \
-                "# mlx4_core should load mlx4_en (LP: #1115710)." \
-                "install mlx4_core /sbin/modprobe --ignore-install mlx4_core" \
-                "/sbin/modprobe mlx4_en" \
-                > "/etc/modprobe.d/mlx4.ephemeral.conf"
-        fi
-        arch="$(dpkg --print-architecture)" || exit
-
-        mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs &&
-        apt-get -q ${apt_opts} update || exit
-
-        removes="^linux-.*"
-        apkgs=""
-        if [ "$arch" = "armhf" ]; then
-            apkgs="u-boot-tools"
-        fi
-
-        set -f;
-        toremove=""
-        for r in $removes; do
-            pinst=$(dpkg-query --show |
-                    awk "\$1 ~ pm { printf(\"%s \",\$1); }" "pm=$r")
-            toremove="$toremove $pinst"
-        done
-        aptrm $toremove
-        set +f
-        aptautoremove || exit
-
-        aptupgrade || exit
-        pkgs="$apkgs $kpkg cloud-initramfs-dyn-netconf maas-enlist open-iscsi overlayroot"
-        aptin $pkgs || exit
-
-        if [ -n "$PPA_CLEAR" -a -f "$PPA_CLEAR" ]; then
-            sed -i "s,^,#," "$PPA_CLEAR" || exit
-        fi
-
-        if dpkg --print-foreign-architectures | grep -q i386; then
-            # precise used multiarch file
-            dpkg --remove-architecture i386 >/dev/null 2>&1 ||
-                rm /etc/dpkg/dpkg.cfg.d/multiarch
-            dpkg --print-foreign-architectures | grep i386 &&
-                { echo "failed to remove i386 foreign arch"; exit 1; }
-            echo "removed foreign arch i386"
-        fi
-        
-        apt-get clean && apt-get update || exit
-        f=/etc/network/interfaces
-        mv "$f" "$f.dist" &&
-            ln -sf ../../run/network/dynamic-interfaces "$f" || exit
-        k=""
-        for i in /boot/vmlinu?-*; do
-            [ "${i%-virtual}" = "${i}" ] && k=${i}; done
-        ver=${k##*/vmlinu?-}
-        update-initramfs -u -k $ver &&
-        cp /boot/initrd.img-$ver /tmp/initrd.img &&
-            cp /boot/vmlinu?-$ver /tmp/kernel.img &&
-            chmod ugo+r /tmp/kernel.img &&
-            dpkg-query --show > /tmp/manifest' </dev/null
+    apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
+        chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
+        { error "failed chroot and kernel install"; return 1; }
     [ $? -eq 0 ] || {
         error "failed to install packages or mkinitramfs in chroot";
         return 1;
@@ -311,6 +381,8 @@ EOF
 }
 
 if [ "$1" = "apply_updates" ]; then
+    "$@"
+elif [ "$1" = "apply_updates_chrooted" ]; then
     "$@"
 else
     short_opts="a:hv"
