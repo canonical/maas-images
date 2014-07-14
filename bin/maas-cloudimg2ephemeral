@@ -169,9 +169,9 @@ apply_updates_chrooted() {
     local add_pkgs="cloud-initramfs-dyn-netconf maas-enlist"
     add_pkgs="${add_pkgs} open-iscsi overlayroot"
 
-    if [ "$arch" = "armhf" ]; then
-        arch_pkgs="u-boot-tools"
-    fi
+    case "$arch" in
+        arm64|armhf) arch_pkgs="u-boot-tools";;
+    esac
 
     toremove=$(set -f; set -o pipefail; set -e;
         rlist=""
