@@ -144,7 +144,7 @@ apply_updates_chrooted() {
         debug 1 "configuring PPA at $IMAGES_PPA_URL"
         echo "deb $IMAGES_PPA_URL $release main" > "$IMAGES_PPA_FILE" ||
             { error "failed writing to $IMAGES_PPA_FILE"; return 1; }
-        printf "%s\n" "$IMAGES_PPA_KEY" | apt-key add - ||
+        printf "%s\n" "$IMAGES_PPA_APT_KEY" | apt-key add - ||
             { error "apt-key add failed!"; return 1; }
     fi
 
