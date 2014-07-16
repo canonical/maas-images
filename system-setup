@@ -23,6 +23,7 @@ else
     DEPS=(
         bzr
         cloud-image-utils      # for mount-image-callback
+        gpgv
         python3-distro-info
         python3-requests
         python3-simplestreams

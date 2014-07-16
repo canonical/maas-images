@@ -99,11 +99,6 @@ class NetbootMirrorReader(mirrors.MirrorReader):
 
         super(NetbootMirrorReader, self).__init__(policy=policy)
 
-        # ensure that ~/.gnupg exists.  Otherwise the verify
-        # commands can race on creating it
-        subprocess.check_output(['gpg', '--list-keys'],
-            stderr=subprocess.STDOUT)
-
         self._get_products(path=None)
 
     def source(self, path):
@@ -146,7 +141,7 @@ def download(url, target):
 
 
 def gpg_check(filepath, gpgpath, keyring=GPG_KEYRING):
-    cmd = ['gpg', '--keyring=%s' % keyring, '--verify', gpgpath, filepath]
+    cmd = ['gpgv', '--keyring=%s' % keyring, gpgpath, filepath]
     
     _output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     return
