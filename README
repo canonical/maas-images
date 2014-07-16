@@ -40,7 +40,7 @@ not contain that.
   vi ./local-ephemeral-v2/streams/v1/com.ubuntu.maas:daily:v2:download.json
 
   # point meph2-cloudimg-sync at the local data
-  meph2-cloudimg-sync --target=./local-ephemeral-v2/streams/v1/index.json out.d
+  meph2-cloudimg-sync --target=./local-ephemeral-v2/streams/v1/*download.json out.d
 
 == streams management ==
 Building as above will create out.d that has *metadata* describing
