@@ -156,8 +156,17 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
                 os.unlink(tf.name)
                 raise
         else:
+            found = summer.hexdigest()
+            try:
+                size = os.path.getsize(tf.name)
+            except:
+                size = "unavailable"
             os.unlink(tf.name)
-            raise ValueError("Invalid checksum")
+
+            msg = ("Invalid checksum for '%s'. size=%s. " 
+                   "found '%s', expected '%s'" %
+                   (path, size, found, str(cksums)))
+            raise ValueError(msg)
 
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
