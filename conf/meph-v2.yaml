@@ -37,6 +37,7 @@ releases:
    kernels:
     - [trusty,  armhf,   hwe-t,    generic,   linux-generic,            *arm_hwe_t]
     - [trusty,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [trusty,  armhf,   slayton,  keystone,  linux-keystone,           [slayton]]
     - [trusty,  i386,    hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  amd64,   hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  ppc64el, hwe-t,    generic,   linux-generic,            *sa_hwe_t]
