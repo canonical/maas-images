@@ -30,6 +30,7 @@ DEFAULT_ARCHES = {
     'x86_64': ['i386', 'amd64', 'armhf', 'arm64'],
     'ppc64le': ['ppc64el'],
     'armhf': ['armhf'],
+    'aarch64': ['arm64'],
 }
 
 ALL_ITEM_TAGS = {'label': 'daily'}
