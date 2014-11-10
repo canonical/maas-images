@@ -186,7 +186,7 @@ main() {
     ddebug 1 "starting maas-cloudimg2ephemeral"
     maas-cloudimg2ephemeral $vflags --zero \
         ${arch:+"--arch=$arch"} "$imgfile" \
-        "$kpkg" "$pkout" "$piout" "$manifest" ||
+        "$kpkg" "$pkout" "$piout" "$manif" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
     local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
