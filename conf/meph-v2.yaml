@@ -15,14 +15,25 @@ subarches:
  - &sa_hwe_s  [generic, hwe-p, hwe-q, hwe-r, hwe-s]
  - &sa_hwe_t  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &sa_hwe_u  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
+ - &sa_hwe_v  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
+ - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
 
 misc:
  - &glpae generic-lpae
  - &xguboot xgene-uboot
 
 releases:
+ - version: 15.04
+   release: vivid
+   kernels:
+    - [vivid,   armhf,   hwe-v,    generic,   linux-generic,            *arm_hwe_v]
+    - [vivid,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [vivid,   i386,    hwe-v,    generic,   linux-generic,            *sa_hwe_v]
+    - [vivid,   amd64,   hwe-v,    generic,   linux-generic,            *sa_hwe_v]
+    - [vivid,   ppc64el, hwe-v,    generic,   linux-generic,            *sa_hwe_v]
+    - [vivid,   arm64,   hwe-v,    generic,   linux-generic,            *sa_hwe_v]
  - version: 14.10
    release: utopic
    kernels:
