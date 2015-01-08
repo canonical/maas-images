@@ -58,8 +58,8 @@ releases:
        {suffix: .xgene, kihelper: kh-xgene, di-format: 'xgene'}]
     - [trusty,  arm64,   *xgmstuboot, generic,   linux-generic,            [*xgmstuboot],
        {suffix: .xgene-mustang, kihelper: kh-xgene, di-format: 'xgene'}]
-#    - [utopic,  i386,    hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
-#    - [utopic,  amd64,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
+    - [utopic,  i386,    hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
+    - [utopic,  amd64,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
 
  - version: 13.10
    release: saucy
