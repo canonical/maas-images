@@ -263,7 +263,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for i in kdata_defaults:
                 if i not in kdata:
                     kdata[i] = kdata_defaults[i]
-            
+
             if karch != arch:
                 continue
 
@@ -282,7 +282,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                       'subarch': psubarch, 'kflavor': flavor}
             common.update(ALL_ITEM_TAGS)
 
-            
             items = {}
             # Check psubarch for xgene-uboot-mustang
             if psubarch.endswith('mustang'):
@@ -299,13 +298,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             if psubarch.endswith('mustang'):
                 di_keys.append('di-dtb')
 #                boot_keys.append('boot-dtb')
-                
+
             for key in di_keys:
                 items[key]['sha256'] = curdi[key]['sha256']
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
                 items[key]['di_version'] = subs['di_version']
-            
+
             for key in boot_keys:
                 items[key]['kpackage'] = kpkg
 

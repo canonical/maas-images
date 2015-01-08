@@ -204,7 +204,6 @@ chrooted() {
 }
 
 main() {
-    set -x
     local short_opts="hv"
     local long_opts="help,kihelper:,copy:,verbose"
     local getopt_out=""

@@ -267,7 +267,6 @@ def get_file_item_data(path, release="base"):
     path = re.sub("/(initrd.gz|initrd|uInitrd)$", "/initrd", path)
     path = re.sub("/[^/]*.dtb", "/dtb", path)
     path = re.sub("-netboot", "", path)
-
     try:
         (frel, kflavor, ftype) = path.split("/")
     except ValueError:
@@ -360,7 +359,7 @@ def mine_md(url, release):
             curfile = flist[path].copy()
             curfile.update(data)
             versions[di_ver]['items'][key] = curfile
-            
+
     return versions
 
 
