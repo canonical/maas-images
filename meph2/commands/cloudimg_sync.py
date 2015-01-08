@@ -40,10 +40,12 @@ PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 PCOMMON = "%(release)s/%(arch)s/"
 PATH_FORMATS = {
     'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
+    'boot-dtb': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-dtb%(suffix)s",
     'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
     'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
-    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
+    'di-dtb': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-dtb%(suffix)s",
     'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
+    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
@@ -233,8 +235,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         newitems = {}
 
-        ikeys = ('boot-kernel', 'boot-initrd', 'di-initrd', 'di-kernel',
-                 'root-image.gz')
+        ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel', 'di-initrd',
+                 'root-image.gz']
+
         mykinfo = self.releases[release]['kernels']
 
         vername = flat['version_name']
@@ -260,7 +263,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for i in kdata_defaults:
                 if i not in kdata:
                     kdata[i] = kdata_defaults[i]
-
+            
             if karch != arch:
                 continue
 
@@ -279,25 +282,39 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                       'subarch': psubarch, 'kflavor': flavor}
             common.update(ALL_ITEM_TAGS)
 
+            
             items = {}
+            # Check psubarch for xgene-uboot-mustang
+            if psubarch.endswith('mustang'):
+                ikeys.append('di-dtb')
+#                ikeys.append('boot-dtb')
             for i in ikeys:
                 items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
                             'size': None, 'sha256': None}
                 items[i].update(common)
 
-            for key in ('di-kernel', 'di-initrd'):
+            di_keys = ['di-kernel', 'di-initrd']
+            boot_keys = ['boot-kernel', 'boot-initrd']
+            # Check psubarch for xgene-uboot-mustang
+            if psubarch.endswith('mustang'):
+                di_keys.append('di-dtb')
+#                boot_keys.append('boot-dtb')
+                
+            for key in di_keys:
                 items[key]['sha256'] = curdi[key]['sha256']
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
                 items[key]['di_version'] = subs['di_version']
-
-            for key in ('boot-kernel', 'boot-initrd'):
+            
+            for key in boot_keys:
                 items[key]['kpackage'] = kpkg
 
             pack = [kpkg,
                  os.path.join(self.out_d, items['boot-kernel']['path']),
                  os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
+#            if suffix.endswith('mustang'):
+#                pack.append(os.path.join(self.out_d, items['boot-dtb']['path']))
             if 'kihelper' in kdata:
                 pack.append('--kihelper=%s' % kdata['kihelper'])
 
@@ -305,6 +322,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
+#            if suffix.endswith('mustang'):
+#                newpaths.add(items['boot-dtb']['path'])
 
             newitems[prodname] = items
 

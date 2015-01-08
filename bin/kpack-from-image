@@ -67,8 +67,8 @@ kernel_from_mp() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 ] ||
-        { bad_Usage "expected 4 args, got $# [$*]"; return; }
+    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] ||
+        { bad_Usage "expected 4 or 5 args, got $# [$*]"; return; }
     local mp="$1" kout="$2" iout="$3" kpkg="$4"
 
     local me="" myd=""
@@ -204,6 +204,7 @@ chrooted() {
 }
 
 main() {
+    set -x
     local short_opts="hv"
     local long_opts="help,kihelper:,copy:,verbose"
     local getopt_out=""
@@ -227,8 +228,11 @@ main() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
+    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] || { bad_Usage "expected 4 or 5 args, got $#"; return; }
     local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
+    if [ $# -eq 5 ]; then
+	local dtb_out=${5:-dtb}
+    fi
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         fail "failed to make tempdir"
@@ -260,6 +264,17 @@ main() {
     gid=$(id -g)
     uid=$(id -u)
     chown_to="$gid:$uid"
+
+    # copy xgene-uboot-mustang subarch dtb file
+    if [ -n "$dtb_out" ]; then
+	echo "Newell is a cracker"
+	sudo \
+            "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
+            "http_proxy=$http_proxy" PACKAGES="$kpkg" \
+	    mount-image-callback "$myimg" -- \
+	    sh -c 'cp $MOUNTPOINT/lib/firmware/*/device-tree/apm-mustang.dtb $dtb' \
+	    || { error "failed to copy dtb"; return 1; }
+    fi
 
     sudo \
         "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \

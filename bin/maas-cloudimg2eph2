@@ -199,15 +199,32 @@ main() {
         flags=( "$@" )
         ckout="${TEMP_D}/$ckpkg-kernel"
         ciout="${TEMP_D}/$ckpkg-initrd"
-        ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
-        KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
-            "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
-            { error "failed to get $ckpkg output"; return 1; }
-        ensure_file_d "$tkout" "$tiout" ||
-            { error "failed to make dirs for $tkout or $tiout"; return 1; }
-        mv "$ckout" "$tkout" &&
-            mv "$ciout" "$tiout" ||
-            { error "failed copying files"; return 1; }
+	if [ -n "$4" ] 
+	then
+	    tdout="$4"
+	    cdout="${TEMP_D}/$ckpkg-dtb"
+            ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
+            KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
+                "$ckpkg" "$ckout" "$ciout" "$cdout" "${flags[@]}" ||
+                { error "failed to get $ckpkg output"; return 1; }
+            ensure_file_d "$tkout" "$tiout" ||
+                { error "failed to make dirs for $tkout or $tiout"; return 1; }
+            mv "$ckout" "$tkout" &&
+                mv "$ciout" "$tiout" && 
+		mv "$cdout" "$tdout" ||
+                { error "failed copying files"; return 1; }
+	else
+            ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
+            KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
+                "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
+                { error "failed to get $ckpkg output"; return 1; }
+            ensure_file_d "$tkout" "$tiout" ||
+                { error "failed to make dirs for $tkout or $tiout"; return 1; }
+            mv "$ckout" "$tkout" &&
+                mv "$ciout" "$tiout" ||
+                { error "failed copying files"; return 1; }
+	fi
+	
     done
     ddebug 1 "kpacks done"
 
