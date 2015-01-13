@@ -8,10 +8,11 @@ fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out
+Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out [dtb-out]
 
   Install kernel-package into image and copy the generated kernel
   and initrd out into kernel-out and initrd-out.
+  'dtb' is the device tree blob (dtb-<version-flavor>)
 
   Requires sudo to invoke mount-image-callback.
 
@@ -69,7 +70,8 @@ kernel_from_mp() {
 
     [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] ||
         { bad_Usage "expected 4 or 5 args, got $# [$*]"; return; }
-    local mp="$1" kout="$2" iout="$3" kpkg="$4"
+    local mp="$1" kpkg="$2" kout="$3" iout="$4" 
+    local dtb_out=${5}
 
     local me="" myd=""
     me=$(readlink -f "$0") && myd="${me%/*}" ||
@@ -115,6 +117,12 @@ kernel_from_mp() {
     mv "$mp/tmp/kernel" "$kout" &&
         mv "$mp/tmp/initrd" "$iout" ||
         { error "failed to copy kernel/initrd from $mp"; return 1; }
+    if [ -n "${dtb_out}" ]; then
+        [ -f "$mp/tmp/dtb" ] ||
+            { error "dtb expected but not found"; return 1; }
+        mv "$mp/tmp/dtb" "$dtb_out" ||
+            { error "failed to copy out dtb file"; return 1; }
+    fi
 }
 
 config_addl_modules() {
@@ -134,6 +142,7 @@ EOF
 }
 
 chrooted() {
+    set -x
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
     # and initramfs and 'verflav' to /tmp/ 
@@ -193,11 +202,22 @@ chrooted() {
 
     [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
-    chmod ugo+r "$kernel" "$initrd" &&
-        cp "$kernel" /tmp/kernel && cp "$initrd" /tmp/initrd ||
-        { error "failed to copy $kernel/$initrd to /tmp"; return 1; }
+    local name="" t="" outd="/tmp" outf=""
+    for f in /boot/*-${verflav}; do
+        case "$f" in
+            vmlinu?*) name="kernel";;
+            initrd.img*) name="initrd";;
+            *)
+                # name is the basename with -${verfla} removed
+                t=$(basename "$f")
+                name="${t%-${verflav}}"
+        esac
+        outf="$outd/$name"
+        cp "$f" "$outf" && chmod ugo+r "$outf" ||
+            { error "failed to copy '$name' from '$f'"; return 1; }
+    done
 
-    echo "$verflav" > /tmp/verflav ||
+    echo "$verflav" > "$outd/verflav" ||
         { error "failed to write verflavor"; return 1; }
 
     rm -f "$stamp"
@@ -227,11 +247,10 @@ main() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] || { bad_Usage "expected 4 or 5 args, got $#"; return; }
+    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] ||
+        { bad_Usage "expected 4 or 5 args, got $#"; return; }
     local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
-    if [ $# -eq 5 ]; then
-	local dtb_out=${5:-dtb}
-    fi
+    local dtb_out=$5
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         fail "failed to make tempdir"
@@ -264,17 +283,6 @@ main() {
     uid=$(id -u)
     chown_to="$gid:$uid"
 
-    # copy xgene-uboot-mustang subarch dtb file
-    if [ -n "$dtb_out" ]; then
-	echo "Newell is a cracker"
-	sudo \
-            "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
-            "http_proxy=$http_proxy" PACKAGES="$kpkg" \
-	    mount-image-callback "$myimg" -- \
-	    sh -c 'cp $MOUNTPOINT/lib/firmware/*/device-tree/apm-mustang.dtb $dtb' \
-	    || { error "failed to copy dtb"; return 1; }
-    fi
-
     sudo \
         "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
         "http_proxy=$http_proxy" PACKAGES="$kpkg" \
@@ -282,10 +290,10 @@ main() {
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
             ${kihelper:+"--kihelper=$kihelper"} \
-            "$kern_out" "$initrd_out" "$kpkg" ||
+            "$kpkg" "$kern_out" "$initrd_out" ${dtb_out:+"${dtb_out}"} ||
         { error "failed"; return 1; }
 
-    error "wrote to $kern_out, $initrd_out"
+    error "wrote to $kern_out, $initrd_out, ${dtb_out:+ ${dtb_out}}"
     return
 }
 
