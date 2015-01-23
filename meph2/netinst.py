@@ -268,6 +268,15 @@ def get_file_item_data(path, release="base"):
         (frel, kflavor, ftype) = path.split("/")
     except ValueError:
         return None
+
+    # realize that 'utopic-generic' is not a kernel flavor but
+    # 'generic' flavor in utopic release.
+    if frel == release:
+        for r in RELEASES:
+            if kflavor.startswith(r + "-"):
+                frel, kflavor = kflavor.split("-", 1)
+                break
+
     if kflavor in INVALID_KERNEL_FLAVORS:
         return None
 
