@@ -74,17 +74,7 @@ kernel_from_mp() {
     local me="" myd=""
     me=$(readlink -f "$0") && myd="${me%/*}" ||
         { error "couldn't figure out full path to $0"; return 1; }
-
-    local dev=""
-    dev=$(awk '$2 == mp { print $1 }' "mp=$mp" /proc/mounts )
-    if [ $? -eq 0 -a -n "$dev" ]; then
-        debug 1 "resizing device $dev for $mp"
-        resize2fs "$dev" ||
-            error "WARNING: resize of $dev failed"
-    else
-        debug 1 "did not find device for $mp. not resizing."
-    fi
-
+        
     if [ -n "$kihelper" ]; then
         if ! command -v "$kihelper" >/dev/null 2>&1 ; then
             [ -x "$myd/$kihelper" ] ||
@@ -253,10 +243,6 @@ main() {
         *) error "bad copy type. one of [none, cp, qcow, auto]"; return 1;;
     esac
 
-    # FIXME: not ideal, but install of some kernels might not fit.
-    # kernel pushing this was keystone
-    qemu-img resize "$myimg" 4G ||
-        { error "failed image resize"; return 1; }
     gid=$(id -g)
     uid=$(id -u)
     chown_to="$gid:$uid"
