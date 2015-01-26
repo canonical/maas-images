@@ -170,13 +170,18 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
 
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
-    def __init__(self, config, out_d, target, v2config):
+    def __init__(self, config, out_d, target, v2config, verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         self.out_d = out_d
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
 
+        if verbosity:
+            self.vflags = ['-' + 'v' * verbosity]
+        else:
+            self.vflags = []
+            
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
         self.releases = {k['release']: k for k in cfgdata['releases']}
@@ -243,10 +248,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
-        gencmd = [os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2"),
-                  "--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
-                  contentsource.url,
-                  os.path.join(self.out_d, rootimg_path)]
+        mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
+        gencmd = ([mci2e] + self.vflags +
+                  ["--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
+                   contentsource.url, os.path.join(self.out_d, rootimg_path)])
         krd_packs = []
         newpaths = set((rootimg_path,))
 
@@ -444,13 +449,15 @@ def main():
 
     mirror_config = {'max_items': args.max, 'filters': filter_list}
 
-    level = (log.ERROR, log.INFO, log.DEBUG)[min(args.verbose, 2)]
+    vlevel = min(args.verbose, 2)
+    level = (log.ERROR, log.INFO, log.DEBUG)[vlevel]
     log.basicConfig(stream=args.log_file, level=level)
 
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
-                                 target=args.target, v2config=args.config)
+                                 target=args.target, v2config=args.config,
+                                 verbosity=vlevel)
 
     tmirror.sync(smirror, initial_path)
 
