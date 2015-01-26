@@ -217,7 +217,7 @@ apply_updates_chrooted() {
         debug 1 "removed foreign arch i386"
     fi
 
-    _apt clean && _apt update ||
+    _apt clean ||
         { error "failed apt-get clean and update"; return 1; }
 
     local f=/etc/network/interfaces
