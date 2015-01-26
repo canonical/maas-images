@@ -1,7 +1,7 @@
 #!/bin/bash
 
 _APT_UPDATED=false
-MEPH2_BRANCH="lp:~smoser/maas/maas-ephemerals-v2"
+MEPH2_BRANCH="lp:maas-images"
 SSTREAM_BRANCH="lp:simplestreams"
 CROSS_DEPS=( qemu-user-static u-boot-tools )
 MEPH2_D=""
@@ -39,8 +39,8 @@ me=$(readlink -f "$0")
 myd=$(dirname "$me")
 if [ -f "$myd/bin/meph2-cloudimg-sync" ]; then
     MEPH2_D="$myd"
-elif [ -f "$PWD/maas-ephemerals-v2/bin/meph2-cloudimg-sync" ]; then
-    MEPH2_D="$PWD/maas-ephemerals-v2"
+elif [ -f "$PWD/maas-images/bin/meph2-cloudimg-sync" ]; then
+    MEPH2_D="$PWD/maas-images"
 fi
 
 
@@ -92,10 +92,10 @@ fi
 apt_install "${deps[@]}"
 
 if [ -z "$MEPH2_D" ]; then
-    error "getting $MEPH2_BRANCH to $PWD/maas-ephemerals-v2"
-    bzr branch "$MEPH2_BRANCH" maas-ephemerals-v2 ||
+    error "getting $MEPH2_BRANCH to $PWD/maas-images"
+    bzr branch "$MEPH2_BRANCH" maas-images ||
         fail "failed branch $MEPH2_BRANCH"
-    MEPH2_D="$PWD/maas-ephemerals-v2"
+    MEPH2_D="$PWD/maas-images"
 fi
 
 if ! $distro_simplestreams; then
