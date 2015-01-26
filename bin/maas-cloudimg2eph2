@@ -124,9 +124,14 @@ human2bytes() {
 resize_image() {
     # grow image 'img' by 'size' and return a string
     # suitable for restoring via restore_image
+    local oversize=""
+    case "$1" in
+        --allow-oversize=*) oversize="${1#--allow-oversize}"; shift;;
+        --allow-oversize) oversize="$2"; shift 2;;
+    esac
     local img="$1" size="$2" ret="" tok=":"
     local oimgsize="" oblocks="" out="" blksize=""
-    local tbytes=""
+    local tbytes="" minblocks=""
     out=$(ls -l "$img") && oimgsize=$(echo "$out" | awk '{print $5}') &&
         [ -n "$oimgsize" ] ||
         { error "failed to get size of $img"; return 1; }
@@ -142,6 +147,13 @@ resize_image() {
             ;;
     esac
 
+    if [ -n "$oversize" ]; then
+        human2bytes "$oversize" || {
+            error "failed convert '$oversize' to bytes";
+            return 1;
+        }
+    fi
+
     out=$(LC_ALL=C dumpe2fs "$img" 2>/dev/null) ||
         { error "failed 'dumpe2fs $img'"; return 1; }
     oblocks=$(printf "%s\n" "$out" |
@@ -154,9 +166,26 @@ resize_image() {
     blksize=$(printf "%s\n" "$out" |
         awk '$0 ~ /^Block size:/ { print $3 }')
 
+    out=$(LC_ALL=c resize2fs -P "$img" 2>/dev/null) ||
+        { error "failed to get min image size"; return 1; }
+    minblocks=$(printf "%s\n" "$out" | awk '$0 ~ /minimum/ { print $NF }')
+    [ -n "$minblocks" ] ||
+        { error "failed to get min blocks in '$img'"; return 1; }
+
     local tblocks=$(($tbytes/$blksize))
+    if [ $tblocks -lt $minblocks ]; then
+        error "target blocks '$tblocks' smaller than minblocks '$minblocks'"
+        if [ -n "$oversize" ]; then
+            tblocks=$(($tblocks+($oversize/$blksize)))
+            error "WARN: '--allow-oversize=$oversize'. tblocks=$tblocks"
+        else
+            return 1
+        fi
+        tbytes=$(($tblocks*$blksize))
+    fi
+
     ddebug 1 "targetting $tbytes bytes. fs is currently $oblocks * $blksize."
-    ddebug 1 "resize to $tblocks blocks"
+    ddebug 1 "resize to $tblocks blocks. minblocks=$minblocks."
 
     if [ "$oimgsize" -lt "$tbytes" ]; then
         truncate --size=$tbytes "$img" ||
