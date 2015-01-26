@@ -166,7 +166,7 @@ resize_image() {
     blksize=$(printf "%s\n" "$out" |
         awk '$0 ~ /^Block size:/ { print $3 }')
 
-    out=$(LC_ALL=c resize2fs -P "$img" 2>/dev/null) ||
+    out=$(LC_ALL=C resize2fs -P "$img" 2>/dev/null) ||
         { error "failed to get min image size"; return 1; }
     minblocks=$(printf "%s\n" "$out" | awk '$0 ~ /minimum/ { print $NF }')
     [ -n "$minblocks" ] ||
