@@ -25,6 +25,7 @@ CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
 MAAS_EPHEM2_DAILY = ("http://maas.ubuntu.com/images/ephemeral-v2/daily/"
                      "streams/v1/com.ubuntu.maas:daily:v2:download.json")
 
+FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
     'i386': ['i386'],
     'i586': ['i386'],
@@ -211,8 +212,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             raise ValueError("Not expecting to sync with content_id: %s" %
                              content_id)
 
-        with contentsource.UrlContentSource(self.target) as tcs:
-            my_prods = sutil.load_content(tcs.read())
+        if self.target == FORCE_URL:
+            my_prods = empty_iid_products(CONTENT_ID)
+        else:
+            with contentsource.UrlContentSource(self.target) as tcs:
+                my_prods = sutil.load_content(tcs.read())
 
         # need the list syntax to not update the dict in place
         for p in [p for p in my_prods['products']]:
@@ -420,7 +424,8 @@ def main():
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
                         help='cloud images mirror')
     parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
-                        help='maas ephemeral v2 mirror')
+                        help="maas ephemeral v2 mirror.  "
+                             'Use "%s" for *DEV* force build' % FORCE_URL)
     parser.add_argument('--config', default=defcfg, help='v2 config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
