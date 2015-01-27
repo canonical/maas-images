@@ -253,7 +253,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         krd_packs = []
         newpaths = set((rootimg_path,))
 
-        kdata_defaults = {'suffix': "", 'di-format': "default"}
+        kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
 
         for info in mykinfo:
             if len(info) == 6:
@@ -283,21 +283,19 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             common.update(ALL_ITEM_TAGS)
 
             items = {}
-            # Check psubarch for xgene-uboot-mustang
-            if psubarch.endswith('mustang'):
+            di_keys = ['di-kernel', 'di-initrd']
+            boot_keys = ['boot-kernel', 'boot-initrd']
+
+            if kdata.get('dtb'):
                 ikeys.append('di-dtb')
-#                ikeys.append('boot-dtb')
+                ikeys.append('boot-dtb')
+                di_keys.append('di-dtb')
+                boot_keys.append('boot-dtb')
+
             for i in ikeys:
                 items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
                             'size': None, 'sha256': None}
                 items[i].update(common)
-
-            di_keys = ['di-kernel', 'di-initrd']
-            boot_keys = ['boot-kernel', 'boot-initrd']
-            # Check psubarch for xgene-uboot-mustang
-            if psubarch.endswith('mustang'):
-                di_keys.append('di-dtb')
-#                boot_keys.append('boot-dtb')
 
             for key in di_keys:
                 items[key]['sha256'] = curdi[key]['sha256']
@@ -312,8 +310,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                  os.path.join(self.out_d, items['boot-kernel']['path']),
                  os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
-#            if suffix.endswith('mustang'):
-#                pack.append(os.path.join(self.out_d, items['boot-dtb']['path']))
+            if kdata.get('dtb'):
+                pack.append(os.path.join(self.out_d, items['boot-dtb']['path']))
+                pack.append(kdata.get('dtb'))
             if 'kihelper' in kdata:
                 pack.append('--kihelper=%s' % kdata['kihelper'])
 
@@ -321,8 +320,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
-#            if suffix.endswith('mustang'):
-#                newpaths.add(items['boot-dtb']['path'])
+            if kdata.get('dtb'):
+                newpaths.add(items['boot-dtb']['path'])
 
             newitems[prodname] = items
 

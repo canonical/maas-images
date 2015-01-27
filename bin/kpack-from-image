@@ -8,11 +8,13 @@ fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out [dtb-out]
+Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out [dtb-out] [dtb-name]
 
   Install kernel-package into image and copy the generated kernel
   and initrd out into kernel-out and initrd-out.
-  'dtb' is the device tree blob (dtb-<version-flavor>)
+  'dtb-out' is the device tree blob (dtb-<version-flavor>)
+  'dtb-name' is filename for the device tree blob
+
 
   Requires sudo to invoke mount-image-callback.
 
@@ -68,10 +70,10 @@ kernel_from_mp() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] ||
-        { bad_Usage "expected 4 or 5 args, got $# [$*]"; return; }
+    [ $# -eq 2 -o $# -eq 4 -o $# -eq 6 ] ||
+        { bad_Usage "expected 4 or 6 args, got $# [$*]"; return; }
     local mp="$1" kpkg="$2" kout="$3" iout="$4" 
-    local dtb_out=${5}
+    local dtb_out="$5" dtb_name="$6"
 
     local me="" myd=""
     me=$(readlink -f "$0") && myd="${me%/*}" ||
@@ -99,9 +101,11 @@ kernel_from_mp() {
         chroot "$mp" /bin/bash -s chrooted "$kpkg" < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
 
+    kernel="vmlinuz"
+    initrd="initrd.img"
     if [ -n "$chown_to" ]; then
-        ( cd "$mp/tmp" && chown "$chown_to" kernel initrd verflav ) || {
-            error "failed chown $mp/tmp/{kernel,initrd,verflav}";
+        ( cd "$mp/tmp" && chown "$chown_to" $kernel $initrd ) || {
+            error "failed chown $mp/tmp/{kernel,initrd}";
             return 1;
         }
     fi
@@ -111,17 +115,18 @@ kernel_from_mp() {
         read verflav < "$mp/tmp/verflav"
         debug 1 "using $kihelper verflav='$verflav'"
         ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
-            "$mp/tmp/kernel" "$mp/tmp/initrd" ||
+            "$mp/tmp/$kernel" "$mp/tmp/$initrd" ||
         { error "$kihelper failed"; return 1; }
     fi
-    mv "$mp/tmp/kernel" "$kout" &&
-        mv "$mp/tmp/initrd" "$iout" ||
+    mv "$mp/tmp/$kernel" "$kout" &&
+        mv "$mp/tmp/$initrd" "$iout" ||
         { error "failed to copy kernel/initrd from $mp"; return 1; }
-    if [ -n "${dtb_out}" ]; then
-        [ -f "$mp/tmp/dtb" ] ||
-            { error "dtb expected but not found"; return 1; }
-        mv "$mp/tmp/dtb" "$dtb_out" ||
-            { error "failed to copy out dtb file"; return 1; }
+    if [ -n "${dtb_name}" ]; then
+	dtb_file=$(find $mp/lib/firmware/$verflav/device-tree/ -iname $dtb_name)
+	if [ ! -z "$dtb_file" ]; then
+	    cp $dtb_file $dtb_out ||
+	    { error "failed to copy out dtb file"; return 1; }
+        fi
     fi
 }
 
@@ -142,7 +147,6 @@ EOF
 }
 
 chrooted() {
-    set -x
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
     # and initramfs and 'verflav' to /tmp/ 
@@ -247,10 +251,10 @@ main() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 -o $# -eq 5 ] ||
-        { bad_Usage "expected 4 or 5 args, got $#"; return; }
+    [ $# -eq 2 -o $# -eq 4 -o $# -eq 6 ] ||
+        { bad_Usage "expected 4 or 6 args, got $#"; return; }
     local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
-    local dtb_out=$5
+    local dtb_out="$5" dtb_name="$6"
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         fail "failed to make tempdir"
@@ -290,10 +294,11 @@ main() {
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
             ${kihelper:+"--kihelper=$kihelper"} \
-            "$kpkg" "$kern_out" "$initrd_out" ${dtb_out:+"${dtb_out}"} ||
-        { error "failed"; return 1; }
+            "$kpkg" "$kern_out" "$initrd_out" ${dtb_out:+"${dtb_out}"} \
+	    ${dtb_name:+"${dtb_name}"} || 
+    { error "failed"; return 1; }
 
-    error "wrote to $kern_out, $initrd_out, ${dtb_out:+ ${dtb_out}}"
+    error "wrote to $kern_out, $initrd_out, ${dtb_out:+${dtb_out}}, ${dtb_name:+${dtb_name}}"
     return
 }
 
