@@ -30,8 +30,9 @@ To debug and use the fake 'maas-cloudimg2eph2', run like:
 == forcing image build ==
 If the maas ephemeral data is up to date with the latest cloud image daily
 then meph2-cloudimg-sync will not do anything.  In order to force it to
-do something, point it at out locally crafted ephemeral data that does
-not contain that.
+do something, you can either
+a.) pass '--target=force'
+b.) point it at out locally crafted ephemeral data that does not contain that.
 
   orig_eurl=http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/index.json
   sstream-mirror --no-item-download $orig_eurl ./local-ephemeral-v2

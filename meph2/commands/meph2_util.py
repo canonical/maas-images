@@ -90,7 +90,7 @@ SUBCOMMANDS = {
             COMMON_FLAGS['orphan-data'], COMMON_FLAGS['dry-run'],
             COMMON_FLAGS['data_d'],
             ('--older', {'default': '3d',
-                'help': 'only remove files orphaned longer than'}),
+                         'help': 'only remove files orphaned longer than'}),
         ],
     },
 }
@@ -271,9 +271,9 @@ class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
         if not filters.filter_item(self.filters, data, src, pedigree):
             return
         super(DryRunMirrorWriter, self).remove_version(self,
-            data, src, target, pedigree)
+                                                       data, src,
+                                                       target, pedigree)
         self.removed_versions.append((self.tcontent_id, pedigree,))
-
 
 
 def main_insert(args):

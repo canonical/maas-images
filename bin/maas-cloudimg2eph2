@@ -105,6 +105,136 @@ ensure_file_d() {
     return 0
 }
 
+human2bytes() {
+    # converts size suitable for input to resize2fs to bytes
+    # s:512 byte sectors, K:kilobytes, M:megabytes, G:gigabytes
+    # none: block size of the image
+    local input=${1} defunit=${2:-1024}
+    local unit count;
+    case "$input" in
+        *s) count=${input%s}; unit=512;;
+        *K) count=${input%K}; unit=1024;;
+        *M) count=${input%M}; unit=$((1024*1024));;
+        *G) count=${input%G}; unit=$((1024*1024*1024));;
+        *)  count=${input}  ; unit=${defunit};;
+    esac
+   _RET=$((${count}*${unit}))
+}
+
+resize_image() {
+    # grow image 'img' by 'size' and return a string
+    # suitable for restoring via restore_image
+    local oversize=""
+    case "$1" in
+        --allow-oversize=*) oversize="${1#--allow-oversize}"; shift;;
+        --allow-oversize) oversize="$2"; shift 2;;
+    esac
+    local img="$1" size="$2" ret="" tok=":"
+    local oimgsize="" oblocks="" out="" blksize=""
+    local tbytes="" minblocks=""
+    out=$(ls -l "$img") && oimgsize=$(echo "$out" | awk '{print $5}') &&
+        [ -n "$oimgsize" ] ||
+        { error "failed to get size of $img"; return 1; }
+
+    case "$size" in
+        +*) human2bytes "${size#+}" ||
+                { error "failed convert '${size#+}' to bytes"; return 1; }
+            tbytes=$(($oimgsize+$_RET))
+            ;;
+        *) human2bytes "$size" ||
+                { error "failed convert '$size' to bytes"; return 1; }
+            tbytes=${_RET}
+            ;;
+    esac
+
+    if [ -n "$oversize" ]; then
+        human2bytes "$oversize" || {
+            error "failed convert '$oversize' to bytes";
+            return 1;
+        }
+    fi
+
+    out=$(e2fsck -fy "$img" 2>&1) ||
+        { error "failed to e2fsck -fy '$img'"; error "$out"; return 1; }
+
+    out=$(LC_ALL=C dumpe2fs "$img" 2>/dev/null) ||
+        { error "failed 'dumpe2fs $img'"; return 1; }
+    oblocks=$(printf "%s\n" "$out" |
+        awk '$0 ~ /^Block count:/ { print $3 }') &&
+        [ -n "$oblocks" ] || {
+            error "failed to record blocks in $img"
+            return
+        }
+
+    blksize=$(printf "%s\n" "$out" |
+        awk '$0 ~ /^Block size:/ { print $3 }')
+
+    out=$(LC_ALL=C resize2fs -P "$img" 2>/dev/null) ||
+        { error "failed to get min image size"; return 1; }
+    minblocks=$(printf "%s\n" "$out" | awk '$0 ~ /minimum/ { print $NF }')
+    [ -n "$minblocks" ] ||
+        { error "failed to get min blocks in '$img'"; return 1; }
+
+    local tblocks=$(($tbytes/$blksize))
+    if [ $tblocks -lt $minblocks ]; then
+        error "target blocks '$tblocks' smaller than minblocks '$minblocks'"
+        if [ -n "$oversize" ]; then
+            tblocks=$(($tblocks+($oversize/$blksize)))
+            error "WARN: '--allow-oversize=$oversize'. tblocks=$tblocks"
+        else
+            return 1
+        fi
+        tbytes=$(($tblocks*$blksize))
+    fi
+
+    ddebug 1 "targetting $tbytes bytes. fs is currently $oblocks * $blksize."
+    ddebug 1 "resize to $tblocks blocks. minblocks=$minblocks."
+
+    if [ "$oimgsize" -lt "$tbytes" ]; then
+        truncate --size=$tbytes "$img" ||
+            { error "failed to resize image to $tbytes"; return 1; }
+    fi
+
+    out=$(e2fsck -fy "$img" 2>&1) ||
+        { error "failed to e2fsck -fy '$img'"; error "$out"; return 1; }
+
+    out=$(resize2fs "$img" "$tblocks" 2>&1) ||
+        { error "failed resize '$img'"; error "$out"; return 1; }
+
+    if [ "$oimgsize" -gt "$tbytes" ]; then
+        truncate --size=$tbytes "$img"
+    fi
+
+    out=$(e2fsck -fy "$img" 2>&1) ||
+        { error "failed to e2fsck -fy '$img'"; error "$out"; return 1; }
+
+    _RET="$oimgsize:$oblocks"
+}
+
+allow_resize_failure() {
+    local arch="$1" bdist="" barch=""
+    barch=${2:-$(uname -m)}
+    bdist=${3:-$(lsb_release -sc)}
+
+    if [ "$arch" = "arm64" ] &&
+       [ "$barch" = "x86_64" -o -z "${barch#i?86}" ] &&
+       [ "$bdist" = "utopic" -o "$bdist" = "vivid" ]; then
+        error "***************************"
+        error "WARN: resize2fs fail allowed for arch=$arch on dist=$bdist/$barch"
+        error "WARN: arm64 builds require utopic due to"
+        error "      'qemu: uncaught target signal 11'"
+        error "as seen http://tinyurl.com/koqo99m"
+        error "        http://paste.ubuntu.com/9900803/"
+        error ""
+        error "resize2fs is broken on utopic: http://pad.lv/1415077"
+        error "***************************"
+        return 0
+    else
+        error "resize image failure not allowed for $arch/$barch/$bdist"
+        return 1
+    fi
+}
+
 main() {
     local short_opts="a:hk:p:v"
     local long_opts="arch:,help,kernel:,krd-pack:,no-gzip,verbose"
@@ -116,6 +246,7 @@ main() {
 
     local cur="" next="" output="" gzip=true kpkg=""
     local kpacks="" src_in="" src="" arch="" vflags=""
+    local working_space="1024M" zero_img="true" fs_img_size="1400M"
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -140,6 +271,11 @@ main() {
     PATH="$(dirname "$0"):$PATH"
     command -v "maas-cloudimg2ephemeral" >/dev/null 2>&1 ||
         { error "do not have maas-cloudimg2ephemeral in path"; return 1; }
+
+    [ -z "$kpkg" ] && {
+        error "no '--kernel' provided, choosing 'linux-generic'"
+        kpkg="linux-generic"
+    }
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         { error "failed to make tempdir"; return 1; }
@@ -180,11 +316,19 @@ main() {
     ensure_file_d "$output" ||
         { error "failed to create dir for $output"; return 1; }
 
+    local restore_img_info=""
+    if [ -n "$working_space" ]; then
+        ddebug 1 "getting '$working_space' in $imgfile"
+        resize_image "$imgfile" "+$working_space" ||
+            { error "failed to grow $imgfile by $working_space"; return 1; }
+        restore_img_info="$_RET"
+    fi
+
     # now imgfile has the root filesystem image to adjust
     local pkout="${TEMP_D}/$kpkg-kernel" piout="${TEMP_D}/$kpkg-initrd"
     local manif="${TEMP_D}/manifest"
     ddebug 1 "starting maas-cloudimg2ephemeral"
-    maas-cloudimg2ephemeral $vflags --zero \
+    maas-cloudimg2ephemeral $vflags \
         ${arch:+"--arch=$arch"} "$imgfile" \
         "$kpkg" "$pkout" "$piout" "$manif" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
@@ -227,6 +371,22 @@ main() {
 	
     done
     ddebug 1 "kpacks done"
+
+    if [ -n "$fs_img_size" ]; then
+        ddebug 1 "setting final image to $fs_img_size"
+        if ! resize_image "$imgfile" "$fs_img_size"; then
+            if ! allow_resize_failure "$arch"; then
+                error "failed resize of $imgfile"
+                return 1;
+            fi
+        fi
+    fi
+
+    if $zero_img; then
+        ddebug 1 "zeroing img"
+        e2fsck -fy "$imgfile" || { error "failed to e2fsck $imgfile"; return 1; }
+        zerofree "$imgfile" || { error "failed zerofree $imgfile"; return 1; }
+    fi
 
     if $gzip; then
         ddebug 1 "gzipping image file"

@@ -20,9 +20,12 @@ import sys
 import tempfile
 import yaml
 
-CLOUD_IMAGES_DAILY = "http://cloud-images.ubuntu.com/daily/streams/v1/com.ubuntu.cloud:daily:download.json"
-MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
+CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
+                      "streams/v1/com.ubuntu.cloud:daily:download.json")
+MAAS_EPHEM2_DAILY = ("http://maas.ubuntu.com/images/ephemeral-v2/daily/"
+                     "streams/v1/com.ubuntu.maas:daily:v2:download.json")
 
+FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
     'i386': ['i386'],
     'i586': ['i386'],
@@ -165,19 +168,24 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
                 size = "unavailable"
             os.unlink(tf.name)
 
-            msg = ("Invalid checksum for '%s'. size=%s. " 
+            msg = ("Invalid checksum for '%s'. size=%s. "
                    "found '%s', expected '%s'" %
                    (path, size, found, str(cksums)))
             raise ValueError(msg)
 
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
-    def __init__(self, config, out_d, target, v2config):
+    def __init__(self, config, out_d, target, v2config, verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         self.out_d = out_d
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
+
+        if verbosity:
+            self.vflags = ['-' + 'v' * verbosity]
+        else:
+            self.vflags = []
 
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
@@ -206,8 +214,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             raise ValueError("Not expecting to sync with content_id: %s" %
                              content_id)
 
-        with contentsource.UrlContentSource(self.target) as tcs:
-            my_prods = sutil.load_content(tcs.read())
+        if self.target == FORCE_URL:
+            my_prods = empty_iid_products(CONTENT_ID)
+        else:
+            with contentsource.UrlContentSource(self.target) as tcs:
+                my_prods = sutil.load_content(tcs.read())
 
         # need the list syntax to not update the dict in place
         for p in [p for p in my_prods['products']]:
@@ -246,10 +257,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
-        gencmd = [os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2"),
-                  "--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
-                  contentsource.url,
-                  os.path.join(self.out_d, rootimg_path)]
+        mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
+        gencmd = ([mci2e] + self.vflags +
+                  ["--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
+                   contentsource.url, os.path.join(self.out_d, rootimg_path)])
         krd_packs = []
         newpaths = set((rootimg_path,))
 
@@ -306,9 +317,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for key in boot_keys:
                 items[key]['kpackage'] = kpkg
 
-            pack = [kpkg,
-                 os.path.join(self.out_d, items['boot-kernel']['path']),
-                 os.path.join(self.out_d, items['boot-initrd']['path']),
+            pack = [
+                kpkg,
+                os.path.join(self.out_d, items['boot-kernel']['path']),
+                os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
             if kdata.get('dtb'):
                 pack.append(os.path.join(self.out_d, items['boot-dtb']['path']))
@@ -328,7 +340,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         for pack in krd_packs:
             gencmd.append('--krd-pack=' + ','.join(pack))
 
-        if len([p for p in newpaths 
+        if len([p for p in newpaths
                 if not os.path.exists(os.path.join(self.out_d, p))]) == 0:
             LOG.info("All paths existed, not re-generating: %s" % newpaths)
         else:
@@ -429,7 +441,8 @@ def main():
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
                         help='cloud images mirror')
     parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
-                        help='maas ephemeral v2 mirror')
+                        help="maas ephemeral v2 mirror.  "
+                             'Use "%s" for *DEV* force build' % FORCE_URL)
     parser.add_argument('--config', default=defcfg, help='v2 config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
@@ -461,13 +474,15 @@ def main():
 
     mirror_config = {'max_items': args.max, 'filters': filter_list}
 
-    level = (log.ERROR, log.INFO, log.DEBUG)[min(args.verbose, 2)]
+    vlevel = min(args.verbose, 2)
+    level = (log.ERROR, log.INFO, log.DEBUG)[vlevel]
     log.basicConfig(stream=args.log_file, level=level)
 
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
-                                 target=args.target, v2config=args.config)
+                                 target=args.target, v2config=args.config,
+                                 verbosity=vlevel)
 
     tmirror.sync(smirror, initial_path)
 
