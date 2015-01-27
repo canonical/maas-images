@@ -25,6 +25,7 @@ import os
 import re
 import sys
 
+
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
     if files is None:
         files = [f for f in os.listdir(target_d) if f.endswith(".json")]
@@ -69,7 +70,7 @@ def signjson_file(fname, status_cb=None):
     sutil.sign_file(fname, inline=False)
     if changed:
         sutil.sign_content(scontent, sutil.signed_fname(fname, inline=True),
-                          inline=True)
+                           inline=True)
     else:
         sutil.sign_file(fname, inline=True)
 
@@ -100,7 +101,8 @@ def get_nonorphan_set(streams, data_d, keyring=None):
     for stream in streams:
         (mirror_url, initial_path) = sutil.path_from_mirror_url(stream, None)
 
-        smirror = mirrors.UrlMirrorReader(mirror_url, mirrors=[data_d],
+        smirror = mirrors.UrlMirrorReader(
+            mirror_url, mirrors=[data_d],
             policy=partial(endswith_policy, initial_path, keyring))
         lmirror = PathListerMirrorWriter()
         lmirror.sync(smirror, initial_path)

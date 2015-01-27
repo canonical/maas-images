@@ -20,8 +20,10 @@ import sys
 import tempfile
 import yaml
 
-CLOUD_IMAGES_DAILY = "http://cloud-images.ubuntu.com/daily/streams/v1/com.ubuntu.cloud:daily:download.json"
-MAAS_EPHEM2_DAILY = "http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json"
+CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
+                      "streams/v1/com.ubuntu.cloud:daily:download.json")
+MAAS_EPHEM2_DAILY = ("http://maas.ubuntu.com/images/ephemeral-v2/daily/"
+                     "streams/v1/com.ubuntu.maas:daily:v2:download.json")
 
 DEFAULT_ARCHES = {
     'i386': ['i386'],
@@ -163,7 +165,7 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
                 size = "unavailable"
             os.unlink(tf.name)
 
-            msg = ("Invalid checksum for '%s'. size=%s. " 
+            msg = ("Invalid checksum for '%s'. size=%s. "
                    "found '%s', expected '%s'" %
                    (path, size, found, str(cksums)))
             raise ValueError(msg)
@@ -181,7 +183,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             self.vflags = ['-' + 'v' * verbosity]
         else:
             self.vflags = []
-            
+
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
         self.releases = {k['release']: k for k in cfgdata['releases']}
@@ -299,9 +301,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for key in ('boot-kernel', 'boot-initrd'):
                 items[key]['kpackage'] = kpkg
 
-            pack = [kpkg,
-                 os.path.join(self.out_d, items['boot-kernel']['path']),
-                 os.path.join(self.out_d, items['boot-initrd']['path']),
+            pack = [
+                kpkg,
+                os.path.join(self.out_d, items['boot-kernel']['path']),
+                os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
             if 'kihelper' in kdata:
                 pack.append('--kihelper=%s' % kdata['kihelper'])
@@ -316,7 +319,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         for pack in krd_packs:
             gencmd.append('--krd-pack=' + ','.join(pack))
 
-        if len([p for p in newpaths 
+        if len([p for p in newpaths
                 if not os.path.exists(os.path.join(self.out_d, p))]) == 0:
             LOG.info("All paths existed, not re-generating: %s" % newpaths)
         else:

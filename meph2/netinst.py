@@ -41,7 +41,7 @@ POCKETS = {
     "release": "",
     "updates": "-updates",
 }
-#POCKETS.update({'proposed': '-proposed'})
+# POCKETS.update({'proposed': '-proposed'})
 
 ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64")
 YYYYMMDD_RE = re.compile("20[0-9][0-9](0[0-9]|1[012])[0-3][0-9]ubuntu.*")
@@ -59,16 +59,16 @@ FLAVOR_COLLISIONS = {
     "generic-lpae": "glp",
 }
 
-##
-## Under a path like: MIRROR/precise-updates/main/installer-i386/
-##  we find a listing of directories like:
-##      20101020ubuntu229
-##      20101020ubuntu230
-##      20101020ubuntu231
-##      current
-##  and under that:
-##     images/netboot/ubuntu-installer/<ARCH>/{linux,initrd.gz}
-##     images/SHA256SUMS{,.gpg}
+# #
+# # Under a path like: MIRROR/precise-updates/main/installer-i386/
+# #  we find a listing of directories like:
+# #      20101020ubuntu229
+# #      20101020ubuntu230
+# #      20101020ubuntu231
+# #      current
+# #  and under that:
+# #     images/netboot/ubuntu-installer/<ARCH>/{linux,initrd.gz}
+# #     images/SHA256SUMS{,.gpg}
 
 
 def get_url_len(url):
@@ -142,10 +142,9 @@ def download(url, target):
 
 def gpg_check(filepath, gpgpath, keyring=GPG_KEYRING):
     cmd = ['gpgv', '--keyring=%s' % keyring, gpgpath, filepath]
-    
+
     _output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     return
-    
 
 
 def get_file_sums_list(url, keyring=GPG_KEYRING, mfilter=None):
@@ -220,7 +219,7 @@ def list_apache_dirs(url):
         if name.endswith('/'):
             dirs += [(name[:-1], pubdate)]
 
-    # return name 
+    # return name
     return dirs
 
 
@@ -256,7 +255,7 @@ def get_file_item_data(path, release="base"):
     if len(toks) == 3 and toks[0] == "generic" and toks[2].startswith("uI"):
         path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
         imgfmt = toks[1]
-        
+
     path = re.sub("^netboot/", "%s-netboot/" % release, path)
     if path.find("-netboot/") < 1:
         return None
@@ -302,7 +301,8 @@ def get_file_item_data(path, release="base"):
     return ret
 
 
-def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype, imgfmt=None):
+def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
+                  imgfmt=None):
     # create the 'item_id' for a kernel file
     # return 2 chars of release, 2 chars of kernel_release
     #        3 chars of kflavor, 3 chars of iflavor, 2 chars for file
@@ -361,7 +361,8 @@ def mine_md(url, release):
                                 imgfmt=data.get('image-format'))
 
             if key in versions[di_ver]['items']:
-                raise Exception("Name Collision: %s[%s]: %s" % (key, release, data))
+                raise Exception("Name Collision: %s[%s]: %s" % (key, release,
+                                                                data))
             curfile = flist[path].copy()
             curfile.update(data)
             versions[di_ver]['items'][key] = curfile
@@ -433,7 +434,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
     num_places = len(releases) * len(POCKETS) * len(arches)
     places = "%s * %s * %s" % (releases, [p for p in POCKETS], arches)
     num_t = min(num_places, NUM_THREADS)
-    
+
     LOG.info("mining d-i data from %s places in %s threads. [%s]." %
              (num_places, num_t, places))
 
@@ -493,7 +494,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
 
             pathmap.update(data['map'])
 
-            #print("%d: %s: %s" % (count, pname, rdata['products'][pname]))
+            # print("%d: %s: %s" % (count, pname, rdata['products'][pname]))
 
         except queue.Empty:
             out_queue.join()
@@ -502,7 +503,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
     if len(errors):
         LOG.warn("There were %s errors, raising first" % len(errors))
         raise errors[0]
-      
+
     simplestreams.util.products_condense(rdata)
     return (rdata, pathmap)
 
@@ -517,16 +518,16 @@ def main():
 
 
 def main_test():
-    #import sys
-    #for a in sys.argv[1:]:
-    #    print(get_file_item_data(a, rel="precise"))
-    #for url in sys.argv[1:]:
-    #    info = requests.get(url).text
-    #    for line in info.splitlines():
-    #        (cksum, fpath) = line.split()
-    #        print(fpath, get_file_item_data(fpath))
+    # import sys
+    # for a in sys.argv[1:]:
+    #     print(get_file_item_data(a, rel="precise"))
+    # for url in sys.argv[1:]:
+    #     info = requests.get(url).text
+    #     for line in info.splitlines():
+    #         (cksum, fpath) = line.split()
+    #         print(fpath, get_file_item_data(fpath))
 
-    #print(json.dumps(mine_md(sys.argv[1]), indent=1))
+    # print(json.dumps(mine_md(sys.argv[1]), indent=1))
     ret = get_products_data()
     print(json.dumps(ret, indent=1))
 
