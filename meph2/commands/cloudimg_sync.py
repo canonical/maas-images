@@ -47,8 +47,8 @@ PATH_FORMATS = {
     'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
     'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
     'di-dtb': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-dtb%(suffix)s",
-    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
     'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
+    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
