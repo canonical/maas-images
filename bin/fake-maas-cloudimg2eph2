@@ -40,10 +40,34 @@ dd if=/dev/zero bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
 
 OIFS="$IFS"
 for kpack in "${kpacks[@]}"; do
+    flags=""
+    pkg=""; kout=""; iout=""; dtbs="";
     IFS=","; set -- $kpack ; IFS="$OIFS"
-    pkg=$1; kout=$2; iout=$3;
-    shift 3
-    error "kpack: pkg=$pkg kout=$kout iout=$iout. flags=$*"
+    error "kpack: $*"
+    while [ $# -ne 0 ]; do
+        case "$1" in
+           --dtb=*|--dtb)
+              [ "$1" = "--dtb" ] &&
+                 { data="$2"; shift; } || data="${1#--dtb=}"
+              echo "dtb-${data%%=*}" > "${data#*=}"
+           -*) flags="$flags $1";;
+           *) 
+              if [ -z "$pkg" ]; then
+                 pkg="$1"
+              elif [ -z "$kout" ]; then
+                 kout="$1"
+                 ensure_d "$kout"
+                 echo "kernel: $pkg" > "$kout"
+              elif [ -z "$iout" ]; then
+                 iout="$1"
+                 ensure_d "$iout"
+                 echo "kernel: $pkg" > "$iout"
+              else
+                 error "confused by $*"
+              fi
+        esac
+        shift;
+    done
     ensure_d "$kout"
     ensure_d "$iout"
     echo "kernel: $pkg" > "$kout"

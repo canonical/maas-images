@@ -235,6 +235,64 @@ allow_resize_failure() {
     fi
 }
 
+handle_kpack() {
+    local short_opts="v"
+    local long_opts="dtb:,kihelper:"
+    local getopt_out=""
+    getopt_out=$(getopt --name "handle_kpack" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return; }
+
+    local dtbs pt img outd ckpkg tkout tiout
+    dtbs=( )
+    pt=( )
+    while [ $# -ne 0 ]; do
+        cur="$1"; next="$2";
+        case "$cur" in
+               --dtb) dtbs[${#dtbs[@]}]="$next"; shift;;
+               --kihelper) pt[${#pt[@]}]="$cur=$next"; shift;;
+            --) shift; break;;
+        esac
+        shift;
+    done
+    # tkout, tiout = target kernel out, target initrd out
+    img="$1"; ckpkg="$2"; tkout="$3"; tiout="$4"
+    shift 4
+    outd="${TEMP_D}/$ckpkg"
+    mkdir -p "$outd" ||
+        { error "failed tempdir for '$ckpkg'"; return 1; }
+
+    ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${pt[*]}"
+    KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "${pt[@]}" \
+        "$imgfile" "$ckpkg" "$outd" ||
+        { error "failed to get $ckpkg output"; return 1; }
+    ensure_file_d "$tkout" "$tiout" ||
+        { error "failed to make dirs for $tkout or $tiout"; return 1; }
+    mv "$outd/kernel" "$tkout" &&
+        mv "$outd/initrd" "$tiout" ||
+        { error "failed copying files"; return 1; }
+
+    local darg="" bname="" outf=""
+    for darg in "${dtbs[@]}"; do
+        # format is name=output. and kpack-from-image names
+        # files dtb-<name>
+        bname=${darg%%=*}
+        outf=${darg#*=}
+        ensure_file_d "$outf" || { error "failed mkdir for $outf"; return 1; }
+        if [ -f "$outd/dtb-$bname" ]; then
+            mv "$outd/dtb-$bname" "$outf" ||
+                { error "failed moving dtb-$bname to $outf"; return 1; }
+        elif [ -f "$outd/dtb-$bname.dtb" ]; then
+            mv "$outd/dtb-$bname.dtb" "$outf" ||
+                { error "failed moving dtb-$bname.dtb to $outf"; return 1; }
+        else
+            error "did not find dtb file $bname"
+            return 1;
+        fi
+    done
+}
+
 main() {
     local short_opts="a:hk:p:v"
     local long_opts="arch:,help,kernel:,krd-pack:,no-gzip,verbose"
@@ -333,42 +391,11 @@ main() {
         "$kpkg" "$pkout" "$piout" "$manif" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
 
-    local i="" ckpkg="" ckout="" ciout="" subarch="" oifs="$IFS"
+    local i="" oifs="$IFS"
     ddebug 1 "starting kpacks: ${kpacks[*]}"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
-        # tkout, tiout = target kernel out, target initrd out
-        ckpkg="$1"; tkout="$2"; tiout="$3"
-        shift 3
-        flags=( "$@" )
-        ckout="${TEMP_D}/$ckpkg-kernel"
-        ciout="${TEMP_D}/$ckpkg-initrd"
-	if [ -n "$4" ] 
-	then
-	    tdout="$4"
-	    cdout="${TEMP_D}/$ckpkg-dtb"
-            ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
-            KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
-                "$ckpkg" "$ckout" "$ciout" "$cdout" "${flags[@]}" ||
-                { error "failed to get $ckpkg output"; return 1; }
-            ensure_file_d "$tkout" "$tiout" ||
-                { error "failed to make dirs for $tkout or $tiout"; return 1; }
-            mv "$ckout" "$tkout" &&
-                mv "$ciout" "$tiout" && 
-		mv "$cdout" "$tdout" ||
-                { error "failed copying files"; return 1; }
-	else
-            ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${flags[*]}"
-            KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "$imgfile" \
-                "$ckpkg" "$ckout" "$ciout" "${flags[@]}" ||
-                { error "failed to get $ckpkg output"; return 1; }
-            ensure_file_d "$tkout" "$tiout" ||
-                { error "failed to make dirs for $tkout or $tiout"; return 1; }
-            mv "$ckout" "$tkout" &&
-                mv "$ciout" "$tiout" ||
-                { error "failed copying files"; return 1; }
-	fi
-	
+        handle_kpack "$imgfile" "$@"
     done
     ddebug 1 "kpacks done"
 

@@ -323,8 +323,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
             if kdata.get('dtb'):
-                pack.append(os.path.join(self.out_d, items['boot-dtb']['path']))
-                pack.append(kdata.get('dtb'))
+                pack.append("--dtb=%s=%s" %
+                            (kdata.get('dtb'),
+                             os.path.join(self.out_d,
+                                          items['boot-dtb']['path'])))
+
             if 'kihelper' in kdata:
                 pack.append('--kihelper=%s' % kdata['kihelper'])
 
