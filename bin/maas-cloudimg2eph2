@@ -263,9 +263,11 @@ handle_kpack() {
     mkdir -p "$outd" ||
         { error "failed tempdir for '$ckpkg'"; return 1; }
 
-    ddebug 1 "$(date -R): starting kpack-from-image for $ckpkg/${pt[*]}"
-    KPACK_SKIP_APT_UPDATE=true kpack-from-image ${vflags} "${pt[@]}" \
-        "$imgfile" "$ckpkg" "$outd" ||
+    local cmd=""
+    cmd=( env KPACK_SKIP_APT_UPDATE=true kpack-from-image \
+             $vflags "${pt[@]}" "$imgfile" "$ckpkg" "$outd" )
+    ddebug 1 "$(date -R): starting ${cmd[*]}"
+    "${cmd[@]}" ||
         { error "failed to get $ckpkg output"; return 1; }
     ensure_file_d "$tkout" "$tiout" ||
         { error "failed to make dirs for $tkout or $tiout"; return 1; }
@@ -395,7 +397,8 @@ main() {
     ddebug 1 "starting kpacks: ${kpacks[*]}"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
-        handle_kpack "$imgfile" "$@"
+        handle_kpack "$imgfile" "$@" ||
+            { error "handle_kpack '$imgfile' $* failed"; return 1; }
     done
     ddebug 1 "kpacks done"
 
