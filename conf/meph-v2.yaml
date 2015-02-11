@@ -57,7 +57,8 @@ releases:
     - [trusty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot],
        {suffix: .xgene, kihelper: kh-xgene, di-format: 'xgene'}]
     - [trusty,  arm64,   *mustang, generic,   linux-generic,            [*mustang],
-       {suffix: .xgene-mustang, kihelper: kh-xgene, di-format: 'xgene', dtb: 'apm-mustang.dtb'}]
+       {suffix: .xgene-mustang, kihelper: kh-xgene, di-format: 'xgene',
+        dtb: 'apm-mustang.dtb'}]
     - [utopic,  amd64,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
     - [utopic,  arm64,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
     - [utopic,  armhf,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
