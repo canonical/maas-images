@@ -96,7 +96,7 @@ kernel_from_mp() {
 
     if [ -n "$kihelper" ]; then
         local verflav=""
-        read verflav < "$mp/tmp/verflav"
+        read verflav < "$mp/$ch_outd/verflav"
         debug 1 "using $kihelper verflav='$verflav'"
         ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
             "$mp/${ch_outd}/kernel" "$mp/${ch_outd}/initrd" ||
@@ -141,6 +141,8 @@ chrooted() {
     export LANG=C
     kpkg="$1"
     outd="$2"
+    shift 2;
+    pkgs=( "$kpkg" "$@" )
 
     mkdir -p "$outd" || { error "failed mkdir $outd"; return 1; }
     local stamp="$outd/stamp"
@@ -162,7 +164,8 @@ chrooted() {
         { error "failed configuring additional modules!"; return 1; }
 
     DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
-        $emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
+        $emd apt-get install --assume-yes --quiet \
+            $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
         { error "failed install of $copymods $*"; return 1; }
 
@@ -184,6 +187,7 @@ chrooted() {
     [ -z "$kernel" ] && { error "no kernel found!" 1>&2; return 1; }
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
+    debug 2 "verflav is $verflav"
 
     if [ "$initrd" -ot "$stamp" ]; then
         debug 1 "initramfs did not update by package install. regenerating."
@@ -194,15 +198,16 @@ chrooted() {
 
     local name="" t="" outf=""
     for f in /boot/*-${verflav}; do
-        case "$f" in
+        t=$(basename "$f")
+        case "$t" in
             vmlinu?*) name="kernel";;
             initrd.img*) name="initrd";;
             *)
                 # name is the basename with -${verfla} removed
-                t=$(basename "$f")
                 name="${t%-${verflav}}"
         esac
         outf="$outd/$name"
+        debug 2 "$f -> $outf"
         cp "$f" "$outf" && chmod ugo+r "$outf" ||
             { error "failed to copy '$name' from '$f'"; return 1; }
     done
@@ -211,6 +216,7 @@ chrooted() {
     for f in "/lib/firmware/$verflav/device-tree"/*; do
         [ -f "$f" ] || continue
         outf="$outd/device-tree-${f##*/}"
+        debug 2 "$f -> $outf"
         cp "$f" "$outf" && chmod ugo+r "$outf" ||
             { error "failed to copy '$outf' from '$f'"; return 1; }
     done
