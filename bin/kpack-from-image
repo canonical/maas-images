@@ -215,7 +215,7 @@ chrooted() {
     local path="/lib/firmware/$verflav/device-tree"
     for f in "/lib/firmware/$verflav/device-tree"/*; do
         [ -f "$f" ] || continue
-        outf="$outd/device-tree-${f##*/}"
+        outf="$outd/dtb-${f##*/}"
         debug 2 "$f -> $outf"
         cp "$f" "$outf" && chmod ugo+r "$outf" ||
             { error "failed to copy '$outf' from '$f'"; return 1; }
