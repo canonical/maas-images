@@ -459,8 +459,8 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
         t.setDaemon(True)
         t.start()
 
-    for n, release in enumerate(releases):
-        ver = VERSIONS[n]
+    for release in releases:
+        ver = VERSIONS[RELEASES.index(release)]
         for (pocket, psuffix) in POCKETS.items():
             for arch in arches:
                 mirror = HTTP_MIRRORS.get(arch, HTTP_MIRRORS.get('default'))
