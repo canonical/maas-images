@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -17,6 +18,7 @@ import urllib.request
 import simplestreams
 from simplestreams import mirrors
 from simplestreams import objectstores
+from simplestreams import log
 from simplestreams.log import LOG
 
 
@@ -529,6 +531,7 @@ def main():
     tstore = objectstores.FileStore("out.d")
     tmirror = mirrors.ObjectStoreMirrorWriter(config=None, objectstore=tstore)
 
+    log.basicConfig(stream=sys.stderr, level=log.DEBUG)
     cpath = "streams/v1/%s.json" % CONTENT_ID
     tmirror.sync(smirror, cpath)
 
