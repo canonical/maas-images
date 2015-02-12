@@ -230,10 +230,10 @@ def get_file_item_data(path, release="base"):
     # http://ports.ubuntu.com/ubuntu-ports/dists/trusty/main
     #    /installer-armhf/current/images/MD5SUMS
     #    /installer-ppc64el/current/images/MD5SUMS
-    # return either None (not a kernel/initrd)
-    #  or a tuple of release-kernel, kernel-flavor, initrd-flavor, filetype
+    # return either None (not a kernel/initrd/dtb)
+    # or a tuple of release-kernel, kernel-flavor, initrd-flavor, filetype
 
-    # at the moment the only 'initrd flavor' that we're supporting is netboot
+    # at the moment the only 'initrd-flavor' that we're supporting is netboot
     if path.find("netboot") < 0:
         return None
     iflavor = "netboot"
@@ -250,9 +250,11 @@ def get_file_item_data(path, release="base"):
         else:
             path = "netboot/" + toks[0] + "/" + toks[1]
 
-    # generic/xgene/uInitrd is generic flavor, xgene-uboot image
+    # generic/xgene/uInitrd is generic flavor,
+    # xgene-uboot or xgene-uboot-mustang image
     imgfmt = "default"
-    if len(toks) == 3 and toks[0] == "generic" and toks[2].startswith("uI"):
+    if (len(toks) == 3 and toks[0] == "generic" and
+            (toks[2].startswith('uI') or toks[2].endswith('dtb'))):
         path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
         imgfmt = toks[1]
 
@@ -262,6 +264,7 @@ def get_file_item_data(path, release="base"):
     path = re.sub("/ubuntu-installer/[^/]*/", "/", path)
     path = re.sub("/(vmlinu[xz]|linux|uImage)$", "/kernel", path)
     path = re.sub("/(initrd.gz|initrd|uInitrd)$", "/initrd", path)
+    path = re.sub("/[^/]*.dtb", "/dtb", path)
     path = re.sub("-netboot", "", path)
     try:
         (frel, kflavor, ftype) = path.split("/")
@@ -279,7 +282,7 @@ def get_file_item_data(path, release="base"):
     if kflavor in INVALID_KERNEL_FLAVORS:
         return None
 
-    if ftype not in ("kernel", "initrd"):
+    if ftype not in ("kernel", "initrd", "dtb"):
         return None
 
     # frel (file release) is 'quantal' for hardware enablement
@@ -408,6 +411,8 @@ class MineNetbootMetaData(threading.Thread):
                         npath = ndir + "/kernel"
                     elif item['ftype'] == 'initrd':
                         npath = ndir + "/initrd-%s" % (item['initrd-flavor'])
+                    elif item['ftype'] == 'dtb':
+                        npath = ndir + "/dtb"
                     else:
                         raise Exception("unknown ftype '%s' in '%s'" %
                                         (item['ftype'], item))

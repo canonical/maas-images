@@ -43,8 +43,10 @@ PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 PCOMMON = "%(release)s/%(arch)s/"
 PATH_FORMATS = {
     'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
+    'boot-dtb': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-dtb%(suffix)s",
     'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
     'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
+    'di-dtb': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-dtb%(suffix)s",
     'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
     'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
 }
@@ -244,8 +246,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         newitems = {}
 
-        ikeys = ('boot-kernel', 'boot-initrd', 'di-initrd', 'di-kernel',
-                 'root-image.gz')
+        ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel', 'di-initrd',
+                 'root-image.gz']
+
         mykinfo = self.releases[release]['kernels']
 
         vername = flat['version_name']
@@ -261,7 +264,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         krd_packs = []
         newpaths = set((rootimg_path,))
 
-        kdata_defaults = {'suffix': "", 'di-format': "default"}
+        kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
 
         for info in mykinfo:
             if len(info) == 6:
@@ -291,18 +294,27 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             common.update(ALL_ITEM_TAGS)
 
             items = {}
+            di_keys = ['di-kernel', 'di-initrd']
+            boot_keys = ['boot-kernel', 'boot-initrd']
+
+            if kdata.get('dtb'):
+                ikeys.append('di-dtb')
+                ikeys.append('boot-dtb')
+                di_keys.append('di-dtb')
+                boot_keys.append('boot-dtb')
+
             for i in ikeys:
                 items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
                             'size': None, 'sha256': None}
                 items[i].update(common)
 
-            for key in ('di-kernel', 'di-initrd'):
+            for key in di_keys:
                 items[key]['sha256'] = curdi[key]['sha256']
                 items[key]['size'] = int(curdi[key]['size'])
                 items[key]['_opath'] = curdi[key]['path']
                 items[key]['di_version'] = subs['di_version']
 
-            for key in ('boot-kernel', 'boot-initrd'):
+            for key in boot_keys:
                 items[key]['kpackage'] = kpkg
 
             pack = [
@@ -310,6 +322,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 os.path.join(self.out_d, items['boot-kernel']['path']),
                 os.path.join(self.out_d, items['boot-initrd']['path']),
             ]
+            if kdata.get('dtb'):
+                pack.append("--dtb=%s=%s" %
+                            (kdata.get('dtb'),
+                             os.path.join(self.out_d,
+                                          items['boot-dtb']['path'])))
+
             if 'kihelper' in kdata:
                 pack.append('--kihelper=%s' % kdata['kihelper'])
 
@@ -317,6 +335,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
             newpaths.add(items['boot-kernel']['path'])
             newpaths.add(items['boot-initrd']['path'])
+            if kdata.get('dtb'):
+                newpaths.add(items['boot-dtb']['path'])
 
             newitems[prodname] = items
 

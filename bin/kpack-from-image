@@ -8,10 +8,14 @@ fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] image kernel-package kernel-out initrd-out
+Usage: ${0##*/} [ options ] image kernel-package out-dir
 
   Install kernel-package into image and copy the generated kernel
-  and initrd out into kernel-out and initrd-out.
+  and initrd out into out-dir
+    out-dir/
+      kernel
+      initrd
+      dtb-<filename>.dtb # for each file in lib/firmare/<ver>/device-tree
 
   Requires sudo to invoke mount-image-callback.
 
@@ -67,9 +71,9 @@ kernel_from_mp() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 ] ||
-        { bad_Usage "expected 4 args, got $# [$*]"; return; }
-    local mp="$1" kout="$2" iout="$3" kpkg="$4"
+    [ $# -eq 3 ] ||
+        { bad_Usage "expected 3 args, got $# [$*]"; return; }
+    local mp="$1" kpkg="$2" outd="$3"
 
     local me="" myd=""
     me=$(readlink -f "$0") && myd="${me%/*}" ||
@@ -82,29 +86,33 @@ kernel_from_mp() {
             kihelper="$myd/$kihelper"
         fi
     fi
+    [ -d "$outd" ] || mkdir -p "$outd" ||
+        { error "failed mkdir $outd"; return 1; }
 
+    local ch_outd="/tmp/output"
     KPACK_SKIP_APT_UPDATE=$skip_update \
-        chroot "$mp" /bin/bash -s chrooted "$kpkg" < "$me" ||
+        chroot "$mp" /bin/bash -s chrooted "$kpkg" "$ch_outd" < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
 
+    if [ -n "$kihelper" ]; then
+        local verflav=""
+        read verflav < "$mp/$ch_outd/verflav"
+        debug 1 "using $kihelper verflav='$verflav'"
+        ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
+            "$mp/${ch_outd}/kernel" "$mp/${ch_outd}/initrd" ||
+        { error "$kihelper failed"; return 1; }
+    fi
+
     if [ -n "$chown_to" ]; then
-        ( cd "$mp/tmp" && chown "$chown_to" kernel initrd verflav ) || {
-            error "failed chown $mp/tmp/{kernel,initrd,verflav}";
+        ( cd "$mp/$ch_outd" && chown "$chown_to" * ) || {
+            error "failed chown $mp/$ch_outd/*";
             return 1;
         }
     fi
 
-    if [ -n "$kihelper" ]; then
-        local verflav=""
-        read verflav < "$mp/tmp/verflav"
-        debug 1 "using $kihelper verflav='$verflav'"
-        ROOT="$mp" VERSION_FLAVOR="$verflav" "$kihelper" \
-            "$mp/tmp/kernel" "$mp/tmp/initrd" ||
-        { error "$kihelper failed"; return 1; }
-    fi
-    mv "$mp/tmp/kernel" "$kout" &&
-        mv "$mp/tmp/initrd" "$iout" ||
-        { error "failed to copy kernel/initrd from $mp"; return 1; }
+    mv "$mp/$ch_outd/"* "$outd" ||
+        { error "failed move files from chrooted outdi '$ch_outd'"; return 1; }
+
 }
 
 config_addl_modules() {
@@ -131,10 +139,13 @@ chrooted() {
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
     local verflav initrd kernel
     export LANG=C
-    pkgs=( "$@" )
     kpkg="$1"
+    outd="$2"
+    shift 2;
+    pkgs=( "$kpkg" "$@" )
 
-    local stamp="/tmp/stamp"
+    mkdir -p "$outd" || { error "failed mkdir $outd"; return 1; }
+    local stamp="$outd/stamp"
     touch "$stamp"
 
     $skip_update || apt-get update -q ||
@@ -153,7 +164,8 @@ chrooted() {
         { error "failed configuring additional modules!"; return 1; }
 
     DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
-        $emd apt-get install --assume-yes --quiet $copymods "$@" </dev/null
+        $emd apt-get install --assume-yes --quiet \
+            $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
         { error "failed install of $copymods $*"; return 1; }
 
@@ -175,6 +187,7 @@ chrooted() {
     [ -z "$kernel" ] && { error "no kernel found!" 1>&2; return 1; }
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
+    debug 2 "verflav is $verflav"
 
     if [ "$initrd" -ot "$stamp" ]; then
         debug 1 "initramfs did not update by package install. regenerating."
@@ -183,11 +196,32 @@ chrooted() {
 
     [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
-    chmod ugo+r "$kernel" "$initrd" &&
-        cp "$kernel" /tmp/kernel && cp "$initrd" /tmp/initrd ||
-        { error "failed to copy $kernel/$initrd to /tmp"; return 1; }
+    local name="" t="" outf=""
+    for f in /boot/*-${verflav}; do
+        t=$(basename "$f")
+        case "$t" in
+            vmlinu?*) name="kernel";;
+            initrd.img*) name="initrd";;
+            *)
+                # name is the basename with -${verfla} removed
+                name="${t%-${verflav}}"
+        esac
+        outf="$outd/$name"
+        debug 2 "$f -> $outf"
+        cp "$f" "$outf" && chmod ugo+r "$outf" ||
+            { error "failed to copy '$name' from '$f'"; return 1; }
+    done
 
-    echo "$verflav" > /tmp/verflav ||
+    local path="/lib/firmware/$verflav/device-tree"
+    for f in "/lib/firmware/$verflav/device-tree"/*; do
+        [ -f "$f" ] || continue
+        outf="$outd/dtb-${f##*/}"
+        debug 2 "$f -> $outf"
+        cp "$f" "$outf" && chmod ugo+r "$outf" ||
+            { error "failed to copy '$outf' from '$f'"; return 1; }
+    done
+
+    echo "$verflav" > "$outd/verflav" ||
         { error "failed to write verflavor"; return 1; }
 
     rm -f "$stamp"
@@ -217,8 +251,9 @@ main() {
         shift;
     done
 
-    [ $# -eq 2 -o $# -eq 4 ] || { bad_Usage "expected 4 args, got $#"; return; }
-    local img="$1" kpkg="$2" kern_out=${3:-kernel} initrd_out=${4:-initrd}
+    [ $# -eq 3 ] ||
+        { bad_Usage "expected 3 args, got $#"; return; }
+    local img="$1" kpkg="$2" outd=${3}
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         fail "failed to make tempdir"
@@ -254,10 +289,11 @@ main() {
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
             ${kihelper:+"--kihelper=$kihelper"} \
-            "$kern_out" "$initrd_out" "$kpkg" ||
-        { error "failed"; return 1; }
+            "$kpkg" "$outd" ||
+    { error "failed"; return 1; }
 
-    error "wrote to $kern_out, $initrd_out"
+    error "wrote to $outd"
+    error "  " $(cd "$outd" && echo *)
     return
 }
 
