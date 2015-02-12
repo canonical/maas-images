@@ -307,7 +307,7 @@ def get_file_item_data(path, release="base"):
 
 
 def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
-                  imgfmt=None):
+                  imgfmt=None, basename=None):
     # create the 'item_id' for a kernel file
     # return 2 chars of release, 2 chars of kernel_release
     #        3 chars of kflavor, 3 chars of iflavor, 2 chars for file
@@ -316,10 +316,15 @@ def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
     else:
         iflavtok = iflavor[0:3]
     flavtok = FLAVOR_COLLISIONS.get(kflavor, kflavor[0:3])
-    if imgfmt:
+    if ftype == "dtb" and basename:
+        if basename.endswith(".dtb"):
+            basename = basename[:-4]
+        fmttok = "." + basename
+    elif imgfmt:
         fmttok = "." + imgfmt
     else:
         fmttok = ""
+
     return (release[0:2] + kernel_release[0:2] + flavtok + ftype[0:2] +
             iflavtok + fmttok)
 
@@ -357,13 +362,15 @@ def mine_md(url, release):
             data['size'] = get_url_len("/".join((curp, path,)))
             data['url'] = curp + "/" + path
             data['pubdate'] = pubdate
+            data['basename'] = path[path.rfind('/')+1:]
 
             key = get_kfile_key(release=release,
                                 kernel_release=data.get('kernel-release'),
                                 kflavor=data.get('kernel-flavor'),
                                 iflavor=data.get('initrd-flavor'),
                                 ftype=data.get('ftype'),
-                                imgfmt=data.get('image-format'))
+                                imgfmt=data.get('image-format'),
+                                basename=data.get('basename'))
 
             if key in versions[di_ver]['items']:
                 raise Exception(
@@ -422,8 +429,15 @@ class MineNetbootMetaData(threading.Thread):
                             raise Exception("unknown ftype '%s' in '%s'" %
                                             (item['ftype'], item))
 
-                        if 'image-format' in item and item['image-format']:
+                        if item.get('ftype') == 'dtb':
+                            npath = npath + "." + item['basename']
+                        elif 'image-format' in item and item['image-format']:
                             npath = npath + "." + item['image-format']
+
+                        if npath in data['map']:
+                            msg = ("npath collide '%s'. old: %s\n new: %s\n" %
+                                   (npath, data['map'][npath], item))
+                            raise ValueError(msg)
 
                         item['path'] = npath
                         data['map'][npath] = item['url']
@@ -527,7 +541,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
 
 
 def main():
-    smirror = NetbootMirrorReader(arches=["arm64"], releases=["trusty"])
+    smirror = NetbootMirrorReader(arches=["armhf"], releases=["trusty"])
     tstore = objectstores.FileStore("out.d")
     tmirror = mirrors.ObjectStoreMirrorWriter(config=None, objectstore=tstore)
 
