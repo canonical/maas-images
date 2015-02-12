@@ -404,27 +404,36 @@ class MineNetbootMetaData(threading.Thread):
 
             # now create a mapping, "local path" -> full url
             data['map'] = {}
-            for serial, vdata in found.items():
-                for item in vdata['items'].values():
-                    ndir = fprefix + '/'.join((release, arch, serial,
-                                               item['kernel-release'],
-                                               item['kernel-flavor'],))
-                    if item['ftype'] == "kernel":
-                        npath = ndir + "/kernel"
-                    elif item['ftype'] == 'initrd':
-                        npath = ndir + "/initrd-%s" % (item['initrd-flavor'])
-                    elif item['ftype'] == 'dtb':
-                        npath = ndir + "/dtb"
-                    else:
-                        raise Exception("unknown ftype '%s' in '%s'" %
-                                        (item['ftype'], item))
+            try:
+                for serial, vdata in found.items():
+                    for item in vdata['items'].values():
+                        ndir = fprefix + '/'.join((release, arch, serial,
+                                                   item['kernel-release'],
+                                                   item['kernel-flavor'],))
+                        if item['ftype'] == "kernel":
+                            npath = ndir + "/kernel"
+                        elif item['ftype'] == 'initrd':
+                            npath = ndir + "/initrd-%s" % item['initrd-flavor']
+                        elif item['ftype'] == 'dtb':
+                            npath = ndir + "/dtb"
+                        else:
+                            raise Exception("unknown ftype '%s' in '%s'" %
+                                            (item['ftype'], item))
 
-                    if 'image-format' in item and item['image-format']:
-                        npath = npath + "." + item['image-format']
+                        if 'image-format' in item and item['image-format']:
+                            npath = npath + "." + item['image-format']
 
-                    item['path'] = npath
-                    data['map'][npath] = item['url']
-                    del item['url']
+                        item['path'] = npath
+                        data['map'][npath] = item['url']
+                        del item['url']
+            except Exception as e:
+                LOG.warn("path creation failed: %s rel=%s" %
+                         (self.name, release), exc_info=1)
+                LOG.warn("excption: %s" % e)
+                data['error'] = e
+                self.out_queue.put(data)
+                self.in_queue.task_done()
+                continue
 
             data['versions'] = found
             data['error'] = False
