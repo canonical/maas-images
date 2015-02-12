@@ -364,8 +364,10 @@ def mine_md(url, release):
                                 imgfmt=data.get('image-format'))
 
             if key in versions[di_ver]['items']:
-                raise Exception("Name Collision: %s[%s]: %s" % (key, release,
-                                                                data))
+                raise Exception(
+                    "Name Collision: %s[%s]: %s.\nCollided with: %s" %
+                    (key, release, data, versions[di_ver]['items'][key]))
+
             curfile = flist[path].copy()
             curfile.update(data)
             versions[di_ver]['items'][key] = curfile
