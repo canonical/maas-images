@@ -49,7 +49,7 @@ for kpack in "${kpacks[@]}"; do
            --dtb=*|--dtb)
               [ "$1" = "--dtb" ] &&
                  { data="$2"; shift; } || data="${1#--dtb=}"
-              echo "dtb-${data%%=*}" > "${data#*=}"
+              echo "dtb-${data%%=*}" > "${data#*=}";;
            -*) flags="$flags $1";;
            *) 
               if [ -z "$pkg" ]; then
