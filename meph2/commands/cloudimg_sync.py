@@ -246,9 +246,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         newitems = {}
 
-        ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel', 'di-initrd',
-                 'root-image.gz']
-
         mykinfo = self.releases[release]['kernels']
 
         vername = flat['version_name']
@@ -296,6 +293,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             items = {}
             di_keys = ['di-kernel', 'di-initrd']
             boot_keys = ['boot-kernel', 'boot-initrd']
+            ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel',
+                     'di-initrd', 'root-image.gz']
 
             if kdata.get('dtb'):
                 ikeys.append('di-dtb')
