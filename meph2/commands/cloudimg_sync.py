@@ -483,6 +483,15 @@ def main():
 
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
+    LOG.info(
+        "summary: \n " + '\n '.join([
+            "source: %s" % args.source,
+            "target: %s" % args.target,
+            "output: %s" % args.output_d,
+            "arches: %s" % args.arches,
+            "filters: %s" % filter_list,
+        ]) + '\n')
+
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
                                  verbosity=vlevel)
