@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 
-from distro_info import UbuntuDistroInfo
 import json
 import os
 import re
@@ -21,6 +20,8 @@ from simplestreams import objectstores
 from simplestreams import log
 from simplestreams.log import LOG
 
+from .distro_info import RELEASES, LTS_RELEASES
+
 
 APACHE_PARSE_RE = re.compile(r'href="([^"]*)".*(..-...-.... '
                              r'..:..).*?(\d+[^\s<]*|-)')
@@ -33,10 +34,6 @@ HTTP_MIRRORS = {
     "amd64": PRIMARY_MIRROR,
     'default': PORTS_MIRROR,
 }
-_d = UbuntuDistroInfo()
-RELEASES = _d.supported()
-VERSIONS = [_v.replace(" LTS", "") for _v in _d.supported(result="release")]
-LTS_RELEASES = [_v for _v in RELEASES if _d.is_lts(_v)]
 
 # add 'proposed': '-proposed' to get proposed pocket also
 POCKETS = {
@@ -92,7 +89,9 @@ class NetbootMirrorReader(mirrors.MirrorReader):
     _products = {}
     _pathmap = {}
 
-    def __init__(self, releases=RELEASES, arches=ARCHES):
+    def __init__(self, releases=None, arches=ARCHES):
+        if releases is None:
+            releases = RELEASES.keys()
         self.releases = releases
         self.arches = arches
 
@@ -276,7 +275,7 @@ def get_file_item_data(path, release="base"):
     # realize that 'utopic-generic' is not a kernel flavor but
     # 'generic' flavor in utopic release.
     if frel == release:
-        for r in RELEASES:
+        for r in RELEASES.keys():
             if kflavor.startswith(r + "-"):
                 frel, kflavor = kflavor.split("-", 1)
                 break
@@ -458,10 +457,13 @@ class MineNetbootMetaData(threading.Thread):
             self.in_queue.task_done()
 
 
-def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
+def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
 
     in_queue = queue.Queue()
     out_queue = queue.Queue()
+
+    if releases is None:
+        releases = RELEASES.keys()
 
     num_places = len(releases) * len(POCKETS) * len(arches)
     places = "%s * %s * %s" % (releases, [p for p in POCKETS], arches)
@@ -476,7 +478,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=RELEASES):
         t.start()
 
     for release in releases:
-        ver = VERSIONS[RELEASES.index(release)]
+        ver = RELEASES[release]['version']
         for (pocket, psuffix) in POCKETS.items():
             for arch in arches:
                 mirror = HTTP_MIRRORS.get(arch, HTTP_MIRRORS.get('default'))
