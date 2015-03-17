@@ -33,6 +33,7 @@ DEFAULT_ARCHES = {
     'x86_64': ['i386', 'amd64', 'armhf', 'arm64'],
     'ppc64le': ['ppc64el'],
     'armhf': ['armhf'],
+    'aarch64': ['arm64', 'armhf'],
 }
 
 ALL_ITEM_TAGS = {'label': 'daily'}
@@ -456,7 +457,13 @@ def main():
     args = parser.parse_args()
 
     if len(args.arches) == 0:
-        arches = DEFAULT_ARCHES[os.uname()[4]]
+        try:
+            karch = os.uname()[4]
+            arches = DEFAULT_ARCHES[karch]
+        except KeyError:
+            msg = "No default arch list for kernel arch '%s'. Try '--arches'."
+            sys.stderr.write(msg % karch + "\n")
+            return False
     else:
         arches = []
         for f in args.arches:
