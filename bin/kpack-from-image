@@ -248,7 +248,7 @@ main() {
         cur="$1"; next="$2";
         case "$cur" in
             -h|--help) Usage ; exit 0;;
-            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
                --kihelper) kihelper="$next"; shift;;
                --copy) copy=$next; shift;;
             --) shift; break;;
