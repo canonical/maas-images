@@ -6,7 +6,10 @@
 # default is 'linux-generic'
 #
 # kernel arrays are
-#   krel, karch, primary-subarch, flavor, kernel-package, [subarches]
+#   krel, karch, primary-subarch, flavor, kernel-package, [subarches], {khdata}
+#
+# 'khdata' is an optional dictionary used to tell which dtb files to pull or
+# what kernel helper to run on the kernel and initramfs.
 
 subarches:
  - &sa_hwe_p  [generic, hwe-p]
