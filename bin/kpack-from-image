@@ -90,7 +90,7 @@ kernel_from_mp() {
         { error "failed mkdir $outd"; return 1; }
 
     local ch_outd="/tmp/output"
-    KPACK_SKIP_APT_UPDATE=$skip_update \
+    KPACK_SKIP_APT_UPDATE=$skip_update CHROOTED_VERBOSITY=$VERBOSITY \
         chroot "$mp" /bin/bash -s chrooted "$kpkg" "$ch_outd" < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
 
@@ -135,6 +135,7 @@ chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
     # and initramfs and 'verflav' to /tmp/ 
+    VERBOSITY=${CHROOTED_VERBOSITY:-${VERBOSITY}}
     local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
     local verflav initrd kernel
@@ -236,14 +237,14 @@ main() {
         eval set -- "${getopt_out}" ||
         { bad_Usage; return; }
 
-    local cur="" next=""
+    local cur="" next="" vflags=""
     local output="" copy=auto chown_to="" gid="" uid=""
 
     while [ $# -ne 0 ]; do
         cur="$1"; next="$2";
         case "$cur" in
             -h|--help) Usage ; exit 0;;
-            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";
                --kihelper) kihelper="$next"; shift;;
                --copy) copy=$next; shift;;
             --) shift; break;;
@@ -254,6 +255,8 @@ main() {
     [ $# -eq 3 ] ||
         { bad_Usage "expected 3 args, got $#"; return; }
     local img="$1" kpkg="$2" outd=${3}
+
+    [ -z "$vflags" ] || vflags="-${vflags}"
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
         fail "failed to make tempdir"
@@ -286,7 +289,7 @@ main() {
         "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
         "http_proxy=$http_proxy" PACKAGES="$kpkg" \
         mount-image-callback --sys --proc \
-            --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" \
+            --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" $vflags \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
             ${kihelper:+"--kihelper=$kihelper"} \
             "$kpkg" "$outd" ||
