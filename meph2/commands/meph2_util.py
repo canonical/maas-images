@@ -17,7 +17,9 @@ DEF_KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
 STREAMS_D = "streams/v1/"
 
-LABELS = ('beta1', 'beta2', 'rc', 'release')
+LABELS = ('alpha1', 'alpha2', 'alpha3',
+          'beta1', 'beta2', 'beta3',
+          'rc', 'release')
 
 COMMON_ARGS = []
 COMMON_FLAGS = {
