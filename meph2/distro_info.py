@@ -43,7 +43,6 @@ def get_ubuntu_info(date=None):
                 getall(result="release", date=date)]
     full_codenames = [x.split('"')[1] for x in fullnames]
     supported = udi.supported(date=date)
-    devel = udi.devel(date=date)
     try:
         devel = udi.devel(date=date)
     except distro_info.DistroDataOutdated as e:
