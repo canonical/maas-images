@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #
 from distro_info import UbuntuDistroInfo
+import sys
 
 ## See LP: #1253208 for why this is so complicated.
 
@@ -43,6 +44,14 @@ def get_ubuntu_info(date=None):
     full_codenames = [x.split('"')[1] for x in fullnames]
     supported = udi.supported(date=date)
     devel = udi.devel(date=date)
+    try:
+        devel = udi.devel(date=date)
+    except distro_info.DistroDataOutdated as e:
+        sys.stderr.write(
+            "distro_info.UbuntuDistroInfo() raised exception (%s)."
+            " Using stable release as devel.\n" % e)
+        devel = udi.stable(date=date)
+
     ret = []
     for i, codename in enumerate(codenames):
         ret.append({'lts': lts[i], 'version': versions[i],
