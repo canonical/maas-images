@@ -19,9 +19,11 @@ subarches:
  - &sa_hwe_t  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &sa_hwe_u  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &sa_hwe_v  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
+ - &sa_hwe_w  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
+ - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
 
 misc:
  - &glpae generic-lpae
@@ -32,6 +34,17 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: 15.10
+   release: wily
+   kernels:
+    - [wily,    armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_w]
+    - [wily,    armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [wily,    i386,    hwe-w,    generic,   linux-generic,            *sa_hwe_w]
+    - [wily,    amd64,   hwe-w,    generic,   linux-generic,            *sa_hwe_w]
+    - [wily,    ppc64el, hwe-w,    generic,   linux-generic,            *sa_hwe_w]
+    - [wily,    arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_w]
+    - [wily,    arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [wily,    arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 15.04
    release: vivid
    kernels:
