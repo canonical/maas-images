@@ -92,7 +92,9 @@ SUBCOMMANDS = {
             COMMON_FLAGS['orphan-data'], COMMON_FLAGS['dry-run'],
             COMMON_FLAGS['data_d'],
             ('--older', {'default': '3d',
-                         'help': 'only remove files orphaned longer than'}),
+                         'help': ('only remove files orphaned longer than'
+                                  'this. if no unit given, default is days.')
+                         }),
         ],
     },
 }
