@@ -20,7 +20,10 @@ from simplestreams import objectstores
 from simplestreams import log
 from simplestreams.log import LOG
 
-from .distro_info import RELEASES, LTS_RELEASES
+if __name__ == '__main__':
+    from ubuntu_info import RELEASES, LTS_RELEASES
+else:
+    from .ubuntu_info import RELEASES, LTS_RELEASES
 
 
 APACHE_PARSE_RE = re.compile(r'href="([^"]*)".*(..-...-.... '
