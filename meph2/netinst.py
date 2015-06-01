@@ -21,9 +21,9 @@ from simplestreams import log
 from simplestreams.log import LOG
 
 if __name__ == '__main__':
-    from ubuntu_info import RELEASES, LTS_RELEASES
+    from ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 else:
-    from .ubuntu_info import RELEASES, LTS_RELEASES
+    from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 
 
 APACHE_PARSE_RE = re.compile(r'href="([^"]*)".*(..-...-.... '
@@ -94,7 +94,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
 
     def __init__(self, releases=None, arches=None):
         if releases is None:
-            releases = RELEASES.keys()
+            releases = SUPPORTED.keys()
 
         if arches is None:
             arches = ARCHES
@@ -470,7 +470,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
     out_queue = queue.Queue()
 
     if releases is None:
-        releases = RELEASES.keys()
+        releases = SUPPORTED.keys()
 
     num_places = len(releases) * len(POCKETS) * len(arches)
     places = "%s * %s * %s" % (releases, [p for p in POCKETS], arches)

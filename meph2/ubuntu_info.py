@@ -65,3 +65,4 @@ _d = get_ubuntu_info()
 
 RELEASES = {d['codename']: d for d in _d}
 LTS_RELEASES = [d for d in RELEASES if RELEASES[d]['lts']]
+SUPPORTED = {d: v for d, v in RELEASES.items() if v['supported']}
