@@ -1,0 +1,56 @@
+Part of the processes of creating maas ephemeral images and streams data
+is scraping the d-i installer data from an archive location.  This is not
+a very pretty process.  Part of that blame resides in the very un-clean
+data that has to be interpreted.
+
+The way this is currently handled is with an intermediate simplestreams
+stream.  The code in meph2/netinst.py.  It can be excercise for test with
+bin/netboot-mirror .
+
+For example:
+ ./bin/netboot-mirror --dry-run -vvv --arches=i386 --releases=trusty out.d
+
+That will create a NetbootMirrorReader that will scrape i386 data for trusty
+mirror trusty from the mirrors specified in meph2/netinst.py HTTP_MIRRORS.
+
+The logging there is useful to see what is happening.
+
+
+== Details ==
+The d-i data lives at
+ <mirror>/dists/<release><pocket>/installer-<arch>/
+Where <release> is like 'trusty' and <pocket> like '-updates', '' or
+'-proposed'.
+For example:
+  http://archive.ubuntu.com/ubuntu/dists/precise-updates/main/installer-i386/
+
+The NetbootReader scrapes apache html to get a list of d-i versions available
+like '20101020ubuntu136.20'.
+
+So given "version_dir" as the above mirro/dists/..../<version> 
+Then SHA256SUM and MD5SUM files are pulled from
+  <mirror>/dists/trusty/main/installer-i386/<version>/images/
+Example
+  http://archive.ubuntu.com/ubuntu/dists/precise-updates/main/installer-i386/20101020ubuntu136.20/images/
+
+Then, we try to extract clean data from each line in that sums file via
+the get_file_item_data method.
+
+The end result is that NetbootMirrorReader is a simplestreams mirror
+that can be read.
+
+It has products like:
+  com.ubuntu.installer:netboot:14.04:i386
+
+You can fully see this mirror by running:
+  netboot-mirror [--arches=i386] [--releases=trusty] out.d
+and looking in
+  out.d/streams/v1/com.ubuntu.installer:released:netboot.json
+
+== d-i data to maas ephemeral ==
+The 'bin/maas-cloudimg2ephemeral' program then uses this streams formated data
+from the NetbootMirrorReader to as a clean set of data. And re-forms that
+data to fit its purposes.
+
+The intermediate step of NetbootReader is not necessary, but the NetbootReader
+code existed previously from an attempt to provide that data in a consistent format.

@@ -1,0 +1,27 @@
+#!/usr/bin/python3
+
+import os
+import sys
+
+
+def call_entry_point(name):
+    (istr, dot, ent) = name.rpartition('.')
+    try:
+        __import__(istr)
+    except ImportError:
+        # if that import failed, check dirname(__file__/..)
+        # to support ./bin/program with modules in .
+        _tdir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        sys.path.insert(0, _tdir)
+        try:
+            __import__(istr)
+        except ImportError as e:
+            sys.stderr.write("Unable to find %s: %s\n" % (name, e))
+            sys.exit(2)
+
+    sys.exit(getattr(sys.modules[istr], ent)())
+
+if __name__ == '__main__':
+    call_entry_point("meph2.commands.netboot_mirror.main")
+
+# vi: ts=4 expandtab syntax=python

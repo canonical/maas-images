@@ -92,9 +92,13 @@ class NetbootMirrorReader(mirrors.MirrorReader):
     _products = {}
     _pathmap = {}
 
-    def __init__(self, releases=None, arches=ARCHES):
+    def __init__(self, releases=None, arches=None):
         if releases is None:
             releases = RELEASES.keys()
+
+        if arches is None:
+            arches = ARCHES
+
         self.releases = releases
         self.arches = arches
 
