@@ -61,6 +61,10 @@ FLAVOR_COLLISIONS = {
     "generic-lpae": "glp",
 }
 
+DTB_TO_FORMAT = {
+    "apm-mustang.dtb": "xgene"
+}
+
 # #
 # # Under a path like: MIRROR/precise-updates/main/installer-i386/
 # #  we find a listing of directories like:
@@ -242,7 +246,7 @@ def get_file_item_data(path, release="base"):
     # or a tuple of release-kernel, kernel-flavor, initrd-flavor, filetype
 
     # at the moment the only 'initrd-flavor' that we're supporting is netboot
-    if path.find("netboot") < 0:
+    if path.find("netboot") < 0 and path.find("device-tree") < 0:
         return None
     iflavor = "netboot"
 
@@ -261,7 +265,19 @@ def get_file_item_data(path, release="base"):
     # generic/xgene/uInitrd is generic flavor,
     # xgene-uboot or xgene-uboot-mustang image
     imgfmt = "default"
-    if (len(toks) == 3 and toks[0] == "generic" and
+    if (len(toks) == 4 and toks[1] == "generic" and
+            (toks[3].startswith('uI'))):
+        path = "%s-netboot/%s/%s" % (release, toks[1], toks[3])
+        imgfmt = toks[2]
+        # xgene-uboot -> xgene
+        imgfmt = re.sub("-uboot$", "", imgfmt)
+    elif (len(toks) == 2 and toks[0] == "device-tree" and
+          toks[1].endswith('dtb')):
+        path = "%s-netboot/generic/%s" % (release, toks[1])
+        if toks[1] in DTB_TO_FORMAT:
+            imgfmt = DTB_TO_FORMAT[toks[1]]
+    # trusty & utopic used this layout for arm64
+    elif (len(toks) == 3 and toks[0] == "generic" and
             (toks[2].startswith('uI') or toks[2].endswith('dtb'))):
         path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
         imgfmt = toks[1]
@@ -351,7 +367,7 @@ def mine_md(url, release):
 
     versions = {}
 
-    regex = re.compile(".*netboot")
+    regex = re.compile(".*(netboot|device-tree)")
     for (di_ver, pubdate) in usable:
         versions[di_ver] = {'items': {}}
         curp = '/'.join((url, di_ver, 'images',))
