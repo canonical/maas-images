@@ -546,11 +546,11 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
 
 
 def main():
+    log.basicConfig(stream=sys.stderr, level=log.DEBUG)
     smirror = NetbootMirrorReader(arches=["armhf"], releases=["trusty"])
     tstore = objectstores.FileStore("out.d")
     tmirror = mirrors.ObjectStoreMirrorWriter(config=None, objectstore=tstore)
 
-    log.basicConfig(stream=sys.stderr, level=log.DEBUG)
     cpath = "streams/v1/%s.json" % CONTENT_ID
     tmirror.sync(smirror, cpath)
 
