@@ -114,7 +114,12 @@ def get_nonorphan_set(streams, data_d, keyring=None):
 
 def read_timedelta(string):
     timedelta = datetime.timedelta()
-    for time_portion in re.findall(r'([0-9]+[dhms])', string):
+    tokenizer = r'([0-9]+[dhms])'
+    parts = re.findall(tokenizer, string)
+    if len(parts) == 0 and string != "":
+        # if no unit given, then default to 'd'
+        parts = re.findall(tokenizer, string + "d")
+    for time_portion in parts:
         num = int(time_portion[:-1])
         specifier = time_portion[-1]
         if specifier == 'd':

@@ -22,6 +22,6 @@ def call_entry_point(name):
     sys.exit(getattr(sys.modules[istr], ent)())
 
 if __name__ == '__main__':
-    call_entry_point("meph2.commands.meph2_util.main")
+    call_entry_point("meph2.commands.netboot_mirror.main")
 
 # vi: ts=4 expandtab syntax=python

@@ -33,6 +33,7 @@ DEFAULT_ARCHES = {
     'x86_64': ['i386', 'amd64', 'armhf', 'arm64'],
     'ppc64le': ['ppc64el'],
     'armhf': ['armhf'],
+    'aarch64': ['arm64', 'armhf'],
 }
 
 ALL_ITEM_TAGS = {'label': 'daily'}
@@ -246,9 +247,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         newitems = {}
 
-        ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel', 'di-initrd',
-                 'root-image.gz']
-
         mykinfo = self.releases[release]['kernels']
 
         vername = flat['version_name']
@@ -296,6 +294,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             items = {}
             di_keys = ['di-kernel', 'di-initrd']
             boot_keys = ['boot-kernel', 'boot-initrd']
+            ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel',
+                     'di-initrd', 'root-image.gz']
 
             if kdata.get('dtb'):
                 ikeys.append('di-dtb')
@@ -445,7 +445,7 @@ def main():
                         help='cloud images mirror')
     parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
                         help="maas ephemeral v2 mirror.  "
-                             'Use "%s" for *DEV* force build' % FORCE_URL)
+                             'Use "%s" to force build [DEV ONLY!]' % FORCE_URL)
     parser.add_argument('--config', default=defcfg, help='v2 config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
@@ -457,7 +457,13 @@ def main():
     args = parser.parse_args()
 
     if len(args.arches) == 0:
-        arches = DEFAULT_ARCHES[os.uname()[4]]
+        try:
+            karch = os.uname()[4]
+            arches = DEFAULT_ARCHES[karch]
+        except KeyError:
+            msg = "No default arch list for kernel arch '%s'. Try '--arches'."
+            sys.stderr.write(msg % karch + "\n")
+            return False
     else:
         arches = []
         for f in args.arches:
@@ -482,6 +488,15 @@ def main():
     log.basicConfig(stream=args.log_file, level=level)
 
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
+
+    LOG.info(
+        "summary: \n " + '\n '.join([
+            "source: %s" % args.source,
+            "target: %s" % args.target,
+            "output: %s" % args.output_d,
+            "arches: %s" % args.arches,
+            "filters: %s" % filter_list,
+        ]) + '\n')
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
