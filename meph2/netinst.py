@@ -25,9 +25,17 @@ if __name__ == '__main__':
 else:
     from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 
-
-APACHE_PARSE_RE = re.compile(r'href="([^"]*)".*(..-...-.... '
-                             r'..:..).*?(\d+[^\s<]*|-)')
+APACHE_PARSE_RE = re.compile(r'''
+                             href="
+                             (?P<name>[^"]*)".*     # filename
+                             (?P<date>              # date, varies w/ apache ver
+                              (..-...-....\ ..:..)   # 01-Jun-2015 (apache 2.2)
+                               |
+                              (....-..-..\ ..:..)    # 2015-06-01 (apache 2.4)
+                             )
+                             .*?
+                             (?P<size>\d+[^\s<]*|-) # size, or '-' for dirs
+                             ''', re.X)
 
 NUM_THREADS = 10
 PRIMARY_MIRROR = "http://archive.ubuntu.com/ubuntu/dists"
@@ -221,13 +229,21 @@ def list_apache_dirs(url):
         return
     if not url.endswith('/'):
         url += '/'
-    files = APACHE_PARSE_RE.findall(html)
     dirs = []
-    for name, date, size in files:
+    for m in APACHE_PARSE_RE.finditer(html):
+        name = m.group('name')
+        date = m.group('date')
+        size = m.group('size')
         if size.strip() == '-':
             size = 'dir'
-        pubdate = simplestreams.util.timestamp(
-            time.mktime(time.strptime(date, "%d-%b-%Y %H:%M")))
+        try:
+            # Apache 2.2 style dates
+            dateobj = time.strptime(date, "%d-%b-%Y %H:%M")
+        except ValueError:
+            # Apache 2.4 style dates
+            dateobj = time.strptime(date, "%Y-%m-%d %H:%M")
+            
+        pubdate = simplestreams.util.timestamp(time.mktime(dateobj))
         if name.endswith('/'):
             dirs += [(name[:-1], pubdate)]
 
