@@ -108,6 +108,8 @@ releases:
     - [trusty,  i386,    hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
     - [trusty,  amd64,   hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
 
+# enable_proposed: True
+
 ## Notes:
 ##  * there are no hwe installer kernels for armhf
 ##    nothing named 'saucy-highbank' at

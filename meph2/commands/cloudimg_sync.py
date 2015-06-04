@@ -7,7 +7,7 @@ from simplestreams.log import LOG
 from simplestreams import mirrors
 from simplestreams import filters
 
-from meph2.netinst import NetbootMirrorReader
+from meph2.netinst import NetbootMirrorReader, POCKETS, POCKETS_PROPOSED
 from meph2 import util
 
 import argparse
@@ -103,11 +103,12 @@ def get_file_info(path, sums=None):
     return ret
 
 
-def get_di_kernelinfo(releases=None, arches=None, asof=None):
+def get_di_kernelinfo(releases=None, arches=None, asof=None, pockets=None):
     # this returns a dict tree like
     # items['precise']['amd64']['generic']['saucy']['kernel']
     # where nodes are flattened to have data (including url)
-    smirror = NetbootMirrorReader(releases=releases, arches=arches)
+    smirror = NetbootMirrorReader(releases=releases, arches=arches,
+                                  pockets=pockets)
     netproducts = smirror._get_products()
 
     # TODO: implement 'asof' to get the right date, right now only returns
@@ -199,13 +200,17 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self._di_kinfo = {}
         self.content_t = None
 
+        self.di_pockets = POCKETS
+        if cfgdata.get('enable_proposed', False):
+            self.di_pockets = POCKETS_PROPOSED
+
     def _get_di_kinfo(self, release, arch):
         if not (release in self._di_kinfo and
                 arch in self._di_kinfo[release]):
             if release not in self._di_kinfo:
                 self._di_kinfo[release] = {}
             (mirror, data) = get_di_kernelinfo(
-                releases=[release], arches=[arch])
+                releases=[release], arches=[arch], pockets=self.di_pockets)
             self._di_kinfo[release][arch] = (mirror, data[release][arch])
 
         return self._di_kinfo[release][arch]
