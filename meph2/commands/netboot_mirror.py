@@ -23,7 +23,8 @@ from simplestreams import log
 from simplestreams import mirrors
 from simplestreams import objectstores
 
-from ..netinst import NetbootMirrorReader, CONTENT_ID
+from ..netinst import (NetbootMirrorReader, CONTENT_ID,
+                       POCKETS, POCKETS_PROPOSED)
 
 
 class DotProgress(object):
@@ -77,6 +78,8 @@ def main():
                         help='comma "," separated list of arches. default all')
     parser.add_argument('--releases', default=None,
                         help='comma "," separated releases. default all')
+    parser.add_argument('--proposed', default=False, action='store_true',
+                        help='enable the -proposed pocket for searching')
 
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
@@ -110,7 +113,12 @@ def main():
     level = (log.ERROR, log.INFO, log.DEBUG)[min(args.verbose, 2)]
     log.basicConfig(stream=args.log_file, level=level)
 
-    smirror = NetbootMirrorReader(arches=arches, releases=releases)
+    pockets = POCKETS
+    if args.proposed:
+        pockets = POCKETS_PROPOSED
+
+    smirror = NetbootMirrorReader(arches=arches, releases=releases,
+                                  pockets=pockets)
     tstore = objectstores.FileStore(args.output_d)
 
     drmirror = mirrors.DryRunMirrorWriter(config=mirror_config,

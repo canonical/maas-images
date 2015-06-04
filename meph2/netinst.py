@@ -51,7 +51,8 @@ POCKETS = {
     "release": "",
     "updates": "-updates",
 }
-# POCKETS.update({'proposed': '-proposed'})
+POCKETS_PROPOSED = POCKETS.copy()
+POCKETS_PROPOSED.update({'proposed': '-proposed'})
 
 ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64")
 YYYYMMDD_RE = re.compile("20[0-9][0-9](0[0-9]|1[012])[0-3][0-9]ubuntu.*")
@@ -104,7 +105,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
     _products = {}
     _pathmap = {}
 
-    def __init__(self, releases=None, arches=None):
+    def __init__(self, releases=None, arches=None, pockets=None):
         if releases is None:
             releases = SUPPORTED.keys()
 
@@ -113,6 +114,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
 
         self.releases = releases
         self.arches = arches
+        self.pockets = pockets
 
         def policy(content, path):
             return content
@@ -140,7 +142,8 @@ class NetbootMirrorReader(mirrors.MirrorReader):
 
         (rdata, pathmap) = get_products_data(content_id=self.content_id,
                                              releases=self.releases,
-                                             arches=self.arches)
+                                             arches=self.arches,
+                                             pockets=self.pockets)
 
         self._pathmap = pathmap
         self._products = rdata
@@ -496,7 +499,8 @@ class MineNetbootMetaData(threading.Thread):
             self.in_queue.task_done()
 
 
-def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
+def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None,
+                      pockets=None):
 
     in_queue = queue.Queue()
     out_queue = queue.Queue()
@@ -504,8 +508,11 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
     if releases is None:
         releases = SUPPORTED.keys()
 
-    num_places = len(releases) * len(POCKETS) * len(arches)
-    places = "%s * %s * %s" % (releases, [p for p in POCKETS], arches)
+    if pockets is None:
+        pockets = POCKETS
+
+    num_places = len(releases) * len(pockets) * len(arches)
+    places = "%s * %s * %s" % (releases, [p for p in pockets], arches)
     num_t = min(num_places, NUM_THREADS)
 
     LOG.info("mining d-i data from %s places in %s threads. [%s]." %
@@ -518,7 +525,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None):
 
     for release in releases:
         ver = RELEASES[release]['version']
-        for (pocket, psuffix) in POCKETS.items():
+        for (pocket, psuffix) in pockets.items():
             for arch in arches:
                 mirror = HTTP_MIRRORS.get(arch, HTTP_MIRRORS.get('default'))
                 path = "/%s/main/installer-%s" % (release + psuffix, arch)
