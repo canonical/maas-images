@@ -84,6 +84,11 @@ releases:
     - [utopic,  armhf,   hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
     - [utopic,  i386,    hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
     - [utopic,  ppc64el, hwe-u,    generic,  linux-generic-lts-utopic,  *sa_hwe_u]
+    - [vivid,   amd64,   hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
+    - [vivid,   arm64,   hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
+    - [vivid,   armhf,   hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
+    - [vivid,   i386,    hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
+    - [vivid,   ppc64el, hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
 
  - version: 13.10
    release: saucy
