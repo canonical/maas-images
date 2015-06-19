@@ -153,8 +153,13 @@ chrooted() {
         { error "apt-get update failed"; return 1; }
 
     copymods="cloud-initramfs-copymods"
-    apt-cache show $copymods >/dev/null 2>&1 ||
-        { error "copymods not available"; copymods=""; }
+    if [ -f /usr/share/initramfs-tools/hooks/copymods ]; then
+        error "$copymods already installed"
+        copymods=""
+    else
+        apt-cache show $copymods >/dev/null 2>&1 ||
+            { error "copymods not available"; copymods=""; }
+    fi
 
     zzgrub=/etc/kernel/postinst.d/zz-update-grub
     [ ! -x "$zzgrub" ] || chmod ugo-x $zzgrub
