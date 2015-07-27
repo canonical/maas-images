@@ -242,6 +242,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         arch = flat['arch']
         release = flat['release']
         version = flat['version']
+        distro = flat.get('os', 'ubuntu')
 
         # 'default_kernel' is a release dict in config
         # that contains the 'builtin' kernel to use
@@ -293,7 +294,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             prodname = PRODUCT_FORMAT % subs
             common = {'subarches': ','.join(subarches), 'krel': krel,
                       'release': release, 'version': version, 'arch': arch,
-                      'subarch': psubarch, 'kflavor': flavor}
+                      'subarch': psubarch, 'kflavor': flavor, 'distro': distro}
             common.update(ALL_ITEM_TAGS)
 
             items = {}
