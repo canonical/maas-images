@@ -4,9 +4,15 @@ import argparse
 import copy
 import os
 from functools import partial
+import hashlib
+import re
+import requests
 import sys
+import subprocess
+import yaml
 
 from meph2 import util
+from meph2.commands import cloudimg_sync
 
 from simplestreams import filters
 from simplestreams import mirrors
@@ -52,6 +58,14 @@ SUBCOMMANDS = {
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
             ('filters', {'nargs': '*', 'default': []}),
         ]
+    },
+    'import': {
+        'help': 'import an image from the specified config into a stream',
+        'opts': [
+            COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
+            ('import_cfg', {'help': 'The config file for the image to import.'}),
+            COMMON_FLAGS['target'],
+            ]
     },
     'promote': {
         'help': 'promote a product/version from daily to release',
@@ -280,6 +294,67 @@ class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
         self.removed_versions.append((self.tcontent_id, pedigree,))
 
 
+def get_sha256_meta_images(url):
+    """ Given a URL to a SHA256SUM file return a dictionary of filenames and
+        SHA256 checksums keyed off the file version found as a date string in
+        the filename. This is used in cases where simplestream data isn't
+        avalible.
+    """
+    ret = dict()
+    resp = requests.get(url)
+    prog = re.compile('[0-9]{8}(_[0-9]+)')
+
+    for i in resp.text.split('\n'):
+        try:
+            sha256, img_name = i.split()
+        except ValueError:
+            continue
+        if (not img_name.endswith('qcow2.xz') and
+            not img_name.endswith('qcow2')):
+            continue
+        m = prog.search(img_name)
+        if m is None:
+            continue
+        img_version = m.group(0)
+
+        # Prefer compressed image over uncompressed
+        if (img_version in ret and
+            ret[img_version]['img_name'].endswith('qcow2.xz')):
+            continue
+        ret[img_version] = {
+            'img_name': img_name,
+            'sha256': sha256,
+            }
+    return ret
+
+
+def import_qcow2(url, expected_sha256, out, curtin_files=None):
+    """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
+        a given URL or local path. Return the SHA256SUM of the outputted file.
+    """
+    qcow2targz_cmd = ("%s %s %s %s" % (os.path.join(
+        os.path.dirname(__file__), "..", "..", "bin", "maas-qcow2targz"),
+        url, expected_sha256, out))
+    if curtin_files:
+        curtin_path = os.path.join(
+            os.path.dirname(__file__), "..", "..", "curtin")
+        qcow2targz_cmd += " %s" % curtin_files.format(curtin_path=curtin_path)
+    proc = subprocess.Popen(qcow2targz_cmd, shell=True)
+    proc.communicate()
+    if proc.wait() != 0:
+        raise subprocess.CalledProcessError(
+            cmd=qcow2targz_cmd, returncode=proc.returncode)
+
+    sha256 = hashlib.sha256()
+    with open(out, 'rb') as fp:
+        while True:
+            chunk = fp.read(2**20)
+            if not chunk:
+                break
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -315,6 +390,86 @@ def main_insert(args):
         util.sign_streams_d(md_d)
 
     return 0
+
+
+def main_import(args):
+    cfg_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
+    if not os.path.exists(cfg_path):
+        if os.path.exists(args.import_cfg):
+            cfg_path = args.import_cfg
+        else:
+            print("Error: Unable to find config file %s" % args.import_cfg)
+            os.exit(1)
+
+    with open(cfg_path) as fp:
+        cfgdata = yaml.load(fp)
+
+    product_tree = cloudimg_sync.empty_iid_products(cfgdata['content_id'])
+    product_tree['updated'] = sutil.timestamp()
+    product_tree['datatype'] = 'image-downloads'
+    for i in cfgdata['versions'].items():
+        if 'arch' in i[1]:
+            arch = i[1]['arch']
+        else:
+            arch = cfgdata['arch']
+
+        if 'os' in i[1]:
+            os_name = i[1]['os']
+        else:
+            os_name = cfgdata['os']
+
+        product_id = cfgdata['product_id'].format(
+            version=i[1]['version'], arch=arch)
+        product_tree['products'][product_id] = {
+            'subarches': 'generic',
+            'label': 'release',
+            'subarch': 'generic',
+            'arch': arch,
+            'os': os_name,
+            'version': i[1]['version'],
+            'release': i[0],
+            'versions': {},
+            }
+        if 'path_version' in i[1]:
+            path_version = i[1]['path_version']
+        else:
+            path_version = i[1]['version']
+        url = cfgdata['sha256_meta_data_path'].format(version=path_version)
+        base_url = os.path.dirname(url)
+        images = get_sha256_meta_images(url)
+        for j in images.items():
+            image_path = '/'.join([i[0], arch, j[0], 'root-tgz'])
+            real_image_path = os.path.join(
+                os.path.realpath(args.target), image_path)
+            sha256 = import_qcow2(
+                '/'.join([base_url, j[1]['img_name']]),
+                j[1]['sha256'], real_image_path,
+                i[1].get('curtin_files'))
+            product_tree['products'][product_id]['versions'][j[0]] = {
+                'items': {
+                    'root-image.gz': {
+                        'ftype': 'root-tgz',
+                        'sha256': sha256,
+                        'path': image_path,
+                        'size': os.path.getsize(real_image_path),
+                        }
+                    }
+                }
+    md_d = os.path.join(args.target, 'streams', 'v1')
+    if not os.path.exists(md_d):
+        os.makedirs(md_d)
+
+    product_tree_fn = cfgdata['content_id'] + '.json'
+    with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
+        fp.write(sutil.dump_data(product_tree) + b"\n")
+
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
+
+    if not args.no_sign:
+        util.sign_streams_d(md_d)
 
 
 def main_promote(args):
