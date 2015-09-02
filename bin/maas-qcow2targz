@@ -1,79 +1,102 @@
 #!/bin/bash -e
+#
+# maas-qcowtargz - Take a qcow2 or qcow2.xz file from a given URL or
+#                  file path and make it sufficient for use as a 
+#                  MAAS ephemeral image
+#
+# Copyright (C) 2015-2016 Canonical
+#
+# Authors:
+#    Lee Trager <lee.trager@canonical.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if [ $# -ne 3 ] && [ $# -ne 4 ]; then
+maasify() {
+    MNT_POINT=$1
+    OUT=$2
+    CURTIN_PATH=$3
+
+    if [ -d "$CURTIN_PATH" ]; then
+	mkdir -p $MNT_POINT/curtin
+	cp $CURTIN_PATH/* $MNT_POINT/curtin/
+	chmod +x $MNT_POINT/curtin/*
+    fi
+
+    # CentOS 7 removed python-oauth which is required for cloud-init to
+    # authenticate with the MAAS metadata service. Until cloud-init from CentOS
+    # supports python-oauth2 we need to pull python-oauth from EPEL7-testing
+    if [ -f "$MNT_POINT/etc/os-release" ] && \
+	[ $(grep -c "centos:7" "$MNT_POINT/etc/os-release") -ge 1 ]; then
+	echo "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
+
+	wget \
+	    https://kojipkgs.fedoraproject.org//packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm \
+	    -O $MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
+	chroot $MNT_POINT \
+	    /bin/bash -c "rpm -ivh /tmp/python-oauth-1.0.1-10.el7.noarch.rpm"
+	rm $MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
+    fi
+
+    echo "Taring up image contents..."
+    pushd $MNT_POINT
+    sudo tar --one-file-system -czf $OUT .
+    popd
+}
+
+if [ "$1" = "maasify" ]; then
+    "$@"
+elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
+    URL=$1
+    IMG_NAME=$(basename $URL)
+    SHA256=$2
+    if [ $(dirname $3) == "." ]; then
+	OUT="${PWD}/${3}"
+    else
+	OUT=$3
+    fi
+    CURTIN_PATH=$4
+
+    mkdir -p $(dirname $OUT)
+
+    if [ ! -f $URL ]; then
+	IMG_PATH=/tmp/$IMG_NAME
+	wget --continue $URL -O $IMG_PATH
+    else
+	IMG_PATH=$URL
+    fi
+
+    echo "Checking given sha256sum..."
+    if [ $(sha256sum $IMG_PATH | awk ' { print $1 } ') != $SHA256 ]; then
+	echo "Error: SHA256 of $IMG_PATH != $SHA256"
+	exit 1
+    fi
+
+    if [ $(file $IMG_PATH | grep -c 'XZ compressed data') -gt 0 ]; then
+	echo "Decompressing image..."
+	NEW_IMG_PATH=${IMG_PATH%%'.xz'}
+	[ -f "$NEW_IMG_PATH" ] && rm $NEW_IMG_PATH
+	unxz $IMG_PATH
+	IMG_PATH=${NEW_IMG_PATH}
+    fi
+
+    sudo \
+	mount-image-callback --proc "$IMG_PATH" -- \
+	"$0" maasify _MOUNTPOINT_ $OUT $CURTIN_PATH
+
+    rm $IMG_PATH
+
+    echo "Done!"
+else
     echo "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
     exit 1
 fi
-
-URL=$1
-IMG_NAME=$(basename $URL)
-SHA256=$2
-if [ $(dirname $3) == "." ]; then
-    OUT="${PWD}/${3}"
-else
-    OUT=$3
-fi
-CURTIN_PATH=$4
-
-if [ ! -f $URL ]; then
-    IMG_PATH=/tmp/$IMG_NAME
-    wget --continue $URL -O $IMG_PATH
-else
-    IMG_PATH=$URL
-fi
-
-echo "Checking given sha256sum..."
-if [ $(sha256sum $IMG_PATH | awk ' { print $1 } ') != $SHA256 ]; then
-    echo "Error: SHA256 of $IMG_PATH != $SHA256"
-    exit 1
-fi
-
-if [ $(file $IMG_PATH | grep -c 'XZ compressed data') -gt 0 ]; then
-    echo "Decompressing image..."
-    NEW_IMG_PATH=${IMG_PATH%%'.xz'}
-    [ -f "$NEW_IMG_PATH" ] && rm $NEW_IMG_PATH
-    unxz $IMG_PATH
-    IMG_PATH=${NEW_IMG_PATH}
-fi
-
-echo "Mounting image..."
-sudo modprobe nbd max_path=8
-sudo qemu-nbd -c /dev/nbd0 $IMG_PATH
-
-mnt_point=$(mktemp -d '/tmp/maas-qcow2targz-XXX')
-sudo mount /dev/nbd0p1 $mnt_point
-if [ -d "$CURTIN_PATH" ]; then
-    sudo mkdir -p $mnt_point/curtin
-    sudo cp $CURTIN_PATH/* $mnt_point/curtin/
-    sudo chmod +x $mnt_point/curtin/*
-fi
-
-# CentOS 7 removed python-oauth which is required for cloud-init to
-# authenticate with the MAAS metadata service. Until cloud-init from CentOS
-# supports python-oauth2 we need to pull python-oauth from EPEL7-testing
-if [ -f "${mnt_point}/etc/os-release" ] && \
-    [ $(grep -c "centos:7" "${mnt_point}/etc/os-release") -ge 1 ]; then
-    echo "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
-
-    wget \
-	https://kojipkgs.fedoraproject.org//packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm \
-	-O ${mnt_point}/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
-    sudo chroot ${mnt_point} \
-	/bin/bash -c "rpm -ivh /tmp/python-oauth-1.0.1-10.el7.noarch.rpm"
-    rm ${mnt_point}/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
-fi
-
-mkdir -p $(dirname $OUT)
-
-echo "Taring up image contents..."
-pushd $mnt_point
-sudo tar -czf $OUT .
-popd
-
-echo "Cleaning up..."
-sudo umount $mnt_point
-rmdir $mnt_point
-sudo qemu-nbd -d /dev/nbd0
-rm $IMG_PATH
-
-echo "Done!"
