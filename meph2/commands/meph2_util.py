@@ -7,6 +7,7 @@ from functools import partial
 import hashlib
 import re
 import requests
+import shutil
 import sys
 import subprocess
 import yaml
@@ -65,6 +66,13 @@ SUBCOMMANDS = {
             COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
             ('import_cfg', {'help': 'The config file for the image to import.'}),
             COMMON_FLAGS['target'],
+            ]
+    },
+    'merge': {
+        'help': 'merge two product streams together',
+        'opts': [
+            COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['src'], COMMON_FLAGS['target'],
             ]
     },
     'promote': {
@@ -472,6 +480,30 @@ def main_import(args):
         util.sign_streams_d(md_d)
 
 
+def main_merge(args):
+    for (dir, subdirs, files) in os.walk(args.src):
+        for file in files:
+            if file.endswith(".sjson"):
+                continue
+            src_path = os.path.join(dir, file)
+            dest_path = os.path.join(
+                args.target, '/'.join(src_path.split('/')[1:]))
+            dest_dir = os.path.dirname(dest_path)
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            shutil.copy2(src_path, dest_path)
+
+    md_d = os.path.join(args.target, 'streams', 'v1')
+    if not os.path.exists(md_d):
+        os.makedirs(md_d)
+
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
+
+    if not args.no_sign:
+        util.sign_streams_d(md_d)
+        
 def main_promote(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
