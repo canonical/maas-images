@@ -188,8 +188,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         for pedigree in self.removed_versions:
             sutil.products_del(self.tproducts, pedigree)
 
-        sutil.products_condense(self.tproducts,
-                                sticky=['di_version', 'kpackage'])
+        sutil.products_condense(
+            self.tproducts, sticky=['di_version', 'kpackage', 'sha256', 'md5'])
 
         self.tproducts['updated'] = sutil.timestamp()
 
@@ -401,7 +401,7 @@ def main_find_orphans(args):
 
     # used to check validity of existent orphan file at beginning
     if os.path.exists(args.orphan_data):
-        _ = util.read_orphan_file(args.orphan_data)
+        util.read_orphan_file(args.orphan_data)
 
     orphans = []
 

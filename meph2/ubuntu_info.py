@@ -3,7 +3,8 @@
 import distro_info
 import sys
 
-## See LP: #1253208 for why this is so complicated.
+# See LP: #1253208 for why this is so complicated.
+
 
 def get_ubuntu_info(date=None):
     # this returns a sorted list of dicts
@@ -17,7 +18,6 @@ def get_ubuntu_info(date=None):
     #  'fullname': 'Ubuntu 13.10 "Saucy Salamander"',
     #  'lts': False, 'supported': True, 'version': '13.10'}
 
-    #udi = distro_info.DebianDistroInfo()
     udi = distro_info.UbuntuDistroInfo()
     # 'all' is a attribute, not a function. so we can't ask for it formated.
     # s2all and us2all are lists, the value of each is the index

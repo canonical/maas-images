@@ -26,16 +26,16 @@ else:
     from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 
 APACHE_PARSE_RE = re.compile(r'''
-                             href="
-                             (?P<name>[^"]*)".*     # filename
-                             (?P<date>              # date, varies w/ apache ver
-                              (..-...-....\ ..:..)   # 01-Jun-2015 (apache 2.2)
-                               |
-                              (....-..-..\ ..:..)    # 2015-06-01 (apache 2.4)
-                             )
-                             .*?
-                             (?P<size>\d+[^\s<]*|-) # size, or '-' for dirs
-                             ''', re.X)
+    href="
+    (?P<name>[^"]*)".*      # filename
+    (?P<date>               # date, varies w/ apache ver
+     (..-...-....\ ..:..)   # 01-Jun-2015 (apache 2.2)
+      |
+     (....-..-..\ ..:..)    # 2015-06-01 (apache 2.4)
+    )
+    .*?
+    (?P<size>\d+[^\s<]*|-)  # size, or '-' for dirs
+    ''', re.X)
 
 NUM_THREADS = 10
 PRIMARY_MIRROR = "http://archive.ubuntu.com/ubuntu/dists"
@@ -166,7 +166,7 @@ def download(url, target):
 def gpg_check(filepath, gpgpath, keyring=GPG_KEYRING):
     cmd = ['gpgv', '--keyring=%s' % keyring, gpgpath, filepath]
 
-    _output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     return
 
 
@@ -245,7 +245,7 @@ def list_apache_dirs(url):
         except ValueError:
             # Apache 2.4 style dates
             dateobj = time.strptime(date, "%Y-%m-%d %H:%M")
-            
+
         pubdate = simplestreams.util.timestamp(time.mktime(dateobj))
         if name.endswith('/'):
             dirs += [(name[:-1], pubdate)]
