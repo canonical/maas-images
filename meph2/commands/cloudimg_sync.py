@@ -41,15 +41,17 @@ ALL_ITEM_TAGS = {'label': 'daily'}
 CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
 
-PCOMMON = "%(release)s/%(arch)s/"
+PATH_COMMON = "%(release)s/%(arch)s/"
+BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
+DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
-    'root-image.gz': PCOMMON + "%(version_name)s/root-image.gz",
-    'boot-dtb': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-dtb%(suffix)s",
-    'boot-kernel': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-kernel%(suffix)s",
-    'boot-initrd': PCOMMON + "%(version_name)s/%(krel)s/%(flavor)s/boot-initrd%(suffix)s",
-    'di-dtb': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-dtb%(suffix)s",
-    'di-initrd': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-initrd%(suffix)s",
-    'di-kernel': PCOMMON + "di/%(di_version)s/%(krel)s/%(flavor)s/di-kernel%(suffix)s",
+    'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
+    'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
+    'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
+    'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
+    'di-dtb': DI_COMMON + "/di-dtb%(suffix)s",
+    'di-initrd': DI_COMMON + "/di-initrd%(suffix)s",
+    'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
