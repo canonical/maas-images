@@ -64,7 +64,8 @@ SUBCOMMANDS = {
         'help': 'import an image from the specified config into a stream',
         'opts': [
             COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
-            ('import_cfg', {'help': 'The config file for the image to import.'}),
+            ('import_cfg', {'help':
+                            'The config file for the image to import.'}),
             COMMON_FLAGS['target'],
             ]
     },
@@ -318,7 +319,7 @@ def get_sha256_meta_images(url):
         except ValueError:
             continue
         if (not img_name.endswith('qcow2.xz') and
-            not img_name.endswith('qcow2')):
+                not img_name.endswith('qcow2')):
             continue
         m = prog.search(img_name)
         if m is None:
@@ -327,7 +328,7 @@ def get_sha256_meta_images(url):
 
         # Prefer compressed image over uncompressed
         if (img_version in ret and
-            ret[img_version]['img_name'].endswith('qcow2.xz')):
+                ret[img_version]['img_name'].endswith('qcow2.xz')):
             continue
         ret[img_version] = {
             'img_name': img_name,
@@ -340,14 +341,13 @@ def import_qcow2(url, expected_sha256, out, curtin_files=None):
     """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
         a given URL or local path. Return the SHA256SUM of the outputted file.
     """
-    qcow2targz_cmd = ("%s %s %s %s" % (os.path.join(
-        os.path.dirname(__file__), "..", "..", "bin", "maas-qcow2targz"),
-        url, expected_sha256, out))
+    # Assume maas-qcow2targz is in the path
+    qcow2targz_cmd = ["maas-qcow2targz", url, expected_sha256, out]
     if curtin_files:
         curtin_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "curtin")
-        qcow2targz_cmd += " %s" % curtin_files.format(curtin_path=curtin_path)
-    proc = subprocess.Popen(qcow2targz_cmd, shell=True)
+        qcow2targz_cmd.append(curtin_files.format(curtin_path=curtin_path))
+    proc = subprocess.Popen(qcow2targz_cmd)
     proc.communicate()
     if proc.wait() != 0:
         raise subprocess.CalledProcessError(
@@ -416,45 +416,44 @@ def main_import(args):
     product_tree = cloudimg_sync.empty_iid_products(cfgdata['content_id'])
     product_tree['updated'] = sutil.timestamp()
     product_tree['datatype'] = 'image-downloads'
-    for i in cfgdata['versions'].items():
-        if 'arch' in i[1]:
-            arch = i[1]['arch']
+    for (release, release_info) in cfgdata['versions'].items():
+        if 'arch' in release_info:
+            arch = release_info['arch']
         else:
             arch = cfgdata['arch']
-
-        if 'os' in i[1]:
-            os_name = i[1]['os']
+        if 'os' in release_info:
+            os_name = release_info['os']
         else:
             os_name = cfgdata['os']
 
         product_id = cfgdata['product_id'].format(
-            version=i[1]['version'], arch=arch)
+            version=release_info['version'], arch=arch)
         product_tree['products'][product_id] = {
             'subarches': 'generic',
             'label': 'release',
             'subarch': 'generic',
             'arch': arch,
             'os': os_name,
-            'version': i[1]['version'],
-            'release': i[0],
+            'version': release_info['version'],
+            'release': release,
             'versions': {},
             }
-        if 'path_version' in i[1]:
-            path_version = i[1]['path_version']
+        if 'path_version' in release_info:
+            path_version = release_info['path_version']
         else:
-            path_version = i[1]['version']
+            path_version = release_info['version']
         url = cfgdata['sha256_meta_data_path'].format(version=path_version)
         base_url = os.path.dirname(url)
         images = get_sha256_meta_images(url)
-        for j in images.items():
-            image_path = '/'.join([i[0], arch, j[0], 'root-tgz'])
+        for (image, image_info) in images.items():
+            image_path = '/'.join([release, arch, image, 'root-tgz'])
             real_image_path = os.path.join(
                 os.path.realpath(args.target), image_path)
             sha256 = import_qcow2(
-                '/'.join([base_url, j[1]['img_name']]),
-                j[1]['sha256'], real_image_path,
-                i[1].get('curtin_files'))
-            product_tree['products'][product_id]['versions'][j[0]] = {
+                '/'.join([base_url, image_info['img_name']]),
+                image_info['sha256'], real_image_path,
+                release_info.get('curtin_files'))
+            product_tree['products'][product_id]['versions'][image] = {
                 'items': {
                     'root-image.gz': {
                         'ftype': 'root-tgz',
@@ -503,7 +502,8 @@ def main_merge(args):
 
     if not args.no_sign:
         util.sign_streams_d(md_d)
-        
+
+
 def main_promote(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -588,7 +588,7 @@ def main_find_orphans(args):
 
     # used to check validity of existent orphan file at beginning
     if os.path.exists(args.orphan_data):
-        _ = util.read_orphan_file(args.orphan_data)
+        util.read_orphan_file(args.orphan_data)
 
     orphans = []
 

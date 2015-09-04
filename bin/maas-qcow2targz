@@ -22,81 +22,84 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 maasify() {
-    MNT_POINT=$1
-    OUT=$2
-    CURTIN_PATH=$3
+    local READONLY MNT_POINT=$1
+    local READONLY OUT=$2
+    local READONLY CURTIN_PATH=$3
 
     if [ -d "$CURTIN_PATH" ]; then
-	mkdir -p $MNT_POINT/curtin
-	cp $CURTIN_PATH/* $MNT_POINT/curtin/
-	chmod +x $MNT_POINT/curtin/*
+        mkdir -p "$MNT_POINT/curtin"
+        cp "$CURTIN_PATH/"* "$MNT_POINT/curtin/"
+        chmod +x "$MNT_POINT/curtin/"*
     fi
 
     # CentOS 7 removed python-oauth which is required for cloud-init to
     # authenticate with the MAAS metadata service. Until cloud-init from CentOS
     # supports python-oauth2 we need to pull python-oauth from EPEL7-testing
     if [ -f "$MNT_POINT/etc/os-release" ] && \
-	[ $(grep -c "centos:7" "$MNT_POINT/etc/os-release") -ge 1 ]; then
-	echo "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
-
-	wget \
-	    https://kojipkgs.fedoraproject.org//packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm \
-	    -O $MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
-	chroot $MNT_POINT \
-	    /bin/bash -c "rpm -ivh /tmp/python-oauth-1.0.1-10.el7.noarch.rpm"
-	rm $MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm
+        [ $(grep -c "centos:7" "$MNT_POINT/etc/os-release") -ge 1 ]; then
+        echo "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
+        wget \
+            https://kojipkgs.fedoraproject.org/packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm \
+            -O "$MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm"
+        chroot "$MNT_POINT" rpm -ivh /tmp/python-oauth-1.0.1-10.el7.noarch.rpm
+        rm "$MNT_POINT/tmp/python-oauth-1.0.1-10.el7.noarch.rpm"
     fi
 
     echo "Taring up image contents..."
-    pushd $MNT_POINT
-    sudo tar --one-file-system -czf $OUT .
-    popd
+    sudo tar -C "$MNT_POINT" --one-file-system -czf "$OUT" .
 }
 
 if [ "$1" = "maasify" ]; then
     "$@"
 elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     URL=$1
-    IMG_NAME=$(basename $URL)
+    IMG_NAME=$(basename "$URL")
     SHA256=$2
-    if [ $(dirname $3) == "." ]; then
-	OUT="${PWD}/${3}"
+    if [ "$(dirname $3)" == "." ]; then
+        OUT="${PWD}/${3}"
     else
-	OUT=$3
+        OUT=$3
     fi
     CURTIN_PATH=$4
 
-    mkdir -p $(dirname $OUT)
+    mkdir -p $(dirname "$OUT")
 
-    if [ ! -f $URL ]; then
-	IMG_PATH=/tmp/$IMG_NAME
-	wget --continue $URL -O $IMG_PATH
+    if [ ! -f "$URL" ]; then
+        IMG_PATH="/tmp/$IMG_NAME"
+        wget --continue "$URL" -O "$IMG_PATH"
     else
-	IMG_PATH=$URL
+        IMG_PATH="$URL"
     fi
 
     echo "Checking given sha256sum..."
-    if [ $(sha256sum $IMG_PATH | awk ' { print $1 } ') != $SHA256 ]; then
-	echo "Error: SHA256 of $IMG_PATH != $SHA256"
-	exit 1
+    sha256_out=$(sha256sum "$IMG_PATH")
+    found_sha256=${sha256_out%  *}
+    if [ "$found_sha256" != "$SHA256" ]; then
+        echo "Error: SHA256 of $IMG_PATH != $SHA256"
+        exit 1
     fi
 
-    if [ $(file $IMG_PATH | grep -c 'XZ compressed data') -gt 0 ]; then
-	echo "Decompressing image..."
-	NEW_IMG_PATH=${IMG_PATH%%'.xz'}
-	[ -f "$NEW_IMG_PATH" ] && rm $NEW_IMG_PATH
-	unxz $IMG_PATH
-	IMG_PATH=${NEW_IMG_PATH}
-    fi
+    fout=$(LANG=C file "$IMG_PATH")
+    case "${fout#$IMG_PATH: }" in
+        "XZ compressed data"*)
+            echo "Decompressing XZ image..."
+            NEW_IMG_PATH="${IMG_PATH%%'.xz'}"
+            [ -f "$NEW_IMG_PATH" ] && rm "$NEW_IMG_PATH"
+            unxz $IMG_PATH
+            IMG_PATH="${NEW_IMG_PATH}"
+            ;;
+    esac
 
     sudo \
-	mount-image-callback --proc "$IMG_PATH" -- \
-	"$0" maasify _MOUNTPOINT_ $OUT $CURTIN_PATH
+        mount-image-callback --proc "$IMG_PATH" -- \
+        "$0" maasify _MOUNTPOINT_ "$OUT" "$CURTIN_PATH"
 
-    rm $IMG_PATH
+    rm "$IMG_PATH"
 
     echo "Done!"
 else
     echo "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
     exit 1
 fi
+
+# vi: ts=4 expandtab
