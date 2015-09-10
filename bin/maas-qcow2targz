@@ -58,6 +58,10 @@ maasify() {
     fi
 
     error "Taring up image contents..."
+    local gzflag="--use-compress-program=gzip"
+    if command -v pigz >/dev/null 2>&1; then
+        gzflag="--use-compress-program=pigz"
+    fi
     tar --directory "$root_d" --create --preserve-permissions \
         --sparse --file "$output" $gzflag \
         --xattrs "--xattrs-include=*" . || {
