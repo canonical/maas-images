@@ -219,17 +219,21 @@ chrooted() {
     done
 
     local path="/lib/firmware/$verflav/device-tree"
-    for f in $(find "$path" -type f -name "*.dtb"); do
-        outf="$outd/dtb-${f##*/}"
-        debug 2 "$f -> $outf"
-        [ ! -f "$outf" ] || {
-            error "basename collision over '${outf##*/}'"
-            find "$path" -type f -name "${f##*/}" 1>&2
-            return 1
-        }
-        cp "$f" "$outf" && chmod ugo+r "$outf" ||
-            { error "failed to copy '$outf' from '$f'"; return 1; }
-    done
+    if [ -d "$path" ]; then
+        for f in $(find "$path" -type f -name "*.dtb"); do
+            outf="$outd/dtb-${f##*/}"
+            debug 2 "$f -> $outf"
+            [ ! -f "$outf" ] || {
+                error "basename collision over '${outf##*/}'"
+                find "$path" -type f -name "${f##*/}" 1>&2
+                return 1
+            }
+            cp "$f" "$outf" && chmod ugo+r "$outf" ||
+                { error "failed to copy '$outf' from '$f'"; return 1; }
+        done
+    else
+        debug 1 "dtb path '$path' did not exist. assume no dtb files"
+    fi
 
     echo "$verflav" > "$outd/verflav" ||
         { error "failed to write verflavor"; return 1; }
