@@ -1,0 +1,136 @@
+#!/bin/bash
+#
+# maas-qcowtargz - Take a qcow2 or qcow2.xz file from a given URL or
+#                  file path and make it sufficient for use as a 
+#                  MAAS installable image
+#
+# Copyright (C) 2015-2016 Canonical
+#
+# Authors:
+#    Lee Trager <lee.trager@canonical.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+PYTHON_OAUTH_RPM_URL="https://kojipkgs.fedoraproject.org/packages/"\
+"python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm"
+
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
+maasify() {
+    local root_d="$1" out="$2" curtin_path="$3"
+
+    if [ -n "$curtin_path" ]; then
+        mkdir -p "$root_d/curtin" ||
+            { error "failed to create /curtin"; return 1; }
+        cp -r "$curtin_path/"* "$root_d/curtin/" || {
+            error "failed copying $CURTIN_PATH to $root_d/curtin";
+            return 1;
+        }
+        chmod +x "$root_d/curtin/"* ||
+            { error "failed chmod +x $root_d/curtin/*"; return 1; }
+    fi
+
+    # CentOS 7 removed python-oauth which is required for cloud-init to
+    # authenticate with the MAAS metadata service. Until cloud-init from CentOS
+    # supports python-oauth2 we need to pull python-oauth from EPEL7-testing
+    local fname="" url="$PYTHON_OAUTH_RPM_URL"
+    if [ -f "$root_d/etc/os-release" ] &&
+        grep -qc "centos:7" "$root_d/etc/os-release"; then
+        error "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
+        fname="/tmp/${PYTHON_OAUTH_RPM_URL##*/}"
+        wget "$url" -O "$root_d/$fname" &&
+            LANG=C chroot "$root_d" rpm -ivh "$fname" &&
+            rm "$root_d/$fname" || {
+                error "failed dl and installation of $url"
+                return 1
+            }
+    fi
+
+    error "Taring up image contents..."
+    local gzflag="--use-compress-program=gzip"
+    if command -v pigz >/dev/null 2>&1; then
+        gzflag="--use-compress-program=pigz"
+    fi
+    tar --directory "$root_d" --create --preserve-permissions \
+        --sparse --file "$output" $gzflag \
+        --xattrs "--xattrs-include=*" . || {
+        error "failed tar command"
+        rm -f "$output"
+        return 1
+    }
+}
+
+if [ "$1" = "maasify" ]; then
+    [ "$(id -u)" = "0" ] || { error "not root, sorry"; exit 1; }
+    "$@"
+elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
+    url=$1
+    img_name=$(basename "$url")
+    sha256=$2
+    if [ "$(dirname $3)" == "." ]; then
+        out="${PWD}/${3}"
+    else
+        out=$3
+    fi
+    curtin_path=$4
+
+    mkdir -p $(dirname "$out")
+
+    if [ ! -f "$url" ]; then
+        img_path="/tmp/$img_name"
+        wget --continue "$url" -O "$img_path" &&
+            mv "$img_path.tmp" "$img_path" ||
+            fail "failed download $url"
+    else
+        img_path="$url"
+    fi
+
+    error "Checking sha256sum for $img_path"
+    sha256_out=$(sha256sum "$img_path") ||
+        fail "failed: sh256sum $img_path"
+    found=${sha256_out%  *}
+    if [ "$found" != "$sha256" ]; then
+        fail "Error: unexpected sha256 of $img_path $found != $sha256"
+    fi
+
+    fout=$(LANG=C file "$img_path") ||
+        fail "failed file $img_path"
+    case "${fout#$img_path: }" in
+        "XZ compressed data"*)
+            echo "Decompressing XZ image..."
+            new_img_path="${img_path%.xz}"
+            [ ! -f "$new_img_path" ] || rm -f "$new_img_path" ||
+                fail "$new_img_path existed, failed rm"
+            unxz "$img_path" ||
+                fail "failed unxz $img_path"
+            img_path="${new_img_path}"
+            ;;
+    esac
+
+    sudo \
+        mount-image-callback --proc "$img_path" -- \
+        "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+${"$curtin_path"}}
+
+    if [ "$img_path" = "$url" ]; then
+        rm "$img_path" ||
+            fail "failed rm $img_path"
+    fi
+
+    echo "Done!"
+else
+    error "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
+    exit 1
+fi
+
+# vi: ts=4 expandtab
