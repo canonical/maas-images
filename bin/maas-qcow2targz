@@ -89,7 +89,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
 
     if [ ! -f "$url" ]; then
         img_path="/tmp/$img_name"
-        wget --continue "$url" -O "$img_path" &&
+        wget --continue "$url" -O "$img_path.tmp" &&
             mv "$img_path.tmp" "$img_path" ||
             fail "failed download $url"
     else
