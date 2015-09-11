@@ -64,10 +64,10 @@ maasify() {
     fi
     tar --directory "$root_d" --create --preserve-permissions \
         --one-file-system \
-        --sparse --file "$output" $gzflag \
+        --sparse --file "$out" $gzflag \
         --xattrs "--xattrs-include=*" . || {
         error "failed tar command"
-        rm -f "$output"
+        rm -f "$out"
         return 1
     }
 }
