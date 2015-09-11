@@ -176,4 +176,8 @@ def write_orphan_file(filename, orphans_list):
         raise Exception('Cannot write orphan file %s' % filename)
 
 
+def empty_iid_products(content_id):
+    return {'content_id': content_id, 'products': {},
+            'datatype': 'image-ids', 'format': 'products:1.0'}
+
 # vi: ts=4 expandtab syntax=python

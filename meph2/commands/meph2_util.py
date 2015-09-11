@@ -12,7 +12,6 @@ import subprocess
 import yaml
 
 from meph2 import util
-from meph2.commands import cloudimg_sync
 
 from simplestreams import filters
 from simplestreams import mirrors
@@ -412,7 +411,7 @@ def main_import(args):
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)
 
-    product_tree = cloudimg_sync.empty_iid_products(cfgdata['content_id'])
+    product_tree = util.empty_iid_products(cfgdata['content_id'])
     product_tree['updated'] = sutil.timestamp()
     product_tree['datatype'] = 'image-downloads'
     for (release, release_info) in cfgdata['versions'].items():
