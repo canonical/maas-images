@@ -57,7 +57,7 @@ maasify() {
             }
     fi
 
-    error "Taring up image contents..."
+    error "Taring up image contents... into $out"
     local gzflag="--use-compress-program=gzip"
     if command -v pigz >/dev/null 2>&1; then
         gzflag="--use-compress-program=pigz"
@@ -136,7 +136,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
         mount-image-callback --proc "$output_img" -- \
         "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${curtin_path}"}
 
-    echo "Done!"
+    error "wrote $output_img"
 else
     error "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
     exit 1
