@@ -113,9 +113,9 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
     trap cleanup EXIT
 
+    working_img="${TEMP_D}/${url##*/}"
     if [ -f "$url" ]; then
         img_path="$url"
-        working_img="${TEMP_D}/${url##*/}"
     else
         img_path="${cache_d}/${url##*/}"
         if [ ! -f "${img_path}" ]; then
