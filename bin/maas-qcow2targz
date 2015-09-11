@@ -113,7 +113,6 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
     trap cleanup EXIT
 
-    working_img="${TEMP_D}/${url##*/}"
     if [ -f "$url" ]; then
         img_path="$url"
     else
@@ -149,6 +148,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
                 ;;
         esac
     fi
+    working_img="${TEMP_D}/${img_path##*/}"
 
     error "copying $img_path to $working_img"
     cp "$img_path" "$working_img" ||
