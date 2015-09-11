@@ -6,7 +6,6 @@ import os
 from functools import partial
 import hashlib
 import re
-import requests
 import shutil
 import sys
 import subprocess
@@ -310,10 +309,10 @@ def get_sha256_meta_images(url):
         avalible.
     """
     ret = dict()
-    resp = requests.get(url)
+    content = geturl_text(url)
     prog = re.compile('[0-9]{8}(_[0-9]+)')
 
-    for i in resp.text.split('\n'):
+    for i in content.split('\n'):
         try:
             sha256, img_name = i.split()
         except ValueError:

@@ -11,7 +11,6 @@ import tempfile
 import threading
 import time
 import queue
-import requests
 import urllib.request
 
 import simplestreams
@@ -19,6 +18,8 @@ from simplestreams import mirrors
 from simplestreams import objectstores
 from simplestreams import log
 from simplestreams.log import LOG
+
+from .url_helper import geturl, geturl_len, geturl_text
 
 if __name__ == '__main__':
     from ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
@@ -86,19 +87,6 @@ DTB_TO_FORMAT = {
 # #     images/SHA256SUMS{,.gpg}
 
 
-def get_url_len(url):
-    if url.startswith("file:///"):
-        path = url[len("file://"):]
-        return os.stat(path).st_size
-    if os.path.exists(url):
-        return os.stat(url).st_size
-
-    request = urllib.request.Request(url)
-    request.get_method = lambda: 'HEAD'
-    response = urllib.request.urlopen(request)
-    return int(response.headers.get('content-length', 0))
-
-
 class NetbootMirrorReader(mirrors.MirrorReader):
     fpath = FILES_PREFIX
     content_id = CONTENT_ID
@@ -160,7 +148,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
 
 def download(url, target):
     with open(target, "wb") as fp:
-        fp.write(requests.get(url).content)
+        fp.write(geturl(url))
 
 
 def gpg_check(filepath, gpgpath, keyring=GPG_KEYRING):
@@ -226,7 +214,7 @@ def list_apache_dirs(url):
     # http://stackoverflow.com/questions/686147/url-tree-walker-in-python
     # the change is just to make it return only dirs, and not recurse.
     try:
-        html = requests.get(url).text
+        html = geturl_text(url)
     except IOError as e:
         print('error fetching %s: %s' % (url, e))
         return
@@ -400,7 +388,7 @@ def mine_md(url, release):
             if data is None:
                 continue
 
-            data['size'] = get_url_len("/".join((curp, path,)))
+            data['size'] = geturl_len("/".join((curp, path,)))
             data['url'] = curp + "/" + path
             data['pubdate'] = pubdate
             data['basename'] = path[path.rfind('/')+1:]
@@ -603,7 +591,7 @@ def main_test():
     # for a in sys.argv[1:]:
     #     print(get_file_item_data(a, rel="precise"))
     # for url in sys.argv[1:]:
-    #     info = requests.get(url).text
+    #     info = geturl_text(url)
     #     for line in info.splitlines():
     #         (cksum, fpath) = line.split()
     #         print(fpath, get_file_item_data(fpath))
