@@ -141,7 +141,7 @@ if [ "$MEPH2_SIMPLESTREAMS" = "branch" ]; then
     sstream_d="$MEPH2_D/simplestreams.bzr"
     if [ ! -d "$sstream_d" ]; then
         bzr branch "$SSTREAM_BRANCH" "$sstream_d" &&
-            ln -snf simplestreams.bzr "$MEPH2_D/simplestreams" ||
+            ln -snf simplestreams.bzr/simplestreams "$MEPH2_D/simplestreams" ||
             fail "failed to get $SSTREAM_BRANCH"
         out=$(cd "$MEPH2_D" && python3 -c 'import simplestreams' 2>&1) ||
             fail "error getting simplestreams: $out"
