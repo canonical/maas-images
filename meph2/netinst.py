@@ -18,7 +18,7 @@ from simplestreams import objectstores
 from simplestreams import log
 from simplestreams.log import LOG
 
-from .url_helper import geturl, geturl_len, geturl_text
+from .url_helper import geturl, geturl_len, geturl_text, UrlError
 
 if __name__ == '__main__':
     from ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
@@ -214,9 +214,12 @@ def list_apache_dirs(url):
     # the change is just to make it return only dirs, and not recurse.
     try:
         html = geturl_text(url)
-    except IOError as e:
-        print('error fetching %s: %s' % (url, e))
-        return
+    except UrlError as e:
+        if e.code == 404:
+            print('skipping 404: %s: %s' % (url, e))
+            return []
+        else:
+            raise e
     if not url.endswith('/'):
         url += '/'
     dirs = []
