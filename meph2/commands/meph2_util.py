@@ -9,6 +9,7 @@ import re
 import shutil
 import sys
 import subprocess
+import yaml
 
 from meph2 import util
 from meph2.url_helper import geturl_text
@@ -408,9 +409,6 @@ def main_import(args):
             print("Error: Unable to find config file %s" % args.import_cfg)
             os.exit(1)
 
-    # temporarily move this here, so import of yaml only occurs for 'import'
-    # build system will get python3-yaml when RT 84629 is resolved.
-    import yaml
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)
 
