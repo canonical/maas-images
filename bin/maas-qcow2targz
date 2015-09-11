@@ -23,6 +23,7 @@
 
 PYTHON_OAUTH_RPM_URL="https://kojipkgs.fedoraproject.org/packages/"\
 "python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm"
+TEMP_D=""
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -72,6 +73,8 @@ maasify() {
     }
 }
 
+cleanup() { [ -d "${TEMP_D}" ] && rm -Rf "${TEMP_D}"; }
+
 if [ "$1" = "maasify" ]; then
     [ "$(id -u)" = "0" ] || { error "not root, sorry"; exit 1; }
     "$@"
@@ -84,17 +87,19 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
         out=$3
     fi
     curtin_path=$4
-    output_img="${url##*/}"
-    error "final output will be in ${output_img}"
+    error "final output will be in ${out}"
 
     mkdir -p $(dirname "$out")
 
     cache_d="${CACHE_DIR:-$PWD/cache}"
     [ -d "$cache_d" ] || mkdir -p "$cache_d" || fail "failed mkdir $cache_d"
 
+    TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
+    trap cleanup EXIT
+
     if [ -f "$url" ]; then
         img_path="$url"
-        output_img="$img_path"
+        working_img="${TEMP_D}/${url##*/}"
     else
         img_path="${cache_d}/${url##*/}"
         if [ ! -f "${img_path}" ]; then
@@ -128,17 +133,19 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
                 img_path="${new_img_path}"
                 ;;
         esac
-        cp "$img_path" "$output_img" ||
-            fail "failed copying image ${img_path} -> ${output_img}"
     fi
+
+    error "copying $img_path to $working_img"
+    cp "$img_path" "$working_img" ||
+        fail "failed copying image ${img_path} -> ${working_img}"
 
     sudo \
         ${http_proxy:+"http_proxy=${http_proxy}"} \
         ${https_proxy:+"https_proxy=${https_proxy}"} \
-        mount-image-callback --proc "$output_img" -- \
+        mount-image-callback --proc "$working_img" -- \
         "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${curtin_path}"}
 
-    error "wrote $output_img"
+    error "wrote $out"
 else
     error "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
     exit 1
