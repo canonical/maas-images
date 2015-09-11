@@ -116,7 +116,6 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
         case "${fout#$img_path: }" in
             "XZ compressed data"*)
                 new_img_path="${img_path%.xz}"
-                img_path="${new_img_path}"
                 if [ -f "$new_img_path" ]; then
                     error "using cached uncompressed '$new_img_path'"
                 else
@@ -124,6 +123,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
                     xzcat "$img_path" > "${new_img_path}" ||
                         { rm -f "$new_img_path"; fail "failed xzcat"; }
                 fi
+                img_path="${new_img_path}"
                 ;;
         esac
         cp "$img_path" "$output_img" ||
