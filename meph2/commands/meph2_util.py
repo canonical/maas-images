@@ -12,6 +12,7 @@ import subprocess
 import yaml
 
 from meph2 import util
+from meph2.url_helper import geturl_text
 
 from simplestreams import filters
 from simplestreams import mirrors
