@@ -98,8 +98,6 @@ else
     DEPS=( "${DEPS_FULL[@]}" )
 fi
 
-error "MEPH2_SIMPLESTREAMS=$MEPH2_SIMPLESTREAMS MEPH2_UTIL_ONLY=$meph2_only"
-
 if [ "$MEPH2_SIMPLESTREAMS" = "auto" ]; then
     if python3 -c 'import simplestreams' >/dev/null 2>&1; then
        MEPH2_SIMPLESTREAMS="system"
@@ -120,7 +118,7 @@ elif [ -f "$PWD/maas-images/bin/meph2-cloudimg-sync" ]; then
     MEPH2_D="$PWD/maas-images"
 fi
 
-
+error "MEPH2_SIMPLESTREAMS=$MEPH2_SIMPLESTREAMS MEPH2_UTIL_ONLY=$meph2_only"
 
 arch=$(dpkg --print-architecture)
 deps=( "${DEPS[@]}" )
