@@ -50,7 +50,7 @@ maasify() {
         grep -qc "centos:7" "$root_d/etc/os-release"; then
         error "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
         fname="/tmp/${PYTHON_OAUTH_RPM_URL##*/}"
-        wget "$url" -O "$root_d/$fname" &&
+        dl "$url" "$root_d/$fname" &&
             LANG=C chroot "$root_d" rpm -ivh "$fname" &&
             rm "$root_d/$fname" || {
                 error "failed dl and installation of $url"
@@ -73,6 +73,22 @@ maasify() {
     }
 }
 
+dl() {
+    local url="$1" out="${2:-${1##*/}}"
+    if [ -n "${CACHE_D}" ]; then
+        local cfile="${CACHE_D}/${url##*/}"
+        if [ ! -f "$cfile" ]; then
+            wget "$url" -O "$cfile.tmp" && mv "$cfile.tmp" "$cfile" ||
+                { rm -f "$cfile.tmp" && return 1; }
+        fi
+        [ "$cfile" -ef "$out" ] && return
+        cp "$cfile" "$out"
+        return
+    fi
+    wget "$url" -O "$out.tmp" && mv "$out.tmp" "$out" ||
+        { rm -f "$out.tmp" && return 1; }
+}
+
 cleanup() { [ -d "${TEMP_D}" ] && rm -Rf "${TEMP_D}"; }
 
 if [ "$1" = "maasify" ]; then
@@ -91,7 +107,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
 
     mkdir -p $(dirname "$out")
 
-    cache_d="${CACHE_DIR:-$PWD/cache}"
+    cache_d="${CACHE_D:-$PWD/cache}"
     [ -d "$cache_d" ] || mkdir -p "$cache_d" || fail "failed mkdir $cache_d"
 
     TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
@@ -103,8 +119,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     else
         img_path="${cache_d}/${url##*/}"
         if [ ! -f "${img_path}" ]; then
-            wget --continue "$url" -O "$img_path.tmp" &&
-                mv "$img_path.tmp" "$img_path" ||
+            dl "$url" "$img_path" ||
                 fail "failed download $url"
         else
             error "using cached '${url##*/}' in ${cache_d}"
@@ -140,6 +155,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
         fail "failed copying image ${img_path} -> ${working_img}"
 
     sudo \
+        CACHE_D="${cache_d}" \
         ${http_proxy:+"http_proxy=${http_proxy}"} \
         ${https_proxy:+"https_proxy=${https_proxy}"} \
         mount-image-callback --proc "$working_img" -- \
