@@ -6,14 +6,13 @@ import os
 from functools import partial
 import hashlib
 import re
-import requests
 import shutil
 import sys
 import subprocess
 import yaml
 
 from meph2 import util
-from meph2.commands import cloudimg_sync
+from meph2.url_helper import geturl_text
 
 from simplestreams import filters
 from simplestreams import mirrors
@@ -310,10 +309,10 @@ def get_sha256_meta_images(url):
         avalible.
     """
     ret = dict()
-    resp = requests.get(url)
+    content = geturl_text(url)
     prog = re.compile('[0-9]{8}(_[0-9]+)')
 
-    for i in resp.text.split('\n'):
+    for i in content.split('\n'):
         try:
             sha256, img_name = i.split()
         except ValueError:
@@ -413,7 +412,7 @@ def main_import(args):
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)
 
-    product_tree = cloudimg_sync.empty_iid_products(cfgdata['content_id'])
+    product_tree = util.empty_iid_products(cfgdata['content_id'])
     product_tree['updated'] = sutil.timestamp()
     product_tree['datatype'] = 'image-downloads'
     for (release, release_info) in cfgdata['versions'].items():

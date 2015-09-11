@@ -23,6 +23,7 @@
 
 PYTHON_OAUTH_RPM_URL="https://kojipkgs.fedoraproject.org/packages/"\
 "python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm"
+TEMP_D=""
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -49,7 +50,7 @@ maasify() {
         grep -qc "centos:7" "$root_d/etc/os-release"; then
         error "CentOS 7 detected! Adding python-oauth for MAAS cloud-init..."
         fname="/tmp/${PYTHON_OAUTH_RPM_URL##*/}"
-        wget "$url" -O "$root_d/$fname" &&
+        dl "$url" "$root_d/$fname" &&
             LANG=C chroot "$root_d" rpm -ivh "$fname" &&
             rm "$root_d/$fname" || {
                 error "failed dl and installation of $url"
@@ -57,26 +58,44 @@ maasify() {
             }
     fi
 
-    error "Taring up image contents..."
+    error "Taring up image contents... into $out"
     local gzflag="--use-compress-program=gzip"
     if command -v pigz >/dev/null 2>&1; then
         gzflag="--use-compress-program=pigz"
     fi
     tar --directory "$root_d" --create --preserve-permissions \
-        --sparse --file "$output" $gzflag \
+        --one-file-system \
+        --sparse --file "$out" $gzflag \
         --xattrs "--xattrs-include=*" . || {
         error "failed tar command"
-        rm -f "$output"
+        rm -f "$out"
         return 1
     }
 }
+
+dl() {
+    local url="$1" out="${2:-${1##*/}}"
+    if [ -n "${CACHE_D}" ]; then
+        local cfile="${CACHE_D}/${url##*/}"
+        if [ ! -f "$cfile" ]; then
+            wget "$url" -O "$cfile.tmp" && mv "$cfile.tmp" "$cfile" ||
+                { rm -f "$cfile.tmp" && return 1; }
+        fi
+        [ "$cfile" -ef "$out" ] && return
+        cp "$cfile" "$out"
+        return
+    fi
+    wget "$url" -O "$out.tmp" && mv "$out.tmp" "$out" ||
+        { rm -f "$out.tmp" && return 1; }
+}
+
+cleanup() { [ -d "${TEMP_D}" ] && rm -Rf "${TEMP_D}"; }
 
 if [ "$1" = "maasify" ]; then
     [ "$(id -u)" = "0" ] || { error "not root, sorry"; exit 1; }
     "$@"
 elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     url=$1
-    img_name=$(basename "$url")
     sha256=$2
     if [ "$(dirname $3)" == "." ]; then
         out="${PWD}/${3}"
@@ -84,50 +103,65 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
         out=$3
     fi
     curtin_path=$4
+    error "final output will be in ${out}"
 
     mkdir -p $(dirname "$out")
 
-    if [ ! -f "$url" ]; then
-        img_path="/tmp/$img_name"
-        wget --continue "$url" -O "$img_path" &&
-            mv "$img_path.tmp" "$img_path" ||
-            fail "failed download $url"
-    else
+    cache_d="${CACHE_D:-$PWD/cache}"
+    [ -d "$cache_d" ] || mkdir -p "$cache_d" || fail "failed mkdir $cache_d"
+
+    TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX")
+    trap cleanup EXIT
+
+    if [ -f "$url" ]; then
         img_path="$url"
-    fi
+    else
+        img_path="${cache_d}/${url##*/}"
+        if [ ! -f "${img_path}" ]; then
+            dl "$url" "$img_path" ||
+                fail "failed download $url"
+        else
+            error "using cached '${url##*/}' in ${cache_d}"
+        fi
 
-    error "Checking sha256sum for $img_path"
-    sha256_out=$(sha256sum "$img_path") ||
-        fail "failed: sh256sum $img_path"
-    found=${sha256_out%  *}
-    if [ "$found" != "$sha256" ]; then
-        fail "Error: unexpected sha256 of $img_path $found != $sha256"
-    fi
+        error "Checking sha256sum for $img_path"
+        sha256_out=$(sha256sum "$img_path") ||
+            fail "failed: sha256sum $img_path"
+        found=${sha256_out%  *}
+        if [ "$found" != "$sha256" ]; then
+            fail "Error: unexpected sha256 of $img_path $found != $sha256"
+        fi
 
-    fout=$(LANG=C file "$img_path") ||
-        fail "failed file $img_path"
-    case "${fout#$img_path: }" in
-        "XZ compressed data"*)
-            echo "Decompressing XZ image..."
-            new_img_path="${img_path%.xz}"
-            [ ! -f "$new_img_path" ] || rm -f "$new_img_path" ||
-                fail "$new_img_path existed, failed rm"
-            unxz "$img_path" ||
-                fail "failed unxz $img_path"
-            img_path="${new_img_path}"
-            ;;
-    esac
+        fout=$(LANG=C file "$img_path") ||
+            fail "failed file $img_path"
+        case "${fout#$img_path: }" in
+            "XZ compressed data"*)
+                new_img_path="${img_path%.xz}"
+                if [ -f "$new_img_path" ]; then
+                    error "using cached uncompressed '$new_img_path'"
+                else
+                    error "Decompressing XZ image..."
+                    xzcat "$img_path" > "${new_img_path}" ||
+                        { rm -f "$new_img_path"; fail "failed xzcat"; }
+                fi
+                img_path="${new_img_path}"
+                ;;
+        esac
+    fi
+    working_img="${TEMP_D}/${img_path##*/}"
+
+    error "copying $img_path to $working_img"
+    cp "$img_path" "$working_img" ||
+        fail "failed copying image ${img_path} -> ${working_img}"
 
     sudo \
-        mount-image-callback --proc "$img_path" -- \
-        "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+${"$curtin_path"}}
+        CACHE_D="${cache_d}" \
+        ${http_proxy:+"http_proxy=${http_proxy}"} \
+        ${https_proxy:+"https_proxy=${https_proxy}"} \
+        mount-image-callback --proc "$working_img" -- \
+        "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${curtin_path}"}
 
-    if [ "$img_path" = "$url" ]; then
-        rm "$img_path" ||
-            fail "failed rm $img_path"
-    fi
-
-    echo "Done!"
+    error "wrote $out"
 else
     error "Usage: $0 <URL> <SHA256> <out file> [curtin file path]"
     exit 1

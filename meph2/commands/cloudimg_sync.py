@@ -60,7 +60,7 @@ def v2_to_cloudimg_products(prodtree):
     # this turns a v2 products tree into a cloud-image products tree.
     # it pays attention only to products with krel == release
     # (in an attempt to only get "primary")
-    ret = empty_iid_products("com.ubuntu.cloud:daily:download")
+    ret = util.empty_iid_products("com.ubuntu.cloud:daily:download")
     for product in prodtree.get('products'):
         if not (prodtree['products'][product].get('krel') ==
                 prodtree['products'][product].get('release')):
@@ -78,11 +78,6 @@ def v2_to_cloudimg_products(prodtree):
                 ret['products'][tprod]['versions'][vername] = {}
 
     return ret
-
-
-def empty_iid_products(content_id):
-    return {'content_id': content_id, 'products': {},
-            'datatype': 'image-ids', 'format': 'products:1.0'}
 
 
 def get_file_info(path, sums=None):
@@ -223,7 +218,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                              content_id)
 
         if self.target == FORCE_URL:
-            my_prods = empty_iid_products(CONTENT_ID)
+            my_prods = util.empty_iid_products(CONTENT_ID)
         else:
             with contentsource.UrlContentSource(self.target) as tcs:
                 my_prods = sutil.load_content(tcs.read())
