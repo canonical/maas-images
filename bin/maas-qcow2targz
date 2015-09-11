@@ -133,6 +133,8 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     fi
 
     sudo \
+        ${http_proxy:+"http_proxy=${http_proxy}"} \
+        ${https_proxy:+"https_proxy=${https_proxy}"} \
         mount-image-callback --proc "$output_img" -- \
         "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${curtin_path}"}
 
