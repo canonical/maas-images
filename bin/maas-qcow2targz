@@ -87,13 +87,18 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
 
     mkdir -p $(dirname "$out")
 
-    if [ ! -f "$url" ]; then
-        img_path="/tmp/$img_name"
-        wget --continue "$url" -O "$img_path.tmp" &&
-            mv "$img_path.tmp" "$img_path" ||
-            fail "failed download $url"
-    else
+    cache_d="${CACHE_DIR:-$PWD/cache}"
+    [ -d "$cache_d" ] || mkdir -p "$cache_d" || fail "failed mkdir $cache_d"
+
+    if [ -f "$url" ]; then
         img_path="$url"
+    else
+        img_path="${cache_d}/${url##*/}"
+        if [ ! -f "${img_path}" ]; then
+            wget --continue "$url" -O "$img_path.tmp" &&
+                mv "$img_path.tmp" "$img_path" ||
+                fail "failed download $url"
+        fi
     fi
 
     error "Checking sha256sum for $img_path"
@@ -121,11 +126,6 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     sudo \
         mount-image-callback --proc "$img_path" -- \
         "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${$curtin_path}"}
-
-    if [ "$img_path" = "$url" ]; then
-        rm "$img_path" ||
-            fail "failed rm $img_path"
-    fi
 
     echo "Done!"
 else
