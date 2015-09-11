@@ -120,7 +120,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
 
     sudo \
         mount-image-callback --proc "$img_path" -- \
-        "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+${"$curtin_path"}}
+        "$0" maasify _MOUNTPOINT_ "$out" ${curtin_path:+"${$curtin_path}"}
 
     if [ "$img_path" = "$url" ]; then
         rm "$img_path" ||
