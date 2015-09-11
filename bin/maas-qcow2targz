@@ -63,6 +63,7 @@ maasify() {
         gzflag="--use-compress-program=pigz"
     fi
     tar --directory "$root_d" --create --preserve-permissions \
+        --one-file-system \
         --sparse --file "$output" $gzflag \
         --xattrs "--xattrs-include=*" . || {
         error "failed tar command"
@@ -84,6 +85,7 @@ elif [ $# -eq 3 ] || [ $# -eq 4 ]; then
     fi
     curtin_path=$4
     output_img="${url##*/}"
+    error "final output will be in ${output_img}"
 
     mkdir -p $(dirname "$out")
 
