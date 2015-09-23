@@ -516,20 +516,16 @@ def main_merge(args):
     target_products = load_products(args.target, target_product_streams)
 
     for (product_name, product_info) in src_products.items():
-        if product_name in target_products:
-            validate_product = True
-        else:
-            validate_product = False
-
         for (version, version_info) in product_info['versions'].items():
             for (item, item_info) in version_info['items'].items():
-                if validate_product:
+                if product_name in target_products:
                     target_product = target_products[product_name]
                     target_version = target_product['versions'][version]
                     target_item = target_version['items'][item]
                     if item_info['sha256'] != target_item['sha256']:
                         print("Error: SHA256 of %s and %s do not match!" %
                               (item['path'], target_item['path']))
+                        sys.exit(0)
                 file_src = os.path.join(args.src, item_info['path'])
                 file_target = os.path.join(args.target, item_info['path'])
                 target_dir = os.path.dirname(file_target)
