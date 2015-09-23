@@ -14,10 +14,12 @@ import yaml
 from meph2 import util
 from meph2.url_helper import geturl_text
 
-from simplestreams import filters
-from simplestreams import mirrors
-from simplestreams import util as sutil
-from simplestreams import objectstores
+from simplestreams import (
+    contentsource,
+    filters,
+    mirrors,
+    util as sutil,
+    objectstores)
 
 DEF_KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
 
@@ -362,6 +364,25 @@ def import_qcow2(url, expected_sha256, out, curtin_files=None):
     return sha256.hexdigest()
 
 
+def load_product_streams(src):
+    index_path = os.path.join(src, STREAMS_D, "index.json")
+    if not os.path.exists(index_path):
+        return []
+    with contentsource.UrlContentSource(index_path) as tcs:
+        index = sutil.load_content(tcs.read())
+    return [product['path'] for product in index['index'].values()]
+
+
+def load_products(path, product_streams):
+    products = {}
+    for product_stream in product_streams:
+        with contentsource.UrlContentSource(
+                os.path.join(path, product_stream)) as tcs:
+            product_listing = sutil.load_content(tcs.read())
+        products.update(product_listing['products'])
+    return products
+
+
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -409,6 +430,9 @@ def main_import(args):
             print("Error: Unable to find config file %s" % args.import_cfg)
             os.exit(1)
 
+    target_product_streams = load_product_streams(args.target)
+    target_products = load_products(args.target, target_product_streams)
+
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)
 
@@ -427,6 +451,13 @@ def main_import(args):
 
         product_id = cfgdata['product_id'].format(
             version=release_info['version'], arch=arch)
+
+        # If the product already exists don't regenerate the image, just copy
+        # its metadata
+        if product_id in target_products:
+            product_tree['products'][product_id] = target_products[product_id]
+            continue
+
         product_tree['products'][product_id] = {
             'subarches': 'generic',
             'label': 'release',
@@ -479,17 +510,36 @@ def main_import(args):
 
 
 def main_merge(args):
-    for (dir, subdirs, files) in os.walk(args.src):
-        for file in files:
-            if file.endswith(".sjson"):
-                continue
-            src_path = os.path.join(dir, file)
-            dest_path = os.path.join(
-                args.target, '/'.join(src_path.split('/')[1:]))
-            dest_dir = os.path.dirname(dest_path)
-            if not os.path.exists(dest_dir):
-                os.makedirs(dest_dir)
-            shutil.copy2(src_path, dest_path)
+    src_product_streams = load_product_streams(args.src)
+    target_product_streams = load_product_streams(args.target)
+    src_products = load_products(args.src, src_product_streams)
+    target_products = load_products(args.target, target_product_streams)
+
+    for (product_name, product_info) in src_products.items():
+        if product_name in target_products:
+            validate_product = True
+        else:
+            validate_product = False
+
+        for (version, version_info) in product_info['versions'].items():
+            for (item, item_info) in version_info['items'].items():
+                if validate_product:
+                    target_product = target_products[product_name]
+                    target_version = target_product['versions'][version]
+                    target_item = target_version['items'][item]
+                    if item_info['sha256'] != target_item['sha256']:
+                        print("Error: SHA256 of %s and %s do not match!" %
+                              (item['path'], target_item['path']))
+                file_src = os.path.join(args.src, item_info['path'])
+                file_target = os.path.join(args.target, item_info['path'])
+                target_dir = os.path.dirname(file_target)
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
+                shutil.copy2(file_src, file_target)
+    for product_stream in src_product_streams:
+        shutil.copy2(
+            os.path.join(args.src, product_stream),
+            os.path.join(args.target, product_stream))
 
     md_d = os.path.join(args.target, 'streams', 'v1')
     if not os.path.exists(md_d):
