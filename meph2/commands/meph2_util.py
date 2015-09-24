@@ -526,6 +526,8 @@ def main_merge(args):
                         print("Error: SHA256 of %s and %s do not match!" %
                               (item['path'], target_item['path']))
                         sys.exit(0)
+                    else:
+                        continue
                 file_src = os.path.join(args.src, item_info['path'])
                 file_target = os.path.join(args.target, item_info['path'])
                 target_dir = os.path.dirname(file_target)
