@@ -523,9 +523,11 @@ def main_merge(args):
                     target_version = target_product['versions'][version]
                     target_item = target_version['items'][item]
                     if item_info['sha256'] != target_item['sha256']:
-                        print("Error: SHA256 of %s and %s do not match!" %
-                              (item['path'], target_item['path']))
-                        sys.exit(0)
+                        print(
+                            "Error: SHA256 of %s and %s do not match!" %
+                            (item['path'], target_item['path']),
+                            file=sys.stderr)
+                        sys.exit(1)
                     else:
                         continue
                 file_src = os.path.join(args.src, item_info['path'])
