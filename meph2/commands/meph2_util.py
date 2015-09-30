@@ -213,7 +213,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             sutil.products_del(self.tproducts, pedigree)
 
         sutil.products_condense(
-            self.tproducts, sticky=['di_version', 'kpackage', 'sha256', 'md5'])
+            self.tproducts,
+            sticky=['di_version', 'kpackage', 'sha256', 'md5', 'path'])
 
         self.tproducts['updated'] = sutil.timestamp()
 
