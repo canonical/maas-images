@@ -187,7 +187,7 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         if self.tcontent_id not in self.inserted:
             self.inserted[self.tcontent_id] = []
 
-        ptouched = set([i[0][0] for i in self.inserted])
+        ptouched = set([i[0][0] for i in self.inserted[self.tcontent_id]])
         srcitems = []
 
         # collect into srcitems a list of all items in the source
