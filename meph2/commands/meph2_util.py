@@ -135,7 +135,7 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         self.config = config
         self.tproducts = None
         self.tcontent_id = None
-        self.inserted = []
+        self.inserted = {}
         self.removed_versions = []
 
     def _noop(*args):
@@ -157,7 +157,9 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         sys.stderr.write("inserting item %s\n" % '/'.join(pedigree))
-        self.inserted.append(
+        if self.tcontent_id not in self.inserted:
+            self.inserted[self.tcontent_id] = []
+        self.inserted[self.tcontent_id].append(
             (pedigree, sutil.products_exdata(
                 src, pedigree, include_top=False,
                 insert_fieldnames=False)),)
@@ -182,6 +184,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         # and also to aid in ReleasePromoteMirror's translation of product
         # names.
         sys.stderr.write("adding products %s\n" % path)
+        if self.tcontent_id not in self.inserted:
+            self.inserted[self.tcontent_id] = []
 
         ptouched = set([i[0][0] for i in self.inserted])
         srcitems = []
@@ -203,7 +207,7 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             self.tproducts['products'][pid] = {}
 
         known_ints = ['size']
-        for (pedigree, flatitem) in srcitems + self.inserted:
+        for (pedigree, flatitem) in srcitems + self.inserted[self.tcontent_id]:
             for n in known_ints:
                 if n in flatitem:
                     flatitem[n] = int(flatitem[n])
@@ -228,6 +232,7 @@ class InsertBareMirrorWriter(BareMirrorWriter):
     remove_item = BareMirrorWriter._noop
     remove_version = BareMirrorWriter._noop
     remove_product = BareMirrorWriter._noop
+    insert_index_entry = BareMirrorWriter._noop
 
 
 class ReleasePromoteMirror(InsertBareMirrorWriter):
@@ -271,9 +276,10 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
         ret = super(ReleasePromoteMirror, self).insert_item(
             data, src, target, pedigree, contentsource)
         # update the label and pedigree of the item that superclass added.
-        (ped, item_flat) = self.inserted[-1]
+        (ped, item_flat) = self.inserted[self.tcontent_id][-1]
         item_flat['label'] = self.label
-        self.inserted[-1] = (self.fixed_pedigree(ped), item_flat)
+        self.inserted[self.tcontent_id][-1] = (
+            self.fixed_pedigree(ped), item_flat)
         return ret
 
     def insert_products(self, path, target, content):
