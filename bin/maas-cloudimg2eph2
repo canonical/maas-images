@@ -122,12 +122,14 @@ human2bytes() {
 }
 
 resize_image() {
-    # grow image 'img' by 'size' and return a string
-    # suitable for restoring via restore_image
-    local oversize=""
+    # set image size to 'size'
+    #  if size is '+<size>', it will be grown by that size
+    #  if '--allow-padding' provided, then size will be
+    #    the minimum of "minimum_size + padding" or size
+    local padding=""
     case "$1" in
-        --allow-oversize=*) oversize="${1#--allow-oversize}"; shift;;
-        --allow-oversize) oversize="$2"; shift 2;;
+        --allow-padding=*) padding="${1#--allow-padding=}"; shift;;
+        --allow-padding) padding="$2"; shift 2;;
     esac
     local img="$1" size="$2" ret="" tok=":"
     local oimgsize="" oblocks="" out="" blksize=""
@@ -147,11 +149,12 @@ resize_image() {
             ;;
     esac
 
-    if [ -n "$oversize" ]; then
-        human2bytes "$oversize" || {
-            error "failed convert '$oversize' to bytes";
+    if [ -n "$padding" ]; then
+        human2bytes "$padding" || {
+            error "failed convert '$padding' to bytes";
             return 1;
         }
+        padbytes=$_RET
     fi
 
     out=$(e2fsck -fy "$img" 2>&1) ||
@@ -176,19 +179,28 @@ resize_image() {
         { error "failed to get min blocks in '$img'"; return 1; }
 
     local tblocks=$(($tbytes/$blksize))
-    if [ $tblocks -lt $minblocks ]; then
-        error "target blocks '$tblocks' smaller than minblocks '$minblocks'"
-        if [ -n "$oversize" ]; then
-            tblocks=$(($tblocks+($oversize/$blksize)))
-            error "WARN: '--allow-oversize=$oversize'. tblocks=$tblocks"
-        else
-            return 1
+    local des_blocks=$tblocks
+    if [ -n "$padding" ]; then
+        if [ $(($minblocks+($padbytes/$blksize))) -gt $tblocks ]; then
+            des_blocks=$((minblocks+($padbytes/$blksize)))
+            error "WARN: '--allow-padding=$padding'."
+            error "  minblocks=$minblocks target=$tblocks desired=$des_blocks"
+        elif [ $((minblocks+$(($padbytes/$blksize)))) -lt $tblocks ]; then
+            ddebug 1 "do not need pad, target=$tblocks > $minblocks+$padding"
         fi
-        tbytes=$(($tblocks*$blksize))
     fi
 
-    ddebug 1 "targetting $tbytes bytes. fs is currently $oblocks * $blksize."
-    ddebug 1 "resize to $tblocks blocks. minblocks=$minblocks."
+    if [ $des_blocks -lt $minblocks ]; then
+        error "target blocks '$tblocks' smaller than minblocks '$minblocks'"
+        error "fail: Could reize to to $size."
+        error "  minblocks=$minblocks target=$tblocks desired=$des_blocks"
+        return 1
+    fi
+    tbytes=$(($des_blocks*$blksize))
+
+    ddebug 1 "targetting $tbytes ($des_blocks*$blksize) bytes."
+    ddebug 1 "fs is currently $oblocks * $blksize."
+    ddebug 1 "resize to $des_blocks. minblocks=$minblocks. target=$tblocks"
 
     if [ "$oimgsize" -lt "$tbytes" ]; then
         truncate --size=$tbytes "$img" ||
@@ -198,7 +210,7 @@ resize_image() {
     out=$(e2fsck -fy "$img" 2>&1) ||
         { error "failed to e2fsck -fy '$img'"; error "$out"; return 1; }
 
-    out=$(resize2fs "$img" "$tblocks" 2>&1) ||
+    out=$(resize2fs "$img" "$des_blocks" 2>&1) ||
         { error "failed resize '$img'"; error "$out"; return 1; }
 
     if [ "$oimgsize" -gt "$tbytes" ]; then
@@ -402,9 +414,17 @@ main() {
     done
     ddebug 1 "kpacks done"
 
+    local padarg=""
+    ## ppc64el wily do not fit in 1400M. Instead of allowing this across the
+    ## board, we're going to keep the 1400M standard other places.
+    ## the '--allow-padding=100M' should give you 100M of wiggle room in
+    ## the resultant image.
+    if [ "$arch" = "ppc64el" ]; then
+        padarg="--allow-padding=100M"
+    fi
     if [ -n "$fs_img_size" ]; then
         ddebug 1 "setting final image to $fs_img_size"
-        if ! resize_image "$imgfile" "$fs_img_size"; then
+        if ! resize_image ${padarg} "$imgfile" "$fs_img_size"; then
             if ! allow_resize_failure "$arch"; then
                 error "failed resize of $imgfile"
                 return 1;
