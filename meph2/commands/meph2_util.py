@@ -200,6 +200,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
                                          insert_fieldnames=False)
             srcitems.append([pedigree, flat])
 
+        if not self.tproducts:
+            return
         sutil.walk_products(self.tproducts, cb_item=get_items)
 
         # empty products entries in the target tree for all those we modified
@@ -249,6 +251,8 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
 
     def rel2daily(self, ptree):
         ret = copy.deepcopy(ptree)
+        if not ret:
+            return
         ret['content_id'] = self.fixed_content_id(ret['content_id'])
 
         for oname in [o for o in ptree.get('products', {})]:
