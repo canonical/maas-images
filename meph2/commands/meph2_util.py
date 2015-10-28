@@ -151,6 +151,8 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
         sys.stderr.write("content_id=%s path=%s\n" % (content_id, path))
         ret = super(BareMirrorWriter, self).load_products(
             path=path, content_id=content_id)
+        if not ret:
+            ret = util.empty_iid_products(content_id)
         self.tcontent_id = content_id
         self.tproducts = copy.deepcopy(ret)
         return ret
@@ -257,12 +259,17 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
             del ptree['products'][oname]
 
     def fixed_content_id(self, content_id):
+        # when promoting from daily, our content ids get ':daily' removed
+        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download 
         return(content_id.replace(":daily", ""))
 
     def fixed_pedigree(self, pedigree):
         return tuple([self.fixed_product_id(pedigree[0])] + list(pedigree[1:]))
 
     def fixed_product_id(self, product_id):
+        # when promoting from daily, product ids get '.daily' removed
+        #  com.ubuntu.maas.daily:v2:boot:13.10:armhf:generic-lpae ->
+        #     com.ubuntu.maas:v2:boot:13.10:armhf:generic-lpae
         return product_id.replace(".daily:", ":")
 
     def load_products(self, path, content_id):
