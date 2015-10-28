@@ -153,7 +153,6 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             path=path, content_id=content_id)
         if not ret:
             ret = util.empty_iid_products(content_id)
-        print("ret: %s" % ret)
         self.tcontent_id = content_id
         self.tproducts = copy.deepcopy(ret)
         return ret
@@ -276,7 +275,6 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
     def load_products(self, path, content_id):
         # this loads the released products, but returns it in form
         # of daily products
-        print("loading %s -> %s" % (path, content_id))
         ret = super(ReleasePromoteMirror, self).load_products(
             path=path, content_id=self.fixed_content_id(content_id))
         return self.rel2daily(ret)
