@@ -166,8 +166,16 @@ apply_updates_chrooted() {
 
     local removes="^linux-.*"
     local arch_pkgs="" toremove=""
-    local add_pkgs="cloud-initramfs-dyn-netconf maas-enlist"
-    add_pkgs="${add_pkgs} open-iscsi overlayroot"
+    local add_pkgs="" rel_pkgs=""
+
+    # additional packages that we have to add
+    add_pkgs="cloud-initramfs-dyn-netconf open-iscsi overlayroot"
+
+    # rel_pkgs: packages added only in some releases
+    case "$release" in
+        precise|quantal|raring|saucy|trusty|utopic|vivid)
+            rel_pkgs="${rel_pkgs} maas-enlist";;
+    esac
 
     case "$arch" in
         arm64|armhf) arch_pkgs="u-boot-tools";;
@@ -199,8 +207,10 @@ apply_updates_chrooted() {
     _apt dist-upgrade ||
         { error "failed apt-get dist-upgrade"; return 1; }
 
-     _apt install $arch_pkgs $kpkg $add_pkgs ||
-         { error "failed installing $arch_pkgs $kpkg $add_pkgs"; return 1; }
+     _apt install $arch_pkgs $kpkg $add_pkgs $rel_pkgs || {
+        error "failed installing $arch_pkgs $kpkg $add_pkgs $rel_pkgs";
+        return 1;
+    }
 
     if ${ppa_clear} && [ -f "$IMAGES_PPA_FILE" ]; then
         debug 1 "disabling ppa in $IMAGES_PPA_FILE."
