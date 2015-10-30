@@ -121,6 +121,12 @@ SUBCOMMANDS = {
                          }),
         ],
     },
+    'sign': {
+        'help': 'Regenerate index.json and sign the stream',
+        'opts': [
+            COMMON_FLAGS['data_d'],
+        ],
+    },
 }
 
 
@@ -260,7 +266,7 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
 
     def fixed_content_id(self, content_id):
         # when promoting from daily, our content ids get ':daily' removed
-        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download 
+        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download
         return(content_id.replace(":daily", ""))
 
     def fixed_pedigree(self, pedigree):
@@ -539,7 +545,7 @@ def main_merge(args):
                     if item_info['sha256'] != target_item['sha256']:
                         print(
                             "Error: SHA256 of %s and %s do not match!" %
-                            (item['path'], target_item['path']),
+                            (item_info['path'], target_item['path']),
                             file=sys.stderr)
                         sys.exit(1)
                     else:
@@ -699,6 +705,15 @@ def main_reap_orphans(args):
     if not args.dry_run:
         util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
     return 0
+
+
+def main_sign(args):
+    md_d = os.path.join(args.data_d, "streams/v1/")
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
+
+    util.sign_streams_d(md_d)
 
 
 def main():
