@@ -2,6 +2,7 @@
 
 VERBOSITY=0
 TEMP_D=""
+COPY_TYPES="auto overlay qcow2 cp none"
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -28,7 +29,8 @@ Usage: ${0##*/} [ options ] image kernel-package out-dir
                         ROOT: path to the mounted 'image'
                         VERSION_FLAVOR: a string like 3.13.0-29-generic 
     --copy mode       use 'mode' to copy. default: auto
-                      one of: qcow2, cp, none
+                      one of: ${COPY_TYPES}
+                      overlay can be used only with mount-image-callback support
 EOF
 }
 
@@ -277,10 +279,16 @@ main() {
     trap cleanup EXIT
 
     if [ "$copy" = "auto" ]; then
-        command -v qemu-img >/dev/null 2>&1 && copy="qcow" || copy="cp"
+        if mount-image-callback --help | grep -q -- --overlay; then
+            copy="overlay"
+        elif command -v qemu-img >/dev/null 2>&1; then
+            copy="qcow"
+        else
+            copy="cp"
+        fi
     fi
 
-    local imgfp myimg="${TEMP_D}/my.img"
+    local imgfp myimg="${TEMP_D}/my.img" overlay_flags=""
     imgfp=$(readlink -f "$img") ||
         { error "failed to get full path to $img"; return 1; }
     debug 1 "copy mode = $copy"
@@ -292,17 +300,24 @@ main() {
         qcow) 
             qemu-img create -f qcow2 -b "$imgfp" "$myimg" ||
                 { error "failed create qcow2 backed by $img"; return 1; };;
-        *) error "bad copy type. one of [none, cp, qcow, auto]"; return 1;;
+        overlay)
+            overlay_flags="--overlay --read-only"
+            ln -s "$imgfp" "$myimg" ||
+            { error "failed link $imgfp -> $myimg"; return 1; };;
+        *) error "bad copy type. one of: $COPY_TYPES"; return 1;;
     esac
 
     gid=$(id -g)
     uid=$(id -u)
     chown_to="$gid:$uid"
 
+    local mic=""
+    mic=$(which mount-image-callback) ||
+        { error "mount-image-callback not in PATH"; return 1; }
     sudo \
         "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
         "http_proxy=$http_proxy" PACKAGES="$kpkg" \
-        mount-image-callback --sys --proc \
+        "$mic" --sys --proc $overlay_flags \
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" $vflags \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
             ${kihelper:+"--kihelper=$kihelper"} \
