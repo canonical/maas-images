@@ -20,6 +20,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
     -k | --kernel K    keep/install the kernel package 'k' inside image
     -p | --krd-pack P  create a kernel / ramdisk pack
                        P is ',' delimited: kernel-name,kernel,ramdisk[,flags]
+         --manifest M  write the dpkg manifest to M
     -v | --verbose     increase verbosity
 
    Example:
@@ -319,6 +320,7 @@ main() {
     local cur="" next="" output="" gzip=true kpkg=""
     local kpacks="" src_in="" src="" arch="" vflags=""
     local working_space="1024M" zero_img="true" fs_img_size="1400M"
+    local manifest_out=""
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -327,6 +329,7 @@ main() {
             -h|--help) Usage ; exit 0;;
             -a|--arch) arch="$next"; shift;;
             -k|--kernel) kpkg=$next; shift;;
+               --manifest) manifest_out="$next";;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
@@ -404,6 +407,8 @@ main() {
         ${arch:+"--arch=$arch"} "$imgfile" \
         "$kpkg" "$pkout" "$piout" "$manif" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
+    [ -z "$manifest_out" ] || cp "$manif" "$manifest_out" ||
+        { error "failed copying manifest to $manifest_out"; return 1; }
 
     local i="" oifs="$IFS"
     ddebug 1 "starting kpacks: ${kpacks[*]}"

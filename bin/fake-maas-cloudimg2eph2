@@ -13,18 +13,20 @@ getopt_out=$(getopt --name "${0##*/}" \
 gzip=true
 arch=""
 kernel=""
+manif=""
 kpacks=( )
 while [ $# -ne 0 ]; do
-	cur=$1
-	next=$2
-	case "$cur" in
-		-a|--arch) arch="$next"; shift;;
-		-k|--kernel) kernel=$next; shift;;
-		-p|--krd-pack) kpacks[${#kpacks[@]}]=$next; shift;;
-		   --no-gzip) gzip=false;;
-		--) shift; break;;
-	esac
-	shift;
+    cur=$1
+    next=$2
+    case "$cur" in
+        -a|--arch) arch="$next"; shift;;
+        -k|--kernel) kernel=$next; shift;;
+        -p|--krd-pack) kpacks[${#kpacks[@]}]=$next; shift;;
+           --manifest) manif="$next"; shift;;
+           --no-gzip) gzip=false;;
+        --) shift; break;;
+    esac
+    shift;
 done
 
 src=$1
@@ -37,6 +39,12 @@ $gzip && gzip_prog="gzip -c" || gzip_prog="cat"
 
 error "src=$src arch=$arch kernel=$kernel output=$root_gz"
 dd if=/dev/zero bs=1024 count=1024 2>/dev/null | $gzip_prog > "$root_gz"
+if [ -n "$manif" ]; then
+   npkg=10
+   for((i=0;i<$npkg;i++)); do
+      printf "bogus-package-%02d\t0.$((($npkg-$i)%$npkg))\n" "$i"
+   done > "$manif"
+fi
 
 OIFS="$IFS"
 for kpack in "${kpacks[@]}"; do
