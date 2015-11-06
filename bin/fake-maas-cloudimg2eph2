@@ -4,7 +4,7 @@ set -f
 error() { echo "$@" 1>&2; }
 
 short_opts="a:k:p:v"
-long_opts="arch:,kernel:,krd-pack:,verbose"
+long_opts="arch:,kernel:,krd-pack:,manifest:,verbose"
 getopt_out=$(getopt --name "${0##*/}" \
     --options "${short_opts}" --long "${long_opts}" -- "$@") &&
     eval set -- "${getopt_out}" ||

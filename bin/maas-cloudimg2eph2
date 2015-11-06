@@ -310,7 +310,7 @@ handle_kpack() {
 
 main() {
     local short_opts="a:hk:p:v"
-    local long_opts="arch:,help,kernel:,krd-pack:,no-gzip,verbose"
+    local long_opts="arch:,help,kernel:,krd-pack:,manifest:,no-gzip,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
