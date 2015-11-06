@@ -265,7 +265,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
         gencmd = ([mci2e] + self.vflags +
                   ["--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
-                   "--manifest=%s" % os.path.join(self.out_d, manifest_path) +
+                   "--manifest=%s" % os.path.join(self.out_d, manifest_path),
                    contentsource.url, os.path.join(self.out_d, rootimg_path)])
         krd_packs = []
         newpaths = set((rootimg_path, manifest_path,))
