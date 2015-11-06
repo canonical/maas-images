@@ -124,7 +124,7 @@ SUBCOMMANDS = {
     'sign': {
         'help': 'Regenerate index.json and sign the stream',
         'opts': [
-            COMMON_FLAGS['data_d'],
+            COMMON_FLAGS['data_d'], COMMON_FLAGS['no-sign'],
         ],
     },
 }
@@ -403,6 +403,17 @@ def load_products(path, product_streams):
     return products
 
 
+def gen_index_and_sign(data_d, sign=True):
+    md_d = os.path.join(data_d, "streams", "v1")
+    if not os.path.exists(md_d):
+        os.makedirs(md_d)
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
+
+    if sign:
+        util.sign_streams_d(md_d)
+
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -429,14 +440,7 @@ def main_insert(args):
     tmirror = InsertBareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
-    md_d = os.path.join(args.target, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(args.target)
     return 0
 
 
@@ -521,12 +525,7 @@ def main_import(args):
     with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
         fp.write(sutil.dump_data(product_tree) + b"\n")
 
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
+    gen_index_and_sign(args.target, not args.no_sign)
 
 
 def main_merge(args):
@@ -561,16 +560,7 @@ def main_merge(args):
             os.path.join(args.src, product_stream),
             os.path.join(args.target, product_stream))
 
-    md_d = os.path.join(args.target, 'streams', 'v1')
-    if not os.path.exists(md_d):
-        os.makedirs(md_d)
-
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
+    gen_index_and_sign(md_d, not args.no_sign)
 
 
 def main_promote(args):
@@ -603,14 +593,7 @@ def main_promote(args):
                                    label=args.label)
     tmirror.sync(smirror, src_path)
 
-    md_d = os.path.join(args.target, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(args.target, not args.no_sign)
     return 0
 
 
@@ -638,14 +621,7 @@ def main_clean_md(args):
     tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, mirror_path)
 
-    md_d = os.path.join(mirror_url, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(mirror_url, not args.no_sign)
     return 0
 
 
@@ -708,13 +684,8 @@ def main_reap_orphans(args):
 
 
 def main_sign(args):
-    md_d = os.path.join(args.data_d, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    util.sign_streams_d(md_d)
-
+    gen_index_and_sign(args.data_d)
+    return 0
 
 def main():
     parser = argparse.ArgumentParser()
