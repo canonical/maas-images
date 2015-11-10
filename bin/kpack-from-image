@@ -134,6 +134,15 @@ EOF
     return 0
 }
 
+clean_local_udev_rules() {
+    # in wily and later, /etc/udev/rules.d/*.rules will be copied
+    # into the initramfs.  If there existed a '70-persistent-net.rules'
+    # then those would be clearly wrong (mac addresses and naming for
+    # the specific system that generated this).  Clean those out.
+    local root="${1:-/}"
+    rm -f "${root%/}/etc/udev/rules.d/70-persistent-net.rules"
+}
+
 chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
@@ -170,6 +179,9 @@ chrooted() {
     which eatmydata >/dev/null 2>&1 && emd=eatmydata
 
     config_addl_modules / ||
+        { error "failed configuring additional modules!"; return 1; }
+
+    clean_local_udev_rules / ||
         { error "failed configuring additional modules!"; return 1; }
 
     DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
