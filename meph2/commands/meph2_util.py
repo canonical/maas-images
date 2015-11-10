@@ -414,6 +414,7 @@ def gen_index_and_sign(data_d, sign=True):
     if sign:
         util.sign_streams_d(md_d)
 
+
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -542,10 +543,9 @@ def main_merge(args):
                     target_version = target_product['versions'][version]
                     target_item = target_version['items'][item]
                     if item_info['sha256'] != target_item['sha256']:
-                        print(
-                            "Error: SHA256 of %s and %s do not match!" %
-                            (item_info['path'], target_item['path']),
-                            file=sys.stderr)
+                        sys.stderr.write(
+                            "Error: SHA256 of %s and %s do not match!\n" %
+                            (item_info['path'], target_item['path']))
                         sys.exit(1)
                     else:
                         continue
@@ -560,7 +560,7 @@ def main_merge(args):
             os.path.join(args.src, product_stream),
             os.path.join(args.target, product_stream))
 
-    gen_index_and_sign(md_d, not args.no_sign)
+    gen_index_and_sign(args.target, not args.no_sign)
 
 
 def main_promote(args):
@@ -686,6 +686,7 @@ def main_reap_orphans(args):
 def main_sign(args):
     gen_index_and_sign(args.data_d)
     return 0
+
 
 def main():
     parser = argparse.ArgumentParser()
