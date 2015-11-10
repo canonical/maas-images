@@ -485,7 +485,7 @@ def main_import(args):
 
         product_tree['products'][product_id] = {
             'subarches': 'generic',
-            'label': 'release',
+            'label': 'daily',
             'subarch': 'generic',
             'arch': arch,
             'os': os_name,
