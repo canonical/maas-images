@@ -49,7 +49,7 @@ kernel_from_mp() {
     # this is the unwrapped function that actually does everything
     # it essentially gets called by mount-image-callback.
     local short_opts="hv"
-    local long_opts="chown-to:,help,kihelper:,chown-to:,verbose"
+    local long_opts="chown-to:,help,kihelper:,proposed,chown-to:,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -58,6 +58,7 @@ kernel_from_mp() {
 
     local cur="" next=""
     local output="" copy=true chown_to="" gid="" uid="" kihelper=""
+    local proposed="false"
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
 
     while [ $# -ne 0 ]; do
@@ -67,6 +68,7 @@ kernel_from_mp() {
             -h|--help) Usage ; exit 0;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
                --kihelper) kihelper="$next"; shift;;
+               --proposed) proposed=true;;
                --skip-update) skip_update=true;;
             --) shift; break;;
         esac
@@ -93,6 +95,7 @@ kernel_from_mp() {
 
     local ch_outd="/tmp/output"
     KPACK_SKIP_APT_UPDATE=$skip_update CHROOTED_VERBOSITY=$VERBOSITY \
+        PROPOSED=$proposed \
         chroot "$mp" /bin/bash -s chrooted "$kpkg" "$ch_outd" < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
 
@@ -150,6 +153,7 @@ chrooted() {
     VERBOSITY=${CHROOTED_VERBOSITY:-${VERBOSITY}}
     local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
+    local proposed=${PROPOSED:-false} proposed_lfile=""
     local verflav initrd kernel
     export LANG=C
     kpkg="$1"
@@ -160,6 +164,18 @@ chrooted() {
     mkdir -p "$outd" || { error "failed mkdir $outd"; return 1; }
     local stamp="$outd/stamp"
     touch "$stamp"
+
+    # add proposed if necessary
+    if $proposed; then
+        local rel mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
+        proposed_lfile="/etc/apt/sources.list.d/proposed-$rel.list"
+        rel=$(lsb_release -sc) ||
+            { error "failed to read release"; return 1; }
+        debug 1 "adding proposed ($mirror) to $proposed_lfile"
+        echo "deb $mirror ${rel}-proposed main" > "$proposed_lfile"
+        $skip_update && 
+            { skip_update=false; debug 1 "enabling update due to proposed"; }
+    fi
 
     $skip_update || apt-get update -q ||
         { error "apt-get update failed"; return 1; }
@@ -189,6 +205,8 @@ chrooted() {
             $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
         { error "failed install of $copymods $*"; return 1; }
+
+    [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
 
     # here we look at all kernel files in /boot and get the package that
     # owns it.  if the package is the kernel that was supplied, then we
@@ -258,7 +276,7 @@ chrooted() {
 
 main() {
     local short_opts="hv"
-    local long_opts="help,kihelper:,copy:,verbose"
+    local long_opts="help,kihelper:,copy:,proposed,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -266,7 +284,7 @@ main() {
         { bad_Usage; return; }
 
     local cur="" next="" vflags=""
-    local output="" copy=auto chown_to="" gid="" uid=""
+    local output="" copy=auto chown_to="" gid="" uid="" proposed_flag=""
 
     while [ $# -ne 0 ]; do
         cur="$1"; next="$2";
@@ -275,6 +293,7 @@ main() {
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
                --kihelper) kihelper="$next"; shift;;
                --copy) copy=$next; shift;;
+               --proposed) proposed_flag="--proposed";;
             --) shift; break;;
         esac
         shift;
@@ -332,7 +351,7 @@ main() {
         "$mic" --sys --proc $overlay_flags \
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" $vflags \
             _MOUNTPOINT_ "--chown-to=$chown_to" \
-            ${kihelper:+"--kihelper=$kihelper"} \
+            ${kihelper:+"--kihelper=$kihelper"} ${proposed_flag} \
             "$kpkg" "$outd" ||
     { error "failed"; return 1; }
 
