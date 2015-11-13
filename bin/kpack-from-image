@@ -168,9 +168,9 @@ chrooted() {
     # add proposed if necessary
     if $proposed; then
         local rel mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
-        proposed_lfile="/etc/apt/sources.list.d/proposed-$rel.list"
         rel=$(lsb_release -sc) ||
             { error "failed to read release"; return 1; }
+        proposed_lfile="/etc/apt/sources.list.d/proposed-$rel.list"
         debug 1 "adding proposed ($mirror) to $proposed_lfile"
         echo "deb $mirror ${rel}-proposed main" > "$proposed_lfile"
         $skip_update && 
