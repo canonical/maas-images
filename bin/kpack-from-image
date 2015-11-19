@@ -186,7 +186,7 @@ chrooted() {
         copymods=""
     else
         apt-cache show $copymods >/dev/null 2>&1 ||
-            { error "copymods not available"; copymods=""; }
+            { error "copymods not available"; return 1; }
     fi
 
     zzgrub=/etc/kernel/postinst.d/zz-update-grub
