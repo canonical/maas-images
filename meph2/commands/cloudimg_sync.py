@@ -455,6 +455,8 @@ def main():
     parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
                         help="maas ephemeral v2 mirror.  "
                              'Use "%s" to force build [DEV ONLY!]' % FORCE_URL)
+    parser.add_argument('--keyring', action='store', default=None,
+                        help='keyring to be specified to gpg via --keyring')
     parser.add_argument('--config', default=defcfg, help='v2 config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
