@@ -20,10 +20,12 @@ subarches:
  - &sa_hwe_u  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &sa_hwe_v  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &sa_hwe_w  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
+ - &sa_hwe_x  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
+ - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-x]
 
 misc:
  - &glpae generic-lpae
@@ -34,6 +36,17 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: 16.04
+   release: xenial
+   kernels:
+    - [xenial,  armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_x]
+    - [xenial,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [xenial,  i386,    hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  amd64,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  ppc64el, hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 15.10
    release: wily
    kernels:
