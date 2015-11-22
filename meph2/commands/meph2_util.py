@@ -121,6 +121,12 @@ SUBCOMMANDS = {
                          }),
         ],
     },
+    'sign': {
+        'help': 'Regenerate index.json and sign the stream',
+        'opts': [
+            COMMON_FLAGS['data_d'], COMMON_FLAGS['no-sign'],
+        ],
+    },
 }
 
 
@@ -260,7 +266,7 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
 
     def fixed_content_id(self, content_id):
         # when promoting from daily, our content ids get ':daily' removed
-        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download 
+        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download
         return(content_id.replace(":daily", ""))
 
     def fixed_pedigree(self, pedigree):
@@ -397,6 +403,18 @@ def load_products(path, product_streams):
     return products
 
 
+def gen_index_and_sign(data_d, sign=True):
+    md_d = os.path.join(data_d, "streams", "v1")
+    if not os.path.exists(md_d):
+        os.makedirs(md_d)
+    index = util.create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(sutil.dump_data(index) + b"\n")
+
+    if sign:
+        util.sign_streams_d(md_d)
+
+
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
@@ -423,14 +441,7 @@ def main_insert(args):
     tmirror = InsertBareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
-    md_d = os.path.join(args.target, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(args.target)
     return 0
 
 
@@ -474,7 +485,7 @@ def main_import(args):
 
         product_tree['products'][product_id] = {
             'subarches': 'generic',
-            'label': 'release',
+            'label': 'daily',
             'subarch': 'generic',
             'arch': arch,
             'os': os_name,
@@ -515,12 +526,7 @@ def main_import(args):
     with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
         fp.write(sutil.dump_data(product_tree) + b"\n")
 
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
+    gen_index_and_sign(args.target, not args.no_sign)
 
 
 def main_merge(args):
@@ -537,10 +543,9 @@ def main_merge(args):
                     target_version = target_product['versions'][version]
                     target_item = target_version['items'][item]
                     if item_info['sha256'] != target_item['sha256']:
-                        print(
-                            "Error: SHA256 of %s and %s do not match!" %
-                            (item['path'], target_item['path']),
-                            file=sys.stderr)
+                        sys.stderr.write(
+                            "Error: SHA256 of %s and %s do not match!\n" %
+                            (item_info['path'], target_item['path']))
                         sys.exit(1)
                     else:
                         continue
@@ -555,16 +560,7 @@ def main_merge(args):
             os.path.join(args.src, product_stream),
             os.path.join(args.target, product_stream))
 
-    md_d = os.path.join(args.target, 'streams', 'v1')
-    if not os.path.exists(md_d):
-        os.makedirs(md_d)
-
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
+    gen_index_and_sign(args.target, not args.no_sign)
 
 
 def main_promote(args):
@@ -597,14 +593,7 @@ def main_promote(args):
                                    label=args.label)
     tmirror.sync(smirror, src_path)
 
-    md_d = os.path.join(args.target, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(args.target, not args.no_sign)
     return 0
 
 
@@ -632,14 +621,7 @@ def main_clean_md(args):
     tmirror = BareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, mirror_path)
 
-    md_d = os.path.join(mirror_url, "streams/v1/")
-    index = util.create_index(md_d, files=None)
-    with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
-
-    if not args.no_sign:
-        util.sign_streams_d(md_d)
-
+    gen_index_and_sign(mirror_url, not args.no_sign)
     return 0
 
 
@@ -698,6 +680,11 @@ def main_reap_orphans(args):
 
     if not args.dry_run:
         util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
+    return 0
+
+
+def main_sign(args):
+    gen_index_and_sign(args.data_d)
     return 0
 
 

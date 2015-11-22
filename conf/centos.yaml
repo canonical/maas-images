@@ -2,8 +2,8 @@
 # static location is the sha256sum.txt file.
 sha256_meta_data_path: http://cloud.centos.org/centos/{version}/images/sha256sum.txt
 
-product_id: "com.canonical.maas:centos-bases:{version}:{arch}"
-content_id: "com.ubuntu.maas:centos-bases-download"
+product_id: "com.ubuntu.maas.daily:centos-bases:{version}:{arch}"
+content_id: "com.ubuntu.maas:daily:centos-bases-download"
 os: centos
 arch: amd64
 
