@@ -231,15 +231,12 @@ allow_resize_failure() {
 
     if [ "$arch" = "arm64" ] &&
        [ "$barch" = "x86_64" -o -z "${barch#i?86}" ] &&
-       [ "$bdist" = "utopic" -o "$bdist" = "vivid" ]; then
+       [ "$bdist" != "trusty" ]; then
         error "***************************"
         error "WARN: resize2fs fail allowed for arch=$arch on dist=$bdist/$barch"
-        error "WARN: arm64 builds require utopic due to"
-        error "      'qemu: uncaught target signal 11'"
-        error "as seen http://tinyurl.com/koqo99m"
-        error "        http://paste.ubuntu.com/9900803/"
         error ""
-        error "resize2fs is broken on utopic: http://pad.lv/1415077"
+        error "resize2fs is less aggresive in versions"
+        error "newer than trusty: http://pad.lv/1415077"
         error "***************************"
         return 0
     else
