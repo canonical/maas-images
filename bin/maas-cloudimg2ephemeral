@@ -162,6 +162,15 @@ apply_updates_chrooted() {
     mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs ||
         { error "failed to create iscsi.initramfs"; return 1; }
 
+    local newaliases_hack=false
+    if [ "$cross" = "true" ] && [ -f /usr/bin/newaliases ]; then
+        # work around LP: #1531299
+        debug 1 "hacking around newaliases in cross root (LP: #1531299)"
+        dpkg-divert --local --rename --add /usr/bin/newaliases
+        ln -s /bin/true /usr/bin/newaliases
+        newaliases_hack=true
+    fi
+
     _apt update || { error "apt-get update failed"; return 1; }
 
     local removes="^linux-.*"
@@ -229,6 +238,13 @@ apply_updates_chrooted() {
 
     _apt clean ||
         { error "failed apt-get clean and update"; return 1; }
+
+    if [ "$newaliases_hack" = "true" ]; then
+        debug 1 "restoring newaliases"
+        rm -f /usr/bin/newaliases
+        dpkg-divert --local --rename --remove /usr/bin/newaliases
+        ls -l /usr/bin/newaliases
+    fi
 
     local f=/etc/network/interfaces
     mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
@@ -348,7 +364,7 @@ apply_updates() {
 
     local me=$(readlink -f "$0")
 
-    apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
+    cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
     [ $? -eq 0 ] || {
