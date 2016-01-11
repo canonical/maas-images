@@ -102,7 +102,11 @@ releases:
     - [vivid,   armhf,   hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
     - [vivid,   i386,    hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
     - [vivid,   ppc64el, hwe-v,    generic,  linux-generic-lts-vivid,   *sa_hwe_v]
-
+    - [wily,    amd64,   hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
+    - [wily,    arm64,   hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
+    - [wily,    armhf,   hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
+    - [wily,    i386,    hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
+    - [wily,    ppc64el, hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
  - version: 13.10
    release: saucy
    kernels:
