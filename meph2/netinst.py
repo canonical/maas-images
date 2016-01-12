@@ -16,6 +16,7 @@ import simplestreams
 from simplestreams import mirrors
 from simplestreams import objectstores
 from simplestreams import log
+from simplestreams import util as sutil
 from simplestreams.log import LOG
 
 from .url_helper import geturl, geturl_len, geturl_text, UrlError
@@ -576,6 +577,41 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None,
 
     simplestreams.util.products_condense(rdata)
     return (rdata, pathmap)
+
+
+def get_di_kernelinfo(releases=None, arches=None, asof=None, pockets=None):
+    # this returns a mirror reference and dict tree like
+    # items['precise']['amd64']['generic']['saucy']['kernel']
+    # where nodes are flattened to have data (including url)
+    smirror = NetbootMirrorReader(releases=releases, arches=arches,
+                                  pockets=pockets)
+    netproducts = smirror._get_products()
+
+    # TODO: implement 'asof' to get the right date, right now only returns
+    # latest.
+
+    items = {}
+    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release',
+                  'image-format')
+
+    def fillitems(item, tree, pedigree):
+        flat = sutil.products_exdata(tree, pedigree)
+        path = [flat[t] for t in tree_order]
+        cur = items
+        for tok in path:
+            if tok not in cur:
+                cur[tok] = {}
+            cur = cur[tok]
+
+        flat['url'] = smirror.source(item['path']).url
+        ftype = 'di-' + flat['ftype']
+        if (ftype not in cur or
+                cur[ftype]['version_name'] < flat['version_name']):
+            cur[ftype] = flat.copy()
+
+    sutil.walk_products(netproducts, cb_item=fillitems)
+
+    return (smirror, items)
 
 
 def main():
