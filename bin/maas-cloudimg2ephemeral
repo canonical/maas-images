@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+_APT_UPDATED=false
 IMAGES_PPA_APT_KEY="-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: SKS 1.0.10
 
@@ -106,19 +107,56 @@ show_vars() {
     done
 }
 
+_apt_update() {
+    if [ "${_APT_UPDATED}" != "true" ]; then
+        log_change true "run apt-update${1:+ [$1]}."
+        _apt update
+        _APT_UPDATED=true
+    fi
+}
+
 _apt() {
     local emd=$(which eatmydata 2>/dev/null || :)
+    case "$1" in
+        upgrade|dist-upgrade|install) _apt_update "$1";;
+    esac
     debug 1 "$emd apt-get ${apt_opts} --quiet --assume-yes $*"
     $emd apt-get ${apt_opts} -q --assume-yes "$@" </dev/null;
+}
+
+log_change() {
+    local change="$1"
+    shift
+    if $change; then
+       echo "CHANGE:" "$@"
+    else
+       echo "NO_CHANGE:" "$@"
+    fi
+}
+
+filter_installed_packages() {
+    # write to stdout, a list of packages not installed locally
+    local fmt='${Package} ${Version}\n'
+    LC_ALL=C dpkg-query --show "--showformat=${fmt}" "$@" 2>&1 | awk '
+        $0 ~ /[Nn]o packages/ {
+            sub("[.]$","",$NF);
+            pkgs[n]=$NF;
+            n=n+1;
+        }
+        $2 == "" {
+                pkgs[n]=$1;
+                n=n+1;
+        };
+        END { for(p in pkgs) {printf("%s ",pkgs[p])}; printf("\n"); }' n=0
 }
 
 apply_updates_chrooted() {
     # FIXME: remove this after no longer necessary
     local required="" known=""
     local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
-    local ppa_clear=${PPA_CLEAR:-true}
+    local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
     required="kpkg"
-    known="apt_opts PPA_CLEAR VERBOSITY"
+    known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
 
     export LC_ALL=C FLASH_KERNEL_SKIP=1
     export DEBIAN_FRONTEND=noninteractive
@@ -136,11 +174,14 @@ apply_updates_chrooted() {
     arch="$(dpkg --print-architecture)" ||
         { error "failed to get dpkg arch"; return 1; }
 
+    change="images ppa for cloud-init and maas-enlist (LP: #1511482, 1515733)"
     if [ -z "${IMAGES_PPA_APT_KEY}" -o "$release" != "precise" ]; then
+        log_change false "$change"
         debug 1 "not adding images ppa to release=$release"
     else
         # apt-add-repository failed when trying quantal amd64 with qemu-static.
         # so instead do this manually.
+        log_change true "$change"
         debug 1 "configuring PPA at $IMAGES_PPA_URL"
         echo "deb $IMAGES_PPA_URL $release main" > "$IMAGES_PPA_FILE" ||
             { error "failed writing to $IMAGES_PPA_FILE"; return 1; }
@@ -148,8 +189,8 @@ apply_updates_chrooted() {
             { error "apt-key add failed!"; return 1; }
     fi
 
-    # ensure mellanox mlx4_en gets loaded (LP: #1115710)
-    if [ ! -f "/etc/modprobe.d/mlx4.conf" ]; then
+    change="ensure mellanox mlx4_en gets loaded (LP: #1115710)"
+    if [ "$release" = "precise" -a ! -f "/etc/modprobe.d/mlx4.conf" ]; then
         # packaged version would be mlx4.conf, to avoid conflict
         # we install a different file here.
         printf "%s\n%s; %s\n" \
@@ -157,21 +198,23 @@ apply_updates_chrooted() {
             "install mlx4_core /sbin/modprobe --ignore-install mlx4_core" \
             "/sbin/modprobe mlx4_en" \
             > "/etc/modprobe.d/mlx4.ephemeral.conf"
+        log_change true "$change"
+    else
+        log_change false "$change"
     fi
 
-    mkdir -p /etc/iscsi && touch /etc/iscsi/iscsi.initramfs ||
-        { error "failed to create iscsi.initramfs"; return 1; }
-
+    change="build-only: divert newaliases (LP: #1531299)"
     local newaliases_hack=false
     if [ "$cross" = "true" ] && [ -f /usr/bin/newaliases ]; then
+        log_change true "$change"
         # work around LP: #1531299
         debug 1 "hacking around newaliases in cross root (LP: #1531299)"
         dpkg-divert --local --rename --add /usr/bin/newaliases
         ln -s /bin/true /usr/bin/newaliases
         newaliases_hack=true
+    else
+        log_change false "$change"
     fi
-
-    _apt update || { error "apt-get update failed"; return 1; }
 
     local removes="^linux-.*"
     local arch_pkgs="" toremove=""
@@ -205,24 +248,41 @@ apply_updates_chrooted() {
     )
     [ $? -eq 0 ] || { error "failed getting list to remove"; return 1; }
       
+    change="removing linux kernel packages."
     if [ -z "$toremove" ]; then
         error "nothing installed matched: $removes. nothing to remove"
+        log_change false "$change"
     else
         debug 1 "removing: $toremove"
         ( set -f; _apt remove --purge $toremove ) ||
             { error "failed to remove $toremove"; return 1; }
+        log_change true "$change [$toremove]"
+
+        _apt autoremove ||
+            { error "failed apt-get autoremove"; return 1; }
     fi
 
-    _apt autoremove ||
-        { error "failed apt-get autoremove"; return 1; }
+    change="apt-get dist-upgrade"
+    if [ "${dist_upgrade}" != "false" ]; then
+        log_change true "$change"
+        _apt dist-upgrade ||
+            { error "failed apt-get dist-upgrade"; return 1; }
+    else
+        log_change false "$change"
+    fi
 
-    _apt dist-upgrade ||
-        { error "failed apt-get dist-upgrade"; return 1; }
-
-     _apt install $arch_pkgs $kernel_pkg $add_pkgs $rel_pkgs || {
-        error "failed installing $arch_pkgs $kernel_pkg $add_pkgs $rel_pkgs";
-        return 1;
-    }
+    local missing="" pkgs="$arch_pkgs $kernel_pkg $add_pkgs $rel_pkgs"
+    missing=$(filter_installed_packages $pkgs)
+    change="install missing packages"
+    if [ -n "$missing" ]; then
+        log_change true "$change [$missing]"
+        _apt install $missing || {
+            error "failed installing $missing";
+            return 1;
+        }
+    else
+        log_change false "$change"
+    fi
 
     if ${ppa_clear} && [ -f "$IMAGES_PPA_FILE" ]; then
         debug 1 "disabling ppa in $IMAGES_PPA_FILE."
@@ -230,17 +290,22 @@ apply_updates_chrooted() {
             { error "failed to clear $IMAGES_PPA_FILE"; return 1; }
     fi
 
+    change="remove dpkg foreign architectures"
     if dpkg --print-foreign-architectures | grep -q i386; then
+        log_change true "$change"
         # precise used multiarch file
         dpkg --remove-architecture i386 >/dev/null 2>&1 ||
             rm /etc/dpkg/dpkg.cfg.d/multiarch
         dpkg --print-foreign-architectures | grep i386 &&
             { error "failed to remove i386 foreign arch"; return 1; }
         debug 1 "removed foreign arch i386"
+    else
+        log_change false "$change"
     fi
 
+    log_change true "apt-get clean"
     _apt clean ||
-        { error "failed apt-get clean and update"; return 1; }
+        { error "failed apt-get clean"; return 1; }
 
     if [ "$newaliases_hack" = "true" ]; then
         debug 1 "restoring newaliases"
@@ -249,16 +314,20 @@ apply_updates_chrooted() {
         ls -l /usr/bin/newaliases
     fi
 
+    change="symlink ENI for cloud-initramfs-dyn-netconf"
     local f=/etc/network/interfaces
+    log_change true "$change"
     mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
         { error "failed to link dynamic interfaces"; return 1; }
 
+    change="update-initramfs"
     if [ "$kpkg" != "none" ]; then
         local k="" i=""
         for i in /boot/vmlinu?-*; do
             [ "${i%-virtual}" = "${i}" ] && k=${i};
         done
         ver=${k##*/vmlinu?-}
+        log_change true "$change [$ver]"
         debug 1 "updating kernel version '$ver'"
         update-initramfs -u -k "$ver" ||
             { error "update-initramfs failed"; return 1; }
@@ -268,6 +337,7 @@ apply_updates_chrooted() {
             chmod ugo+r /tmp/kernel.img ||
             { error "failed to publish kernel files to /tmp/"; return 1; }
     else
+        log_change false "$change"
         debug 1 "kernel package = 'none'. No kernels published."
     fi
     dpkg-query --show > /tmp/manifest ||
@@ -391,13 +461,18 @@ apply_updates() {
     fi
 
     # LP: #1034116: disable rescuevol and overlayroot's diskcfg
+    change="disable rescuevol (LP: #1034116)"
     if grep -q "^cloud-initramfs-rescuevol${tab}" "$dir/tmp/manifest"; then
+        log_change true "$change"
         # if cloud-initramfs-resuevol is installed, disable it
         echo "# cloud-initramfs-rescuevol is disabled by ${0##*/}" \
             > "$dir/etc/rescuevol-ignore" ||
         { error "failed to disable rescuevol"; return 1; }
+    else
+        log_change false "$change"
     fi
 
+    change="disable overlayroot via /etc/overlayroot.local.conf (LP: #1533822)"
     if grep -q "^overlayroot${tab}" "$dir/tmp/manifest"; then
         printf "%s\n%s\n%s\n" "# overlayroot_cfgdisk disabled by ${0##*/}" \
             "overlayroot_cfgdisk=disabled" "overlayroot=tmpfs" \

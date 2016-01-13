@@ -137,6 +137,15 @@ EOF
     return 0
 }
 
+ensure_iscsi_initramfs_support() {
+    local root="${1:-/}"
+    local mfile="${root%/}/etc/iscsi/iscsi.initramfs"
+    if [ ! -f "$mfile" ]; then
+        mkdir -p "${mfile%/*}" && touch "$mfile" ||
+        { error "failed to create iscsi.initramfs"; return 1; }
+    fi
+}
+
 clean_local_udev_rules() {
     # in wily and later, /etc/udev/rules.d/*.rules will be copied
     # into the initramfs.  If there existed a '70-persistent-net.rules'
@@ -208,6 +217,9 @@ chrooted() {
 
     config_addl_modules / ||
         { error "failed configuring additional modules!"; return 1; }
+
+    ensure_iscsi_initramfs_support / ||
+        { error "failed to enable iscsi initramfs support"; return 1; }
 
     clean_local_udev_rules / ||
         { error "failed configuring additional modules!"; return 1; }
