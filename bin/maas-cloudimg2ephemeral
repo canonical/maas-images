@@ -175,7 +175,10 @@ apply_updates_chrooted() {
 
     local removes="^linux-.*"
     local arch_pkgs="" toremove=""
-    local add_pkgs="" rel_pkgs=""
+    local add_pkgs="" rel_pkgs="" kernel_pkg=""
+    if [ "$kpkg" != "none" ]; then
+        kernel_pkg="$kpkg"
+    fi
 
     # additional packages that we have to add
     add_pkgs="cloud-initramfs-dyn-netconf open-iscsi overlayroot"
@@ -216,8 +219,8 @@ apply_updates_chrooted() {
     _apt dist-upgrade ||
         { error "failed apt-get dist-upgrade"; return 1; }
 
-     _apt install $arch_pkgs $kpkg $add_pkgs $rel_pkgs || {
-        error "failed installing $arch_pkgs $kpkg $add_pkgs $rel_pkgs";
+     _apt install $arch_pkgs $kernel_pkg $add_pkgs $rel_pkgs || {
+        error "failed installing $arch_pkgs $kernel_pkg $add_pkgs $rel_pkgs";
         return 1;
     }
 
@@ -250,20 +253,25 @@ apply_updates_chrooted() {
     mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
         { error "failed to link dynamic interfaces"; return 1; }
 
-    local k="" i=""
-    for i in /boot/vmlinu?-*; do
-        [ "${i%-virtual}" = "${i}" ] && k=${i};
-    done
-    ver=${k##*/vmlinu?-}
-    debug 1 "updating kernel version '$ver'"
-    update-initramfs -u -k "$ver" ||
-        { error "update-initramfs failed"; return 1; }
+    if [ "$kpkg" != "none" ]; then
+        local k="" i=""
+        for i in /boot/vmlinu?-*; do
+            [ "${i%-virtual}" = "${i}" ] && k=${i};
+        done
+        ver=${k##*/vmlinu?-}
+        debug 1 "updating kernel version '$ver'"
+        update-initramfs -u -k "$ver" ||
+            { error "update-initramfs failed"; return 1; }
 
-    cp /boot/initrd.img-$ver /tmp/initrd.img &&
-        cp /boot/vmlinu?-$ver /tmp/kernel.img &&
-        chmod ugo+r /tmp/kernel.img &&
-        dpkg-query --show > /tmp/manifest ||
-        { error "failed to publish files to /tmp/"; return 1; }
+        cp /boot/initrd.img-$ver /tmp/initrd.img &&
+            cp /boot/vmlinu?-$ver /tmp/kernel.img &&
+            chmod ugo+r /tmp/kernel.img ||
+            { error "failed to publish kernel files to /tmp/"; return 1; }
+    else
+        debug 1 "kernel package = 'none'. No kernels published."
+    fi
+    dpkg-query --show > /tmp/manifest ||
+        { error "failed to publish manifest to /tmp/"; return 1; }
 
     return 0
 }
@@ -376,9 +384,11 @@ apply_updates() {
         chown "--reference=$perms_ref" \
             "$dir/tmp/kernel.img" "$dir/tmp/initrd.img" "$dir/tmp/manifest"
 
-    mv "$dir/tmp/kernel.img" "$kernel_out" &&
-        mv "$dir/tmp/initrd.img" "$initrd_out" ||
-        { error "failed to copy kernels out"; return 1; }
+    if [ "$kpkg" != "none" ]; then
+        mv "$dir/tmp/kernel.img" "$kernel_out" &&
+            mv "$dir/tmp/initrd.img" "$initrd_out" ||
+            { error "failed to copy kernels out"; return 1; }
+    fi
 
     # LP: #1034116: disable rescuevol and overlayroot's diskcfg
     if grep -q "^cloud-initramfs-rescuevol${tab}" "$dir/tmp/manifest"; then

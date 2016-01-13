@@ -2,7 +2,7 @@
 #   kernel-release, arch, primary-subarch, flavor, kernel-pkgname, subarches
 # we use the anchors to make subarches more compact
 #
-# default_kernel is "builtin" kernel.
+# builtin_kernel is "builtin" kernel.
 # default is 'linux-generic'
 #
 # kernel arrays are
@@ -48,6 +48,7 @@ releases:
     - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 15.10
+   builtin_kernel: linux-generic
    release: wily
    kernels:
     - [wily,    armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_w]
@@ -70,6 +71,7 @@ releases:
     - [vivid,   arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [vivid,   arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 14.10
+   builtin_kernel: linux-generic
    release: utopic
    kernels:
     - [utopic,  armhf,   hwe-u,    generic,   linux-generic,            *arm_hwe_u]
@@ -81,6 +83,7 @@ releases:
     - [utopic,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [utopic,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 14.04
+   builtin_kernel: linux-generic
    release: trusty
    kernels:
     - [trusty,  armhf,   hwe-t,    generic,   linux-generic,            *arm_hwe_t]
@@ -108,6 +111,7 @@ releases:
     - [wily,    i386,    hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
     - [wily,    ppc64el, hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
  - version: 13.10
+   builtin_kernel: linux-generic
    release: saucy
    kernels:
     - [saucy,   armhf,   hwe-s,    generic,   linux-generic,            *sa_hwe_s]
@@ -116,7 +120,7 @@ releases:
     - [saucy,   amd64,   hwe-s,    generic,   linux-generic,            *sa_hwe_t]
  - version: 12.04
    release: precise
-   default_kernel: {armhf: linux-highbank}
+   builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
    kernels:
     - [precise, i386,    hwe-p,    generic,  linux-generic,             *sa_hwe_p]
     - [precise, amd64,   hwe-p,    generic,  linux-generic,             *sa_hwe_p]

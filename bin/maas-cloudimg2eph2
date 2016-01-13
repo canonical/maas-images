@@ -18,6 +18,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
    options:
          --no-gzip     do not gzip output image
     -k | --kernel K    keep/install the kernel package 'k' inside image
+                       use 'none' to remove any existing kernels
     -p | --krd-pack P  create a kernel / ramdisk pack
                        P is ',' delimited: kernel-name,kernel,ramdisk[,flags]
          --manifest M  write the dpkg manifest to M

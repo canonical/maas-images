@@ -146,6 +146,18 @@ clean_local_udev_rules() {
     rm -f "${root%/}/etc/udev/rules.d/70-persistent-net.rules"
 }
 
+insist_running_in_container() {
+    local root="${1:-/}"
+    ln -sf /bin/true "${root%/}/bin/running-in-container"
+}
+
+vrun() {
+    local vlvl="$1" msg="$2" 
+    shift 2
+    debug $vlvl "$msg: $*"
+    "$@"
+}
+
 chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
@@ -200,11 +212,14 @@ chrooted() {
     clean_local_udev_rules / ||
         { error "failed configuring additional modules!"; return 1; }
 
-    DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
+    insist_running_in_container / ||
+        { error "failed to set running-in-container to true"; return 1; }
+    vrun 1 "installing packages" \
+        env DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet \
             $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
-        { error "failed install of $copymods $*"; return 1; }
+        { error "failed install of $copymods ${pkgs[*]}"; return 1; }
 
     [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
 

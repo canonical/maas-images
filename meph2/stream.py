@@ -63,9 +63,25 @@ def create_version(arch, release, version_name, img_url, out_d,
     # TODO: enable_proposed does not affect image build, only d-i scraping
     enable_proposed = cfgdata.get('enable_proposed', False)
 
-    # default_kernel is an arch specific dictionary per release in config
-    # like releases['trusty']['default_kernel']['amd64']
-    builtin_kernel = rdata.get('default_kernel', {}).get(arch, 'linux-generic')
+    # default kernel can be:
+    #  string or None: use this as the value for all arch
+    #  dictionary of arch with default in 'default'.
+    #    If no default, use linux-generic
+    #      {armhf: linux-highbank, 'default': 'linux-foo'}
+    dkdata = rdata.get('builtin_kernel')
+    if isinstance(dkdata, str) or dkdata is None:
+        builtin_kernel = dkdata
+    elif isinstance(dkdata, dict):
+        if arch in dkdata:
+            builtin_kernel = dkdata[arch]
+        else:
+            builtin_kernel = dkdata.get('default', 'linux-generic')
+
+    if builtin_kernel:
+        bkparm = "--kernel=%s" % builtin_kernel
+    else:
+        bkparm = "--kernel=none"
+
     mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
 
     if include_di:
@@ -86,7 +102,7 @@ def create_version(arch, release, version_name, img_url, out_d,
     manifest_path = PATH_FORMATS['manifest'] % subs
 
     gencmd = ([mci2e] + vflags +
-              ["--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
+              [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
                img_url, os.path.join(out_d, rootimg_path)])
 
