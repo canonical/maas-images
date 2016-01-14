@@ -217,7 +217,7 @@ apply_updates_chrooted() {
     fi
 
     local removes="^linux-.*"
-    local arch_pkgs="" toremove=""
+    local arch_pkgs="" toremove="" removed="" installed=""
     local add_pkgs="" rel_pkgs="" kernel_pkg=""
     if [ "$kpkg" != "none" ]; then
         kernel_pkg="$kpkg"
@@ -257,10 +257,8 @@ apply_updates_chrooted() {
         ( set -f; _apt remove --purge $toremove ) ||
             { error "failed to remove $toremove"; return 1; }
         log_change true "$change [$toremove]"
-
-        _apt autoremove ||
-            { error "failed apt-get autoremove"; return 1; }
     fi
+    removed="$toremove"
 
     change="apt-get dist-upgrade"
     if [ "${dist_upgrade}" != "false" ]; then
@@ -283,6 +281,7 @@ apply_updates_chrooted() {
     else
         log_change false "$change"
     fi
+    installed="$missing"
 
     if ${ppa_clear} && [ -f "$IMAGES_PPA_FILE" ]; then
         debug 1 "disabling ppa in $IMAGES_PPA_FILE."
@@ -299,6 +298,15 @@ apply_updates_chrooted() {
         dpkg --print-foreign-architectures | grep i386 &&
             { error "failed to remove i386 foreign arch"; return 1; }
         debug 1 "removed foreign arch i386"
+    else
+        log_change false "$change"
+    fi
+
+    change="autoremove"
+    if [ -n "$removed" ]; then
+        log_change true "$change [removed=$removed]"
+        _apt autoremove ||
+            { error "failed apt-get autoremove"; return 1; }
     else
         log_change false "$change"
     fi
