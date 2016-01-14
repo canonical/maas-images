@@ -175,7 +175,7 @@ apply_updates_chrooted() {
         { error "failed to get dpkg arch"; return 1; }
 
     change="images ppa for cloud-init and maas-enlist (LP: #1511482, 1515733)"
-    if [ "$release" != "precise" ]; then
+    if [ "$release" = "precise" ]; then
         # apt-add-repository failed when trying quantal amd64 with qemu-static.
         # so instead do this manually.
         log_change true "$change"
