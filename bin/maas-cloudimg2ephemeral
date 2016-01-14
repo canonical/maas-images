@@ -322,7 +322,7 @@ apply_updates_chrooted() {
         ls -l /usr/bin/newaliases
     fi
 
-    change="symlink ENI for cloud-initramfs-dyn-netconf"
+    change="symlink ENI for cloud-initramfs-dyn-netconf (LP: #1534205)"
     local f=/etc/network/interfaces
     log_change true "$change"
     mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
