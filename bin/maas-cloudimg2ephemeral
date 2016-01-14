@@ -175,10 +175,7 @@ apply_updates_chrooted() {
         { error "failed to get dpkg arch"; return 1; }
 
     change="images ppa for cloud-init and maas-enlist (LP: #1511482, 1515733)"
-    if [ -z "${IMAGES_PPA_APT_KEY}" -o "$release" != "precise" ]; then
-        log_change false "$change"
-        debug 1 "not adding images ppa to release=$release"
-    else
+    if [ "$release" != "precise" ]; then
         # apt-add-repository failed when trying quantal amd64 with qemu-static.
         # so instead do this manually.
         log_change true "$change"
@@ -187,6 +184,9 @@ apply_updates_chrooted() {
             { error "failed writing to $IMAGES_PPA_FILE"; return 1; }
         printf "%s\n" "$IMAGES_PPA_APT_KEY" | apt-key add - ||
             { error "apt-key add failed!"; return 1; }
+    else
+        log_change false "$change"
+        debug 1 "not adding images ppa to release=$release"
     fi
 
     change="ensure mellanox mlx4_en gets loaded (LP: #1115710)"
