@@ -150,12 +150,27 @@ filter_installed_packages() {
         END { for(p in pkgs) {printf("%s ",pkgs[p])}; printf("\n"); }' n=0
 }
 
+get_new_pkgs() {
+    # get_new_pkgs(manifest_in, manifest_out)
+    # return a list of packages in manifest_out that are not in manifest_in
+    _RET=$(set -o pipefail
+        cat "$1" "$1" "$2" | awk '-F\t' '{print $1}' | sort | uniq -u) &&
+        (set -f; echo $_RET)
+}
+get_removed_pkgs() {
+    # get_removed_pkgs(manifest_in, manifest_out)
+    # return a list of packages manifest_in not in manifest_out
+    _RET=$(set -o pipefail
+        cat "$1" "$2" "$2" | awk '-F\t' '{print $1}' | sort | uniq -u) &&
+        (set -f; echo $_RET)
+}
+
 apply_updates_chrooted() {
     # FIXME: remove this after no longer necessary
     local required="" known=""
     local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
     local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
-    required="kpkg"
+    required="kpkg pubd"
     known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
 
     export LC_ALL=C FLASH_KERNEL_SKIP=1
@@ -174,6 +189,11 @@ apply_updates_chrooted() {
     arch="$(dpkg --print-architecture)" ||
         { error "failed to get dpkg arch"; return 1; }
 
+
+    mkdir -p "$pubd" || { error "failed to create pubdir '$pubd'"; return 1; }
+
+    dpkg-query --show > "$pubd/manifest.in"
+    
     change="images ppa for cloud-init and maas-enlist (LP: #1511482, 1515733)"
     if [ "$release" = "precise" ]; then
         # apt-add-repository failed when trying quantal amd64 with qemu-static.
@@ -302,9 +322,9 @@ apply_updates_chrooted() {
         log_change false "$change"
     fi
 
-    change="autoremove"
+    change="run autoremove"
     if [ -n "$removed" ]; then
-        log_change true "$change [removed=$removed]"
+        log_change true "$change"
         _apt autoremove ||
             { error "failed apt-get autoremove"; return 1; }
     else
@@ -340,16 +360,16 @@ apply_updates_chrooted() {
         update-initramfs -u -k "$ver" ||
             { error "update-initramfs failed"; return 1; }
 
-        cp /boot/initrd.img-$ver /tmp/initrd.img &&
-            cp /boot/vmlinu?-$ver /tmp/kernel.img &&
-            chmod ugo+r /tmp/kernel.img ||
-            { error "failed to publish kernel files to /tmp/"; return 1; }
+        cp /boot/initrd.img-$ver "$pubd/initrd.img" &&
+            cp /boot/vmlinu?-$ver "$pubd/kernel.img" &&
+            chmod ugo+r "$pubd/kernel.img" ||
+            { error "failed to publish kernel files to $pubd"; return 1; }
     else
         log_change false "$change"
         debug 1 "kernel package = 'none'. No kernels published."
     fi
-    dpkg-query --show > /tmp/manifest ||
-        { error "failed to publish manifest to /tmp/"; return 1; }
+    dpkg-query --show > "$pubd/manifest" ||
+        { error "failed to publish manifest to $pubd"; return 1; }
 
     return 0
 }
@@ -449,8 +469,10 @@ apply_updates() {
         debug 1 "using apt options ${apt_opts} for install"
 
     local me=$(readlink -f "$0")
+    local pubd="/tmp/results" fpubd="$dir/tmp/results"
 
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
+        pubd="$pubd" \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
     [ $? -eq 0 ] || {
@@ -459,18 +481,17 @@ apply_updates() {
     }
 
     [ -n "$perms_ref" ] &&
-        chown "--reference=$perms_ref" \
-            "$dir/tmp/kernel.img" "$dir/tmp/initrd.img" "$dir/tmp/manifest"
+        chown -R "--reference=$perms_ref" "${fpubd}"
 
     if [ "$kpkg" != "none" ]; then
-        mv "$dir/tmp/kernel.img" "$kernel_out" &&
-            mv "$dir/tmp/initrd.img" "$initrd_out" ||
+        mv "$fpubd/kernel.img" "$kernel_out" &&
+            mv "$fpubd/initrd.img" "$initrd_out" ||
             { error "failed to copy kernels out"; return 1; }
     fi
 
     # LP: #1034116: disable rescuevol and overlayroot's diskcfg
     change="disable rescuevol (LP: #1034116)"
-    if grep -q "^cloud-initramfs-rescuevol${tab}" "$dir/tmp/manifest"; then
+    if grep -q "^cloud-initramfs-rescuevol${tab}" "$fpubd/manifest"; then
         log_change true "$change"
         # if cloud-initramfs-resuevol is installed, disable it
         echo "# cloud-initramfs-rescuevol is disabled by ${0##*/}" \
@@ -481,18 +502,27 @@ apply_updates() {
     fi
 
     change="disable overlayroot via /etc/overlayroot.local.conf (LP: #1533822)"
-    if grep -q "^overlayroot${tab}" "$dir/tmp/manifest"; then
+    if grep -q "^overlayroot${tab}" "$fpubd/manifest"; then
         printf "%s\n%s\n%s\n" "# overlayroot_cfgdisk disabled by ${0##*/}" \
             "overlayroot_cfgdisk=disabled" "overlayroot=tmpfs" \
             > "$dir/etc/overlayroot.local.conf"
     fi
 
-    if [ -n "$manifest" ]; then 
-        mv "$dir/tmp/manifest" "$manifest" || fail "failed to move manifest"
+    local pkg_add="" pkg_remove=""
+    pkg_add=$(get_new_pkgs "$fpubd/manifest.in" "$fpubd/manifest") ||
+        fail "failed to get new packages"
+    pkg_remove=$(get_removed_pkgs "$fpubd/manifest.in" "$fpubd/manifest") ||
+        fail "failed to get removed packages"
+    if [ -z "$pkg_add" -a -z "$pkg_remove" ]; then
+        log_change false "package changes: add='' remove=''"
     else
-        rm "$dir/tmp/manifest" ||
-            fail "failed to rm manifest"
+        log_change true "package changes: add=$pkg_add remove=$pkg_remove"
     fi
+
+    if [ -n "$manifest" ]; then
+        mv "$fpubd/manifest" "$manifest" || fail "failed to move manifest"
+    fi
+    rm -Rf "$fpubd" || fail "failed to remove pubd"
     
     undisable_services "$dir"
 
