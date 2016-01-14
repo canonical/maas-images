@@ -194,7 +194,7 @@ resize_image() {
 
     if [ $des_blocks -lt $minblocks ]; then
         error "target blocks '$tblocks' smaller than minblocks '$minblocks'"
-        error "fail: Could reize to to $size."
+        error "fail: Could not resize to $size. ($tblocks * $blksize)"
         error "  minblocks=$minblocks target=$tblocks desired=$des_blocks"
         return 1
     fi
@@ -230,18 +230,19 @@ allow_resize_failure() {
     barch=${2:-$(uname -m)}
     bdist=${3:-$(lsb_release -sc)}
 
+    local info="arch=$arch build-system=$bdist/$barch"
     if [ "$arch" = "arm64" ] &&
        [ "$barch" = "x86_64" -o -z "${barch#i?86}" ] &&
        [ "$bdist" != "trusty" ]; then
         error "***************************"
-        error "WARN: resize2fs fail allowed for arch=$arch on dist=$bdist/$barch"
+        error "WARN: resize2fs fail allowed for $info"
         error ""
         error "resize2fs is less aggresive in versions"
         error "newer than trusty: http://pad.lv/1415077"
         error "***************************"
         return 0
     else
-        error "resize image failure not allowed for $arch/$barch/$bdist"
+        error "resize image failure not allowed for $info"
         return 1
     fi
 }
