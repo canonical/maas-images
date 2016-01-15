@@ -481,7 +481,7 @@ main() {
         cp --sparse=always "$src" "$imgfile" ||
             { error "failed to copy $src_in to temp"; return 1; }
         chmod u+w "$imgfile" ||
-            { error "failed to give write permsm to $imgfile"; return 1; }
+            { error "failed to give write perms to $imgfile"; return 1; }
     fi
 
     ensure_file_d "$output" ||
