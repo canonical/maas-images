@@ -516,18 +516,23 @@ main() {
     done
     ddebug 1 "kpacks done"
 
-    local padarg=""
-    ## ppc64el wily do not fit in 1400M. Instead of allowing this across the
-    ## board, we're going to keep the 1400M standard other places.
-    ## the '--allow-padding=100M' should give you 100M of wiggle room in
-    ## the resultant image.
+    local pad="" tmp_img_size="$fs_img_size"
     if [ "$arch" = "ppc64el" ]; then
-        fs_img_size="1500M"
+        ## ppc64el wily do not fit in 1400M. Instead of allowing this across
+        ## the board, we're going to keep the 1400M standard other places.
+        ## the 'pad' of 100M gives ~ 100M wiggle room in image.
+        tmp_img_size="1600M"
+        pad="100M"
     fi
-    ddebug 1 "copying working img to final with $fs_img_size"
+    ddebug 1 "copying working img into new fs of $tmp_img_size (pad=$pad)"
     local timg="$imgfile.fs_img_size"
-    copy_filesystem_image "$imgfile" "$timg" "$fs_img_size" ||
+    copy_filesystem_image "$imgfile" "$timg" "$tmp_img_size" ||
         error "failed copying $imgfile to $timg"
+
+    if [ -n "$pad" ]; then
+        ddebug 1 "adjusting image to fit $fs_img_size with pad=$pad"
+        resize_image "--allow-padding=$pad" "$timg" "$fs_img_size"
+    fi
 
     if $zero_img; then
         ddebug 1 "zeroing img"
