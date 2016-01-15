@@ -13,7 +13,8 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
    convert 'source-image' into a ephemeral image and put
    output into output-image.gz.
 
-   source-image can be url or file path that is either .tar.gz or .img.
+   source-image can be url or file path that is either .tar.gz or .img
+   or -root.tar.gz. or -root.tar.xz
 
    options:
          --no-gzip     do not gzip output image
@@ -65,37 +66,71 @@ get_img_from_tar() {
     mv "$found" "$out" && rm -Rf "$mtmp"
 }
 
+root_tar_to_image() {
+    local tball="$1" output="$2" tempd="$3" size="4G"
+    local mtmp=$(mktemp -d "${tempd}/root_tar_to_image.XXXXXX")
+    local mp="$mtmp/mp" xout="" ret=""
+    truncate "--size=$size" "$output" ||
+        return "failed to create file of $size in $output"
+    mkdir "$mp"
+    out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
+        { error "failed mkfs.ext4 -F '$output'"; return 1; }
+    debug 1 "turning root tarball in $tball to image in $output"
+    sudo bash -ec 'tball="$1"; img="$2"; mp="$3";
+        mount -o loop "$img" "$mp"
+        trap "umount $mp" EXIT
+        tar -C "$mp" -xpSf "$tball" --numeric-owner \
+            --xattrs "--xattrs-include=*"' \
+        "root-tar-to-image" "$tball" "$output" "$mp"
+    ret=$?
+    rm -Rf "$mtmp" || return
+    return $ret
+}
+
 get_img_file() {
-    local fout="" input="$1" output="$2" tempd="$3"
-    fout=$(LANG=C file "$input") || { error "failed: file $input"; return 1; }
-    case "${fout#$input: }" in
-        "gzip compressed"*)
-            fout=$(zcat "$input" | file -)
-            case "${fout#*: }" in
-                POSIX\ tar*) get_img_from_tar "$input" "$output" "$tempd";;
-                *) zcat -c "$input" > "$output";;
-            esac
-            ;;
-        "POSIX tar"*)
+    local fout="" fmt="$1" input="$2" output="$3" tempd="$4"
+    if [ "$fmt" = "auto" ]; then
+        fout=$(LANG=C file "$input") ||
+            { error "failed: file $input"; return 1; }
+        case "${fout#$input: }" in
+            "gzip compressed"*)
+                fout=$(zcat "$input" | file -)
+                case "${fout#*: }" in
+                    POSIX\ tar*) fmt="img-tar";;
+                    *) fmt="root-image";;
+                esac
+                ;;
+            "POSIX tar"*) fmt="img-tar";;
+            *ext[234]\ filesystem*) fmt="root-image";;
+            *)
+                # if the above failed (on trusty a .tar.gz file was reported
+                # as a Minux file system) then try filename based heuristics
+                case "$input" in
+                    *-root.t??|*-root.tar|*-root.tar.??) fmt="root-tar";;
+                    *.tar.gz|*.tgz|*.tar) fmt="img-tar";;
+                    *.gz) fmt="root-image-gz";;
+                    *) 
+                        error "WARN: file '$input' did not match name hueristics"
+                        fmt="root-image";;
+                esac
+                debug 1 "guessing $input is $fmt based on name and 'file' [$fout]";;
+        esac
+        debug 1 "determined format is $fmt"
+    fi
+    case "$fmt" in
+        img-tar)
             get_img_from_tar "$input" "$output" "$tempd";;
-        *ext[234]\ filesystem*)
+        root-image-gz)
+            zcat -c "$input" > "$output";;
+        root-image)
             ln -s "$(readlink -f "$input")" "$output";;
+        root-tar)
+            root_tar_to_image "$input" "$output" "$tempd";;
         *)
-            # if the above failed (on trusty a .tar.gz file was reported
-            # as a Minux file system) then try filename based heuristics
-            case "$input" in
-                *.tar.gz|*.tgz|*.tar) 
-                    debug 1 "guessing content is tar archive [$fout]"
-                    get_img_from_tar "$input" "$output" "$tempd";;
-                *.gz)
-                    debug 1 "guessing content is gzip [$fout]"
-                    zcat -c "$input" > "$output";;
-                *) 
-                    error "WARN: unknown file '$input'. Assuming mountable image"
-                    error "file output: $fout"
-                    ln -s "$(readlink -f "$input")" "$output";;
-            esac
+            error "Unknonwn format '$fmt'";
+            return 1;;
     esac
+    _RET="$fmt"
 }
 
 ensure_file_d() {
@@ -225,6 +260,60 @@ resize_image() {
     _RET="$oimgsize:$oblocks"
 }
 
+copy_filesystem_image() {
+    local src_img="$1" target_img="$2" size="${3:-1400M}"
+    local fstype="" label="" uuid="" tmpf="" out=""
+    tmpf=$(mktemp "${TMPDIR:-/tmp}/${0##*/}-copyfs.XXXXXX") ||
+        { error "mktemp failed"; return 1; }
+    blkid -o export "${src_img}" > "$tmpf" ||
+        { rm -f "$tmpf"; error "blkid ${src_img} failed"; return 1; }
+    out=$(UUID=""; TYPE=""; LABEL=""; . "$tmpf" && echo "$TYPE $UUID $LABEL")
+    [ $? -eq 0 ] || fail "failed reading blkid information for $src_img"
+    set -- ${out}
+    fstype="$1"
+    uuid="$2"
+    label="$3"
+    rm -f "$tmpf"
+
+    debug 1 "src image uuid=$uuid label=$label fstype=$fstype"
+    truncate "--size=$size" "$target_img" ||
+        { error "truncate $target_img $size failed"; return 1; }
+    case "$fstype" in
+        ext*)
+            out=$("mkfs.$fstype" -F "$target_img" ${label:+-L "$label"} \
+                    ${uuid:+-U "${uuid}"} 2>&1) ||
+                { error "failed mkfs to $target_img: $out"; return 1; }
+            ;;
+        *) error "unknown filesystem type '$fstype'";;
+    esac
+
+    sudo bash -ec '
+        s_img=$1
+        t_img=$2
+        s_mp=""
+        t_mp=""
+        fail() { echo "$@" 1>&2; exit 1; }
+        cleanup() {
+            for t in "$t_mp" "$s_mp"; do [ -z "$t" ] || umount "$t"; done;
+            rm -Rf "$tmpd";
+        }
+
+        tmpd=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") &&
+            mkdir "$tmpd/src" "$tmpd/tgt" ||
+            fail "failed making tmpdir"
+        trap cleanup EXIT
+        mount -o loop,ro "$s_img" "$tmpd/src" && s_mp="$tmpd/src" ||
+            fail "failed mount $s_img";
+        mount -o loop "$t_img" "$tmpd/tgt" && t_mp="$tmpd/tgt" ||
+            fail "failed mount $t_img";
+        rsync -aXHAS "${s_mp}/" "${t_mp}/" ||
+            fail "failed copy data ${s_img} -> ${t_img}"' \
+        copy-source-to-target "$src_img" "$target_img" || {
+            error "copy data from $src_img -> $target_img failed"
+            return 1;
+        }
+}
+
 allow_resize_failure() {
     local arch="$1" bdist="" barch=""
     barch=${2:-$(uname -m)}
@@ -308,8 +397,8 @@ handle_kpack() {
 }
 
 main() {
-    local short_opts="a:hk:p:v"
-    local long_opts="arch:,help,kernel:,krd-pack:,manifest:,no-gzip,verbose"
+    local short_opts="a:fhk:p:v"
+    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -317,7 +406,7 @@ main() {
         { bad_Usage; return; }
 
     local cur="" next="" output="" gzip=true kpkg=""
-    local kpacks="" src_in="" src="" arch="" vflags=""
+    local kpacks="" src_in="" src="" arch="" vflags="" fmt="auto"
     local working_space="1024M" zero_img="true" fs_img_size="1400M"
     local manifest_out=""
     kpacks=( )
@@ -327,6 +416,7 @@ main() {
         case "$cur" in
             -h|--help) Usage ; exit 0;;
             -a|--arch) arch="$next"; shift;;
+            -f|--format) fmt="$next"; shift;;
             -k|--kernel) kpkg=$next; shift;;
                --manifest) manifest_out="$next";;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
@@ -374,11 +464,16 @@ main() {
         esac
     fi
 
-    # now src is either a .tar.gz file, or a .img file
+    # now src is either a .tar.gz file, a -root.tar.gz, or a .img file
     local imgfile="${TEMP_D}/root.img"
-    ddebug 1 "getting .img from $src"
-    get_img_file "$src" "$imgfile" "${TEMP_D}" ||
+    ddebug 1 "getting .img from $src fmt=$fmt"
+    get_img_file "$fmt" "$src" "$imgfile" "${TEMP_D}" ||
         { error "failed to get image file from $src"; return 1; }
+    fmt=${_RET}
+
+    if [ "$fmt" = "root-tar" ]; then
+        working_space=""
+    fi
 
     if [ "$src" -ef "$imgfile" ]; then
         rm -f "$imgfile"
@@ -427,17 +522,12 @@ main() {
     ## the '--allow-padding=100M' should give you 100M of wiggle room in
     ## the resultant image.
     if [ "$arch" = "ppc64el" ]; then
-        padarg="--allow-padding=100M"
+        fs_img_size="1500M"
     fi
-    if [ -n "$fs_img_size" ]; then
-        ddebug 1 "setting final image to $fs_img_size"
-        if ! resize_image ${padarg} "$imgfile" "$fs_img_size"; then
-            if ! allow_resize_failure "$arch"; then
-                error "failed resize of $imgfile"
-                return 1;
-            fi
-        fi
-    fi
+    ddebug 1 "copying working img to final with $fs_img_size"
+    local timg="$imgfile.fs_img_size"
+    copy_filesystem_image "$imgfile" "$timg" "$fs_img_size" ||
+        error "failed copying $imgfile to $timg"
 
     if $zero_img; then
         ddebug 1 "zeroing img"
@@ -448,12 +538,12 @@ main() {
     if $gzip; then
         ddebug 1 "gzipping image file"
         local stime=$SECONDS
-        gzip -9 --rsyncable "$imgfile" &&
-            mv --force "$imgfile.gz" "$output" ||
+        gzip -9 --rsyncable "$timg" &&
+            mv --force "$timg.gz" "$output" ||
             { error "failed gzip"; return 1; }
         ddebug 1 "gzip took $(($SECONDS-$stime))s"
     else
-        mv --force "$imgfile" "$output" ||
+        mv --force "$timg" "$output" ||
             { error "failed move to $output"; return 1; }
     fi
     ddebug 1 "finished"
