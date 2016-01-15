@@ -189,8 +189,8 @@ def create_version(arch, release, version_name, img_url, out_d,
             os.path.join(out_d, items['boot-initrd']['path']),
         ]
         if dtb:
-            dtb_path = os.path.join(out_d, items['boot-dtb']['path'])
-            pack.append("--dtb=%s=%s" % (dtb, dtb_path))
+            dtb_path = items['boot-dtb']['path']
+            pack.append("--dtb=%s=%s" % (dtb, os.path.join(out_d, dtb_path)))
             newpaths.add(dtb_path)
 
         if 'kihelper' in kdata:
