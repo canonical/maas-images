@@ -19,13 +19,20 @@ You can build images and kernel in one of 2 ways
 This will build output for a single release and architecture.
 You must provide a url or file to use as the source image.
 
-  meph2-build arch release version source-imge output.d
+  meph2-build arch release version source-image output.d
+
+example:
+  $ burl=http://cloud-images.ubuntu.com/daily/server/
+  $ meph2-build amd64 xenial 20160101 \
+     $burl/xenial/current/xenial-server-cloudimg-amd64-root.tar.xz \
+     xenial-output.d/
 
 This will build from source-image into output.d for 'arch' and 'release'.
 The 'version' provided is a serial (YYYYMMDD such as 20160101).
+source-image can be either a url or a local file of type 
+  '.tar.gz', '-root.tar.gz', or '-root.tar.xz' or '.img'
 
 In order to collect debian installer data you will need '--enable-di'.
-
 
 === syncing against cloud-images.ubuntu.com ===
 This will pull the latest images down from cloud-images.ubuntu.com
