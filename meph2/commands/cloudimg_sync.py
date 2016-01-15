@@ -7,7 +7,7 @@ from simplestreams.log import LOG
 from simplestreams import mirrors
 from simplestreams import filters
 
-from meph2 import util, DEF_MEPH2_CONFIG
+from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
 from meph2.stream import ALL_ITEM_TAGS, CONTENT_ID, create_version
 
 import argparse
@@ -68,9 +68,17 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
         self.cfgdata = cfgdata
-        self.releases = [k['release'] for k in self.cfgdata['releases']]
+        self.releases = []
+        for r in [k['release'] for k in cfgdata['releases']]:
+            if r not in ubuntu_info.SUPPORTED:
+                LOG.info("ignoring unsupported release: %s", r)
+            else:
+                self.releases.append(r)
+            
         arches = set()
         for r in cfgdata['releases']:
+            if r['release'] not in self.releases:
+                continue
             for k in r['kernels']:
                 arches.add(k[1])
         self.arches = arches
