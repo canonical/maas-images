@@ -20,10 +20,13 @@ from simplestreams import mirrors
 
 from functools import partial
 import datetime
+import errno
+import hashlib
 import json
 import os
 import re
 import sys
+import tempfile
 
 
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
@@ -179,5 +182,65 @@ def write_orphan_file(filename, orphans_list):
 def empty_iid_products(content_id):
     return {'content_id': content_id, 'products': {},
             'datatype': 'image-ids', 'format': 'products:1.0'}
+
+
+def get_file_info(path, sums=None):
+    # return dictionary with size and checksums of existing file
+    buflen = 1024*1024
+
+    if sums is None:
+        sums = ['sha256']
+    sumers = {k: hashlib.new(k) for k in sums}
+
+    ret = {'size': os.path.getsize(path)}
+    with open(path, "rb") as fp:
+        while True:
+            buf = fp.read(buflen)
+            for sumer in sumers.values():
+                sumer.update(buf)
+            if len(buf) != buflen:
+                break
+
+    ret.update({k: sumers[k].hexdigest() for k in sumers})
+    return ret
+
+
+def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
+    summer = sutil.checksummer(cksums)
+    out_d = os.path.dirname(path)
+    if makedirs:
+        try:
+            os.makedirs(out_d)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+    tf = tempfile.NamedTemporaryFile(dir=out_d, delete=False)
+    try:
+        while True:
+            buf = src.read(buflen)
+            summer.update(buf)
+            tf.write(buf)
+            if len(buf) != buflen:
+                break
+    finally:
+        if summer.check():
+            try:
+                os.rename(tf.name, path)
+            except:
+                os.unlink(tf.name)
+                raise
+        else:
+            found = summer.hexdigest()
+            try:
+                size = os.path.getsize(tf.name)
+            except:
+                size = "unavailable"
+            os.unlink(tf.name)
+
+            msg = ("Invalid checksum for '%s'. size=%s. "
+                   "found '%s', expected '%s'" %
+                   (path, size, found, str(cksums)))
+            raise ValueError(msg)
+
 
 # vi: ts=4 expandtab syntax=python

@@ -137,6 +137,15 @@ EOF
     return 0
 }
 
+ensure_iscsi_initramfs_support() {
+    local root="${1:-/}"
+    local mfile="${root%/}/etc/iscsi/iscsi.initramfs"
+    if [ ! -f "$mfile" ]; then
+        mkdir -p "${mfile%/*}" && touch "$mfile" ||
+        { error "failed to create iscsi.initramfs"; return 1; }
+    fi
+}
+
 clean_local_udev_rules() {
     # in wily and later, /etc/udev/rules.d/*.rules will be copied
     # into the initramfs.  If there existed a '70-persistent-net.rules'
@@ -144,6 +153,18 @@ clean_local_udev_rules() {
     # the specific system that generated this).  Clean those out.
     local root="${1:-/}"
     rm -f "${root%/}/etc/udev/rules.d/70-persistent-net.rules"
+}
+
+insist_running_in_container() {
+    local root="${1:-/}"
+    ln -sf /bin/true "${root%/}/bin/running-in-container"
+}
+
+vrun() {
+    local vlvl="$1" msg="$2" 
+    shift 2
+    debug $vlvl "$msg: $*"
+    "$@"
 }
 
 chrooted() {
@@ -197,14 +218,20 @@ chrooted() {
     config_addl_modules / ||
         { error "failed configuring additional modules!"; return 1; }
 
+    ensure_iscsi_initramfs_support / ||
+        { error "failed to enable iscsi initramfs support"; return 1; }
+
     clean_local_udev_rules / ||
         { error "failed configuring additional modules!"; return 1; }
 
-    DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
+    insist_running_in_container / ||
+        { error "failed to set running-in-container to true"; return 1; }
+    vrun 1 "installing packages" \
+        env DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet \
             $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
-        { error "failed install of $copymods $*"; return 1; }
+        { error "failed install of $copymods ${pkgs[*]}"; return 1; }
 
     [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
 

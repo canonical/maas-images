@@ -1,0 +1,245 @@
+from . import DEF_MEPH2_CONFIG, util
+from . netinst import POCKETS, POCKETS_PROPOSED, get_di_kernelinfo
+
+import os
+import subprocess
+import yaml
+
+from simplestreams.log import LOG
+
+ALL_ITEM_TAGS = {'label': 'daily'}
+
+CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
+PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
+
+PATH_COMMON = "%(release)s/%(arch)s/"
+BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
+DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
+PATH_FORMATS = {
+    'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
+    'manifest': PATH_COMMON + "%(version_name)s/root-image.manifest",
+    'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
+    'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
+    'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
+    'di-dtb': DI_COMMON + "/di-dtb%(suffix)s",
+    'di-initrd': DI_COMMON + "/di-initrd%(suffix)s",
+    'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
+}
+PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
+
+
+def create_version(arch, release, version_name, img_url, out_d,
+                   include_di=True, cfgdata=None, common_tags=None,
+                   verbosity=0):
+    # arch: what dpkg arch (amd64, i386, ppc64el) to build this for
+    # release: codename (trusty)
+    # version_name: serial/build-number YYYYMMDD[.X])
+    # img_url: url to the image to use for reference
+    # out_d: where to store the stream output
+    # include_di: should we scrape di data?
+    # cfgdata: the v2 config file loaded as data
+    # common_tags: these are applied to all items
+    #
+    # return value is a dictionary of 
+    #  {product_name: {'item_name': item, 'item2_name': item},
+    #   product_name2: {item_name': item, 'item2_name': item},
+    #   ...}
+    # each 'item' above is a dictionary like:
+    #   {'arch': 'amd64', 'path': 'xenial/amd64/....', 'sha256': ..}
+    if common_tags is None:
+        common_tags = {}
+
+    if verbosity:
+        vflags = ['-' + 'v' * verbosity]
+    else:
+        vflags = []
+
+    if cfgdata is None:
+        with open(DEF_MEPH2_CONFIG) as fp:
+            cfgdata = yaml.load(fp)
+
+    rdata = None
+    for r in cfgdata['releases']:
+        if r['release'] == release:
+            if rdata is not None:
+                raise ValueError("Multiple entries with release=%s in config",
+                                 release)
+            rdata = r
+    version = rdata['version']
+
+    # TODO: enable_proposed does not affect image build, only d-i scraping
+    enable_proposed = cfgdata.get('enable_proposed', False)
+
+    # default kernel can be:
+    #  string or None: use this as the value for all arch
+    #  dictionary of arch with default in 'default'.
+    #    If no default, use linux-generic
+    #      {armhf: linux-highbank, 'default': 'linux-foo'}
+    dkdata = rdata.get('builtin_kernel')
+    if isinstance(dkdata, str) or dkdata is None:
+        builtin_kernel = dkdata
+    elif isinstance(dkdata, dict):
+        if arch in dkdata:
+            builtin_kernel = dkdata[arch]
+        else:
+            builtin_kernel = dkdata.get('default', 'linux-generic')
+
+    if builtin_kernel:
+        bkparm = "--kernel=%s" % builtin_kernel
+    else:
+        bkparm = "--kernel=none"
+
+    mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
+
+    if include_di:
+        di_pockets = POCKETS
+        if enable_proposed:
+            di_pockets = POCKETS_PROPOSED
+
+        (di_mirror, _all_di_data) = get_di_kernelinfo(
+            releases=[release], arches=[arch], pockets=di_pockets)
+        di_kinfo = _all_di_data[release][arch]
+
+    newitems = {}
+
+    subs = {'release': release, 'arch': arch,
+            'version_name': version_name, 'version': version}
+
+    rootimg_path = PATH_FORMATS['root-image.gz'] % subs
+    manifest_path = PATH_FORMATS['manifest'] % subs
+
+    gencmd = ([mci2e] + vflags +
+              [bkparm, "--arch=%s" % arch,
+               "--manifest=%s" % os.path.join(out_d, manifest_path),
+               img_url, os.path.join(out_d, rootimg_path)])
+
+    krd_packs = []
+    newpaths = set((rootimg_path, manifest_path,))
+
+    kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
+
+    for info in rdata['kernels']:
+        # 7th field is optional in kernel lines in config data
+        # so fill it with empty dictionary if not present.
+        if len(info) == 6:
+            info.append({})
+        (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
+
+        if karch != arch:
+            continue
+
+        for i in kdata_defaults:
+            if i not in kdata:
+                kdata[i] = kdata_defaults[i]
+
+        subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
+                     'psubarch': psubarch,
+                     'suffix': kdata["suffix"]})
+
+        boot_keys = ['boot-kernel', 'boot-initrd']
+        ikeys = boot_keys + ['root-image.gz', 'manifest']
+
+        dtb = kdata.get('dtb')
+        if dtb:
+            ikeys.append('boot-dtb')
+            boot_keys.append('boot-dtb')
+
+        if include_di:
+            curdi = di_kinfo[flavor][krel][kdata['di-format']]
+            di_version = curdi['di-kernel']['version_name']
+            subs.update({'di_version': di_version})
+            di_keys = ['di-kernel', 'di-initrd']
+            if dtb:
+                di_keys.append('di-dtb')
+            ikeys += di_keys
+        else:
+            curdi = "DI_NOT_ENABLED"
+            di_keys = []
+
+        prodname = PRODUCT_FORMAT % subs
+        if prodname in newitems:
+            raise ValueError("duplicate prodname %s from %s" %
+                             (prodname, subs))
+
+        common = {'subarches': ','.join(subarches), 'krel': krel,
+                  'release': release, 'version': version, 'arch': arch,
+                  'subarch': psubarch, 'kflavor': flavor}
+        common.update(ALL_ITEM_TAGS)
+        if common_tags:
+            common.update(common_tags)
+
+        items = {}
+        for i in ikeys:
+            items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
+                        'size': None, 'sha256': None}
+            items[i].update(common)
+
+        for key in di_keys:
+            items[key]['sha256'] = curdi[key]['sha256']
+            items[key]['size'] = int(curdi[key]['size'])
+            items[key]['_opath'] = curdi[key]['path']
+            items[key]['di_version'] = di_version
+
+        for key in boot_keys:
+            items[key]['kpackage'] = kpkg
+
+        pack = [
+            kpkg,
+            os.path.join(out_d, items['boot-kernel']['path']),
+            os.path.join(out_d, items['boot-initrd']['path']),
+        ]
+        if dtb:
+            dtb_path = items['boot-dtb']['path']
+            pack.append("--dtb=%s=%s" % (dtb, os.path.join(out_d, dtb_path)))
+            newpaths.add(dtb_path)
+
+        if 'kihelper' in kdata:
+            pack.append('--kihelper=%s' % kdata['kihelper'])
+
+        krd_packs.append(pack)
+
+        newpaths.add(items['boot-kernel']['path'])
+        newpaths.add(items['boot-initrd']['path'])
+
+        newitems[prodname] = items
+
+    for pack in krd_packs:
+        gencmd.append('--krd-pack=' + ','.join(pack))
+
+    if len([p for p in newpaths
+            if not os.path.exists(os.path.join(out_d, p))]) == 0:
+        LOG.info("All paths existed, not re-generating: %s" % newpaths)
+    else:
+        LOG.info("running: %s" % gencmd)
+        subprocess.check_call(gencmd)
+        LOG.info("finished: %s" % gencmd)
+
+    # get checksum and size of new files created
+    file_info = {}
+    for path in newpaths:
+        file_info[path] = util.get_file_info(os.path.join(out_d, path))
+
+    for prodname in newitems:
+        items = newitems[prodname]
+        for item in items.values():
+            item.update(file_info.get(item['path'], {}))
+
+            lpath = os.path.join(out_d, item['path'])
+            # items with _opath came from a di mirror
+            if ('_opath' in item and not os.path.exists(lpath)):
+                if not os.path.exists(os.path.dirname(lpath)):
+                    os.makedirs(os.path.dirname(lpath))
+                try:
+                    srcfd = di_mirror.source(item['_opath'])
+                    util.copy_fh(src=srcfd, path=lpath, cksums=item)
+                except ValueError as e:
+                    raise ValueError("%s had bad checksum (%s). %s" %
+                                     (srcfd.url, item['_opath'], e))
+
+            for k in [k for k in item.keys() if k.startswith('_')]:
+                del item[k]
+
+    return newitems
+
+
+# vi: ts=4 expandtab syntax=python

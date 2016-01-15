@@ -13,37 +13,53 @@ from stuff on
     export PATH=$PWD/bin:$PATH
 
 == building images ==
-To run:
-  meph2-cloudimg-sync out.d
+You can build images and kernel in one of 2 ways
 
-  You can then add filters to the end, like 'release=trusty' or
-  'arch=amd64'.  The resultant out.d/streams/v1/ will have information
-  copied from maas.ubuntu.com for all other products, but will only
-  create new content for products that match the provided filters.
+=== build a single release/arch combination ===
+This will build output for a single release and architecture.
+You must provide a url or file to use as the source image.
 
+  meph2-build arch release version source-image output.d
 
+example:
+  $ burl=http://cloud-images.ubuntu.com/daily/server/
+  $ meph2-build amd64 xenial 20160101 \
+     $burl/xenial/current/xenial-server-cloudimg-amd64-root.tar.xz \
+     xenial-output.d/
+
+This will build from source-image into output.d for 'arch' and 'release'.
+The 'version' provided is a serial (YYYYMMDD such as 20160101).
+source-image can be either a url or a local file of type 
+  '.tar.gz', '-root.tar.gz', or '-root.tar.xz' or '.img'
+
+In order to collect debian installer data you will need '--enable-di'.
+
+=== syncing against cloud-images.ubuntu.com ===
+This will pull the latest images down from cloud-images.ubuntu.com
+and build maas images and kernel data all in one go.  It only builds
+if it notices that maas images are out of date with cloud-images.
+To force a build, use '--target=force'
+
+  To run:
+    meph2-cloudimg-sync out.d
+
+    You can then add filters to the end, like 'release=trusty' or
+    'arch=amd64'.  The resultant out.d/streams/v1/ will have information
+    copied from maas.ubuntu.com for all other products, but will only
+    create new content for products that match the provided filters.
+
+  If the maas ephemeral data is up to date with the latest cloud image daily
+  then meph2-cloudimg-sync will not do anything.  In order to force it to
+  do something, you can either
+
+=== debugging ===
 To debug and use the fake 'maas-cloudimg2eph2', run like:
   env MAAS_CLOUDIMG2EPH2=fake-maas-cloudimg2eph2 meph2-cloudimg-sync out.d
 
   This will still download di-kernels and di-initramfs.
 
-== forcing image build ==
-If the maas ephemeral data is up to date with the latest cloud image daily
-then meph2-cloudimg-sync will not do anything.  In order to force it to
-do something, you can either
-a.) pass '--target=force'
-    This will re-generate the latest image from cloud-images.ubuntu.com
-    in order to do more than the latest, use '--max=N'.
-b.) point it at out locally crafted ephemeral data that does not contain that.
-
-  orig_eurl=http://maas.ubuntu.com/images/ephemeral-v2/daily/streams/v1/index.json
-  sstream-mirror --no-item-download $orig_eurl ./local-ephemeral-v2
-
-  # remove the newest entry for your desired build
-  vi ./local-ephemeral-v2/streams/v1/com.ubuntu.maas:daily:v2:download.json
-
-  # point meph2-cloudimg-sync at the local data
-  meph2-cloudimg-sync --target=./local-ephemeral-v2/streams/v1/*download.json out.d
+It will produce output that looks much like the final output, but
+runs in seconds rather than minutes.
 
 == streams management ==
 Building as above will create out.d that has *metadata* describing

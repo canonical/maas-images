@@ -7,17 +7,13 @@ from simplestreams.log import LOG
 from simplestreams import mirrors
 from simplestreams import filters
 
-from meph2.netinst import NetbootMirrorReader, POCKETS, POCKETS_PROPOSED
-from meph2 import util
+from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
+from meph2.stream import ALL_ITEM_TAGS, CONTENT_ID, create_version
 
 import argparse
 import copy
-import hashlib
-import errno
 import os
-import subprocess
 import sys
-import tempfile
 import yaml
 
 CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
@@ -35,26 +31,6 @@ DEFAULT_ARCHES = {
     'armhf': ['armhf'],
     'aarch64': ['arm64', 'armhf'],
 }
-
-ALL_ITEM_TAGS = {'label': 'daily'}
-
-CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
-PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
-
-PATH_COMMON = "%(release)s/%(arch)s/"
-BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
-DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
-PATH_FORMATS = {
-    'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
-    'manifest': PATH_COMMON + "%(version_name)s/root-image.manifest",
-    'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
-    'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
-    'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
-    'di-dtb': DI_COMMON + "/di-dtb%(suffix)s",
-    'di-initrd': DI_COMMON + "/di-initrd%(suffix)s",
-    'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
-}
-PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 
 
 def v2_to_cloudimg_products(prodtree):
@@ -81,99 +57,6 @@ def v2_to_cloudimg_products(prodtree):
     return ret
 
 
-def get_file_info(path, sums=None):
-    buflen = 1024*1024
-
-    if sums is None:
-        sums = ['sha256']
-    sumers = {k: hashlib.new(k) for k in sums}
-
-    ret = {'size': os.path.getsize(path)}
-    with open(path, "rb") as fp:
-        while True:
-            buf = fp.read(buflen)
-            for sumer in sumers.values():
-                sumer.update(buf)
-            if len(buf) != buflen:
-                break
-
-    ret.update({k: sumers[k].hexdigest() for k in sumers})
-    return ret
-
-
-def get_di_kernelinfo(releases=None, arches=None, asof=None, pockets=None):
-    # this returns a dict tree like
-    # items['precise']['amd64']['generic']['saucy']['kernel']
-    # where nodes are flattened to have data (including url)
-    smirror = NetbootMirrorReader(releases=releases, arches=arches,
-                                  pockets=pockets)
-    netproducts = smirror._get_products()
-
-    # TODO: implement 'asof' to get the right date, right now only returns
-    # latest.
-
-    items = {}
-    tree_order = ('release', 'arch', 'kernel-flavor', 'kernel-release',
-                  'image-format')
-
-    def fillitems(item, tree, pedigree):
-        flat = sutil.products_exdata(tree, pedigree)
-        path = [flat[t] for t in tree_order]
-        cur = items
-        for tok in path:
-            if tok not in cur:
-                cur[tok] = {}
-            cur = cur[tok]
-
-        flat['url'] = smirror.source(item['path']).url
-        ftype = 'di-' + flat['ftype']
-        if (ftype not in cur or
-                cur[ftype]['version_name'] < flat['version_name']):
-            cur[ftype] = flat.copy()
-
-    sutil.walk_products(netproducts, cb_item=fillitems)
-
-    return (smirror, items)
-
-
-def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
-    summer = sutil.checksummer(cksums)
-    out_d = os.path.dirname(path)
-    if makedirs:
-        try:
-            os.makedirs(out_d)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-    tf = tempfile.NamedTemporaryFile(dir=out_d, delete=False)
-    try:
-        while True:
-            buf = src.read(buflen)
-            summer.update(buf)
-            tf.write(buf)
-            if len(buf) != buflen:
-                break
-    finally:
-        if summer.check():
-            try:
-                os.rename(tf.name, path)
-            except:
-                os.unlink(tf.name)
-                raise
-        else:
-            found = summer.hexdigest()
-            try:
-                size = os.path.getsize(tf.name)
-            except:
-                size = "unavailable"
-            os.unlink(tf.name)
-
-            msg = ("Invalid checksum for '%s'. size=%s. "
-                   "found '%s', expected '%s'" %
-                   (path, size, found, str(cksums)))
-            raise ValueError(msg)
-
-
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config, verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
@@ -182,36 +65,25 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
 
-        if verbosity:
-            self.vflags = ['-' + 'v' * verbosity]
-        else:
-            self.vflags = []
-
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
-        self.releases = {k['release']: k for k in cfgdata['releases']}
+        self.cfgdata = cfgdata
+        self.releases = []
+        for r in [k['release'] for k in cfgdata['releases']]:
+            if r not in ubuntu_info.SUPPORTED:
+                LOG.info("ignoring unsupported release: %s", r)
+            else:
+                self.releases.append(r)
+            
         arches = set()
-        for r in self.releases.values():
+        for r in cfgdata['releases']:
+            if r['release'] not in self.releases:
+                continue
             for k in r['kernels']:
                 arches.add(k[1])
-        self.arches = list(arches)
+        self.arches = arches
         self._di_kinfo = {}
         self.content_t = None
-
-        self.di_pockets = POCKETS
-        if cfgdata.get('enable_proposed', False):
-            self.di_pockets = POCKETS_PROPOSED
-
-    def _get_di_kinfo(self, release, arch):
-        if not (release in self._di_kinfo and
-                arch in self._di_kinfo[release]):
-            if release not in self._di_kinfo:
-                self._di_kinfo[release] = {}
-            (mirror, data) = get_di_kernelinfo(
-                releases=[release], arches=[arch], pockets=self.di_pockets)
-            self._di_kinfo[release][arch] = (mirror, data[release][arch])
-
-        return self._di_kinfo[release][arch]
 
     def load_products(self, path=None, content_id=None):
         if content_id != "com.ubuntu.cloud:daily:download":
@@ -234,157 +106,24 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         return v2_to_cloudimg_products(my_prods)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
-        flat = sutil.products_exdata(src, pedigree)
-
         # create the ephemeral root
+
+        flat = sutil.products_exdata(src, pedigree)
         arch = flat['arch']
         release = flat['release']
-        version = flat['version']
+        vername = flat['version_name']
 
         # these are copied from the source stream if they're present
         copy_if_avail = ('os', 'os_title', 'release_title', 'release_codename')
+        all_item_tags = ALL_ITEM_TAGS.copy()
+        all_item_tags.update({k: flat[k] for k in copy_if_avail if k in flat})
 
-        # 'default_kernel' is a release dict in config
-        # that contains the 'builtin' kernel to use
-        dks = self.releases[flat['release']].get('default_kernel', {})
-        builtin_kernel = dks.get(flat['arch'], 'linux-generic')
+        cvret = create_version(
+            arch=arch, release=release, version_name=vername,
+            img_url=contentsource.url, out_d=self.out_d, include_di=True,
+            cfgdata=self.cfgdata, common_tags=all_item_tags)
 
-        (dimirror, dikinfo) = self._get_di_kinfo(release, arch)
-
-        newitems = {}
-
-        mykinfo = self.releases[release]['kernels']
-
-        vername = flat['version_name']
-        subs = {'release': release, 'arch': arch,
-                'version_name': vername, 'version': version}
-
-        rootimg_path = PATH_FORMATS['root-image.gz'] % subs
-        manifest_path = PATH_FORMATS['manifest'] % subs
-
-        mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
-        gencmd = ([mci2e] + self.vflags +
-                  ["--kernel=%s" % builtin_kernel, "--arch=%s" % arch,
-                   "--manifest=%s" % os.path.join(self.out_d, manifest_path),
-                   contentsource.url, os.path.join(self.out_d, rootimg_path)])
-        krd_packs = []
-        newpaths = set((rootimg_path, manifest_path,))
-
-        kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
-
-        for info in mykinfo:
-            if len(info) == 6:
-                info.append({})
-            (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
-
-            for i in kdata_defaults:
-                if i not in kdata:
-                    kdata[i] = kdata_defaults[i]
-
-            if karch != arch:
-                continue
-
-            curdi = dikinfo[flavor][krel][kdata['di-format']]
-
-            suffix = kdata['suffix']
-
-            subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                         'psubarch': psubarch,
-                         'di_version': curdi['di-kernel']['version_name'],
-                         'suffix': suffix})
-
-            prodname = PRODUCT_FORMAT % subs
-            common = {'subarches': ','.join(subarches), 'krel': krel,
-                      'release': release, 'version': version, 'arch': arch,
-                      'subarch': psubarch, 'kflavor': flavor}
-            common.update(ALL_ITEM_TAGS)
-            common.update({k: flat[k] for k in copy_if_avail if k in flat})
-
-            items = {}
-            di_keys = ['di-kernel', 'di-initrd']
-            boot_keys = ['boot-kernel', 'boot-initrd']
-            ikeys = ['boot-kernel', 'boot-initrd', 'di-kernel',
-                     'di-initrd', 'root-image.gz', 'manifest']
-
-            if kdata.get('dtb'):
-                ikeys.append('di-dtb')
-                ikeys.append('boot-dtb')
-                di_keys.append('di-dtb')
-                boot_keys.append('boot-dtb')
-
-            for i in ikeys:
-                items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
-                            'size': None, 'sha256': None}
-                items[i].update(common)
-
-            for key in di_keys:
-                items[key]['sha256'] = curdi[key]['sha256']
-                items[key]['size'] = int(curdi[key]['size'])
-                items[key]['_opath'] = curdi[key]['path']
-                items[key]['di_version'] = subs['di_version']
-
-            for key in boot_keys:
-                items[key]['kpackage'] = kpkg
-
-            pack = [
-                kpkg,
-                os.path.join(self.out_d, items['boot-kernel']['path']),
-                os.path.join(self.out_d, items['boot-initrd']['path']),
-            ]
-            if kdata.get('dtb'):
-                pack.append("--dtb=%s=%s" %
-                            (kdata.get('dtb'),
-                             os.path.join(self.out_d,
-                                          items['boot-dtb']['path'])))
-
-            if 'kihelper' in kdata:
-                pack.append('--kihelper=%s' % kdata['kihelper'])
-
-            krd_packs.append(pack)
-
-            newpaths.add(items['boot-kernel']['path'])
-            newpaths.add(items['boot-initrd']['path'])
-            if kdata.get('dtb'):
-                newpaths.add(items['boot-dtb']['path'])
-
-            newitems[prodname] = items
-
-        for pack in krd_packs:
-            gencmd.append('--krd-pack=' + ','.join(pack))
-
-        if len([p for p in newpaths
-                if not os.path.exists(os.path.join(self.out_d, p))]) == 0:
-            LOG.info("All paths existed, not re-generating: %s" % newpaths)
-        else:
-            LOG.info("running: %s" % gencmd)
-            subprocess.check_call(gencmd)
-            LOG.info("finished: %s" % gencmd)
-
-        # get checksum and size of new files created
-        file_info = {}
-        for path in newpaths:
-            file_info[path] = get_file_info(os.path.join(self.out_d, path))
-
-        for prodname in newitems:
-            items = newitems[prodname]
-            for item in items.values():
-                item.update(file_info.get(item['path'], {}))
-
-                lpath = os.path.join(self.out_d, item['path'])
-                if ('_opath' in item and not os.path.exists(lpath)):
-                    if not os.path.exists(os.path.dirname(lpath)):
-                        os.makedirs(os.path.dirname(lpath))
-
-                    try:
-                        srcfd = dimirror.source(item['_opath'])
-                        copy_fh(src=srcfd, path=lpath, cksums=item)
-                    except ValueError as e:
-                        raise ValueError("%s had bad checksum (%s). %s" %
-                                         (srcfd.url, item['_opath'], e))
-
-                for k in [k for k in item.keys() if k.startswith('_')]:
-                    del item[k]
-
+        for prodname, items in cvret.items():
             for i in items:
                 sutil.products_set(self.content_t, items[i],
                                    (prodname, vername, i))
@@ -438,10 +177,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
 
 def main():
-    defcfg = os.path.abspath(
-        os.path.join(os.path.dirname(__file__),
-                     "..", "..", "conf", "meph-v2.yaml"))
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--max', type=int, default=1,
@@ -457,7 +192,7 @@ def main():
                              'Use "%s" to force build [DEV ONLY!]' % FORCE_URL)
     parser.add_argument('--keyring', action='store', default=None,
                         help='keyring to be specified to gpg via --keyring')
-    parser.add_argument('--config', default=defcfg, help='v2 config')
+    parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
                         type=argparse.FileType('w'))
