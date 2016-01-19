@@ -61,6 +61,7 @@ releases:
     - [wily,    arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
  - version: 15.04
    release: vivid
+   builtin_kernel: linux-generic
    kernels:
     - [vivid,   armhf,   hwe-v,    generic,   linux-generic,            *arm_hwe_v]
     - [vivid,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
