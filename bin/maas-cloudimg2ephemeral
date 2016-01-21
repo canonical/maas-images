@@ -165,6 +165,27 @@ get_removed_pkgs() {
         (set -f; echo $_RET)
 }
 
+ensure_iscsi_initramfs_support() {
+    local root="${1:-/}" release="$2"
+    local fname="/etc/iscsi/iscsi.initramfs"
+    local mfile="${root%/}$fname"
+    local change="touch $fname for iscsi root shutdown (LP: #1536707)"
+    if [ -f "$mfile" ]; then
+        log_change false "$change" "[file existed]"
+        return 0
+    fi
+    case "$release" in
+        precise|quantal|raring|saucy|trusty|utopic) :;;
+        *)
+            log_change false "$change" "[systemd]"
+            return 0
+            ;;
+    esac
+    mkdir -p "${mfile%/*}" && touch "$mfile" || 
+    { error "failed to create iscsi.initramfs"; return 1; }
+    log_change true "$change"
+}
+
 apply_updates_chrooted() {
     # FIXME: remove this after no longer necessary
     local required="" known=""
@@ -347,6 +368,9 @@ apply_updates_chrooted() {
     log_change true "$change"
     mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
         { error "failed to link dynamic interfaces"; return 1; }
+
+    ensure_iscsi_initramfs_support "/" "$release" ||
+        { "ensure_iscsi_initramfs_support / $release failed"; return 1; }
 
     change="update-initramfs"
     if [ "$kpkg" != "none" ]; then
