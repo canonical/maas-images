@@ -365,7 +365,7 @@ handle_kpack() {
         { error "failed tempdir for '$ckpkg'"; return 1; }
 
     local cmd=""
-    cmd=( env KPACK_SKIP_APT_UPDATE=true kpack-from-image \
+    cmd=( env kpack-from-image \
              $vflags "${pt[@]}" "$imgfile" "$ckpkg" "$outd" )
     ddebug 1 "$(date -R): starting ${cmd[*]}"
     "${cmd[@]}" ||
