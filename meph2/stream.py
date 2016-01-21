@@ -40,7 +40,7 @@ def create_version(arch, release, version_name, img_url, out_d,
     # cfgdata: the v2 config file loaded as data
     # common_tags: these are applied to all items
     #
-    # return value is a dictionary of 
+    # return value is a dictionary of
     #  {product_name: {'item_name': item, 'item2_name': item},
     #   product_name2: {item_name': item, 'item2_name': item},
     #   ...}

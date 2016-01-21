@@ -33,11 +33,12 @@ DEFAULT_ARCHES = {
 }
 
 
-def v2_to_cloudimg_products(prodtree):
+def v2_to_cloudimg_products(prodtree, rebuilds={}):
     # this turns a v2 products tree into a cloud-image products tree.
     # it pays attention only to products with krel == release
     # (in an attempt to only get "primary")
     ret = util.empty_iid_products("com.ubuntu.cloud:daily:download")
+    # rebuilds is {cloudimgYYYYMMDD:newYYYYMMDD}
     for product in prodtree.get('products'):
         if not (prodtree['products'][product].get('krel') ==
                 prodtree['products'][product].get('release')):
@@ -52,14 +53,22 @@ def v2_to_cloudimg_products(prodtree):
             ret['products'][tprod] = {'versions': {}}
         for vername in prodtree['products'][product].get('versions'):
             if vername not in ret['products'][tprod]['versions']:
+                if vername in rebuilds.keys():
+                    LOG.info("skipping rebuild version %s in %s",
+                             vername, tprod)
+                    continue
                 ret['products'][tprod]['versions'][vername] = {}
 
     return ret
 
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
-    def __init__(self, config, out_d, target, v2config, verbosity=0):
+    def __init__(self, config, out_d, target, v2config, rebuilds=None,
+                 verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
+        if rebuilds is None:
+            rebuilds = {}
+
         self.out_d = out_d
         self.target = target
         self.v2config = v2config
@@ -74,7 +83,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 LOG.info("ignoring unsupported release: %s", r)
             else:
                 self.releases.append(r)
-            
+
         arches = set()
         for r in cfgdata['releases']:
             if r['release'] not in self.releases:
@@ -84,6 +93,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.arches = arches
         self._di_kinfo = {}
         self.content_t = None
+        self.rebuilds = rebuilds
 
     def load_products(self, path=None, content_id=None):
         if content_id != "com.ubuntu.cloud:daily:download":
@@ -103,7 +113,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 del(my_prods['products'][p])
 
         self.content_t = my_prods
-        return v2_to_cloudimg_products(my_prods)
+        return v2_to_cloudimg_products(my_prods, rebuilds=self.rebuilds)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         # create the ephemeral root
@@ -112,6 +122,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         arch = flat['arch']
         release = flat['release']
         vername = flat['version_name']
+
+        if vername in self.rebuilds:
+            LOG.info("mapped item for rebuild %s to %s",
+                     vername, self.rebuilds[vername])
+            vername = self.rebuilds[vername]
 
         # these are copied from the source stream if they're present
         copy_if_avail = ('os', 'os_title', 'release_title', 'release_codename')
@@ -185,6 +200,8 @@ def main():
                         help='only report what would be done')
     parser.add_argument('--arches', action='append',
                         default=[], help='which arches to build, "," delim')
+    parser.add_argument('--rebuild', action='append', default=[],
+                        help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
                         help='cloud images mirror')
     parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
@@ -214,6 +231,15 @@ def main():
         arches = []
         for f in args.arches:
             arches.extend(f.split(","))
+
+    rebuilds = {}
+    for rebuild in args.rebuild:
+        if ':' not in rebuild:
+            raise ValueError(
+                "Bad argument '%s' to --rebuild. must be "
+                "YYYYMMDD:YYYYMMDD.N" % rebuild)
+        from_v, to_v = rebuild.split(':')
+        rebuilds[from_v] = to_v
 
     arch_filter = "arch~(" + "|".join(arches) + ")"
 
@@ -246,7 +272,7 @@ def main():
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
-                                 verbosity=vlevel)
+                                 rebuilds=rebuilds, verbosity=vlevel)
 
     tmirror.sync(smirror, initial_path)
 

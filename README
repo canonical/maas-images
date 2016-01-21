@@ -52,6 +52,10 @@ To force a build, use '--target=force'
   then meph2-cloudimg-sync will not do anything.  In order to force it to
   do something, you can either
 
+In order to 'rebuild' something.  To create a new '20160101.1' even when
+there is an existing '20160101' maas image and the latest cloud image
+is 20160101, then pass '--rebuild=20160101:20160101.1'.
+
 === debugging ===
 To debug and use the fake 'maas-cloudimg2eph2', run like:
   env MAAS_CLOUDIMG2EPH2=fake-maas-cloudimg2eph2 meph2-cloudimg-sync out.d
