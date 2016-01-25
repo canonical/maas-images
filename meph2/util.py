@@ -243,4 +243,14 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
             raise ValueError(msg)
 
 
+def dump_data(data, end_cr=True):
+    # dump a jsonable data as a string
+    bytestr = json.dumps(data, indent=1, sort_keys=True,
+                         separators=(',', ': ')).encode('utf-8')
+    if end_cr:
+        bytestr += b'\n'
+
+    return bytestr
+
+
 # vi: ts=4 expandtab syntax=python

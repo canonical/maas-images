@@ -409,7 +409,7 @@ def gen_index_and_sign(data_d, sign=True):
         os.makedirs(md_d)
     index = util.create_index(md_d, files=None)
     with open(os.path.join(md_d, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
+        fp.write(util.dump_data(index))
 
     if sign:
         util.sign_streams_d(md_d)
@@ -524,7 +524,7 @@ def main_import(args):
 
     product_tree_fn = cfgdata['content_id'] + '.json'
     with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
-        fp.write(sutil.dump_data(product_tree) + b"\n")
+        fp.write(util.dump_data(product_tree))
 
     gen_index_and_sign(args.target, not args.no_sign)
 

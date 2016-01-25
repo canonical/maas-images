@@ -165,13 +165,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             os.makedirs(sdir)
 
         with open(fdpath, "wb") as fp:
-            fp.write(sutil.dump_data(tree))
+            fp.write(util.dump_data(tree))
 
         # now insert or update an index
         LOG.info("updating index in %s" % sdir)
         index = util.create_index(sdir)
         with open(os.path.join(sdir, "index.json"), "wb") as fp:
-            fp.write(sutil.dump_data(index) + b"\n")
+            fp.write(util.dump_data(index))
 
     def filter_index_entry(self, data, src, pedigree):
         if pedigree[0] != "com.ubuntu.cloud:daily:download":

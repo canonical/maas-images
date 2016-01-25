@@ -38,12 +38,12 @@ def dump_stream_data(out_d, cvdata, content_id, version_name):
         os.makedirs(sdir)
 
     with open(fdpath, "wb") as fp:
-        fp.write(sutil.dump_data(prod_tree))
+        fp.write(util.dump_data(prod_tree))
 
     # now insert or update an index
     index = util.create_index(sdir)
     with open(os.path.join(sdir, "index.json"), "wb") as fp:
-        fp.write(sutil.dump_data(index) + b"\n")
+        fp.write(util.dump_data(index))
 
 
 def dump_json_data(fname, cvdata, version_name):
