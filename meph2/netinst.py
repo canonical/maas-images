@@ -20,11 +20,9 @@ from simplestreams import util as sutil
 from simplestreams.log import LOG
 
 from .url_helper import geturl, geturl_len, geturl_text, UrlError
+from .util import dump_data
+from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 
-if __name__ == '__main__':
-    from ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
-else:
-    from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
 
 APACHE_PARSE_RE = re.compile(r'''
     href="
@@ -116,8 +114,7 @@ class NetbootMirrorReader(mirrors.MirrorReader):
             return self._get_index()
         elif path == "streams/v1/%s.json" % self.content_id:
             return simplestreams.contentsource.MemoryContentSource(
-                url=None, content=simplestreams.util.dump_data(
-                    self._get_products(path)))
+                url=None, content=dump_data(self._get_products(path)))
         elif path in self._pathmap:
             LOG.debug("request for %s %s" % (path, self._pathmap[path]))
             cs = simplestreams.contentsource.UrlContentSource
@@ -639,4 +636,5 @@ def main_test():
     print(json.dumps(ret, indent=1))
 
 if __name__ == '__main__':
+    # executable as 'python3 -m meph2.netinst'
     main()
