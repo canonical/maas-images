@@ -49,12 +49,14 @@ To force a build, use '--target=force'
     create new content for products that match the provided filters.
 
   If the maas ephemeral data is up to date with the latest cloud image daily
-  then meph2-cloudimg-sync will not do anything.  In order to force it to
-  do something, you can either
+  then meph2-cloudimg-sync will not do anything.
 
 In order to 'rebuild' something.  To create a new '20160101.1' even when
 there is an existing '20160101' maas image and the latest cloud image
 is 20160101, then pass '--rebuild=20160101:20160101.1'.
+
+For faster debugging, you can disable the crawling of d-i kernel/initramfs
+by passing '--disable-di'
 
 === debugging ===
 To debug and use the fake 'maas-cloudimg2eph2', run like:

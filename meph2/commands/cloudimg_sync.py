@@ -73,6 +73,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
+        self.enable_di = self.config.get('enable_di', True)
 
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
@@ -135,7 +136,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         cvret = create_version(
             arch=arch, release=release, version_name=vername,
-            img_url=contentsource.url, out_d=self.out_d, include_di=True,
+            img_url=contentsource.url, out_d=self.out_d,
+            include_di=self.enable_di,
             cfgdata=self.cfgdata, common_tags=all_item_tags)
 
         for prodname, items in cvret.items():
@@ -200,6 +202,7 @@ def main():
                         help='only report what would be done')
     parser.add_argument('--arches', action='append',
                         default=[], help='which arches to build, "," delim')
+    parser.add_argument('--disable-di', action='store_true', default=False)
     parser.add_argument('--rebuild', action='append', default=[],
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
@@ -253,7 +256,8 @@ def main():
         else:
             return content
 
-    mirror_config = {'max_items': args.max, 'filters': filter_list}
+    mirror_config = {'max_items': args.max, 'filters': filter_list,
+                     'enable_di': not args.disable_di}
 
     vlevel = min(args.verbose, 2)
     level = (log.ERROR, log.INFO, log.DEBUG)[vlevel]
