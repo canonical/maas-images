@@ -36,7 +36,7 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
- - version: 16.04
+ - version: "16.04"
    release: xenial
    kernels:
     - [xenial,  armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_x]
@@ -47,7 +47,7 @@ releases:
     - [xenial,  arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
     - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
- - version: 15.10
+ - version: "15.10"
    builtin_kernel: linux-generic
    release: wily
    kernels:
@@ -59,7 +59,7 @@ releases:
     - [wily,    arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_w]
     - [wily,    arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [wily,    arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
- - version: 15.04
+ - version: "15.04"
    release: vivid
    builtin_kernel: linux-generic
    kernels:
@@ -71,7 +71,7 @@ releases:
     - [vivid,   arm64,   hwe-v,    generic,   linux-generic,            *sa_hwe_v]
     - [vivid,   arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [vivid,   arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
- - version: 14.10
+ - version: "14.10"
    builtin_kernel: linux-generic
    release: utopic
    kernels:
@@ -83,7 +83,7 @@ releases:
     - [utopic,  arm64,   hwe-u,    generic,   linux-generic,            *sa_hwe_u]
     - [utopic,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [utopic,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
- - version: 14.04
+ - version: "14.04"
    builtin_kernel: linux-generic
    release: trusty
    kernels:
@@ -111,7 +111,7 @@ releases:
     - [wily,    armhf,   hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
     - [wily,    i386,    hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
     - [wily,    ppc64el, hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
- - version: 13.10
+ - version: "13.10"
    builtin_kernel: linux-generic
    release: saucy
    kernels:
@@ -119,7 +119,7 @@ releases:
     - [saucy,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [saucy,   i386,    hwe-s,    generic,   linux-generic,            *sa_hwe_t]
     - [saucy,   amd64,   hwe-s,    generic,   linux-generic,            *sa_hwe_t]
- - version: 12.04
+ - version: "12.04"
    release: precise
    builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
    kernels:
