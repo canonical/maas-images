@@ -4,7 +4,8 @@ from simplestreams import log
 from simplestreams import util as sutil
 
 from meph2 import DEF_MEPH2_CONFIG, util
-from meph2.stream import ALL_ITEM_TAGS, CONTENT_ID, create_version
+from meph2.stream import (
+    ALL_ITEM_TAGS, CONTENT_ID, create_version, IMAGE_FORMATS)
 
 import argparse
 import copy
@@ -67,6 +68,9 @@ def main():
                         help='only report what would be done')
     parser.add_argument('--enable-di', action='store_true', default=False)
     parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
+    parser.add_argument('--image-format', default=None,
+                        help='format of img in img_url.',
+                        choices=IMAGE_FORMATS)
     parser.add_argument('--flat-json', metavar='FILE', default=None,
                         help='dump json metadata to FILE')
     parser.add_argument('--verbose', '-v', action='count', default=0)
@@ -95,7 +99,7 @@ def main():
         img_url=args.img_url, out_d=args.output_d,
         include_di=args.enable_di, cfgdata=cfgdata,
         common_tags=ALL_ITEM_TAGS,
-        verbosity=vlevel)
+        verbosity=vlevel, image_format=args.image_format)
 
     dump_stream_data(args.output_d, copy.deepcopy(cvret),
                      CONTENT_ID, args.version_name)

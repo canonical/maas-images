@@ -26,11 +26,12 @@ PATH_FORMATS = {
     'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
+IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz', 'root-tar']
 
 
 def create_version(arch, release, version_name, img_url, out_d,
                    include_di=True, cfgdata=None, common_tags=None,
-                   verbosity=0):
+                   verbosity=0, img_format=None):
     # arch: what dpkg arch (amd64, i386, ppc64el) to build this for
     # release: codename (trusty)
     # version_name: serial/build-number YYYYMMDD[.X])
@@ -49,10 +50,15 @@ def create_version(arch, release, version_name, img_url, out_d,
     if common_tags is None:
         common_tags = {}
 
+    mci2e_flags = []
     if verbosity:
-        vflags = ['-' + 'v' * verbosity]
-    else:
-        vflags = []
+        mci2e_flags.append('-' + 'v' * verbosity)
+
+    if img_format is not None:
+        if img_format not in IMAGE_FORMATS:
+            raise ValueError("img_format='%s' invalid.  Must be one of: %s" %
+                             img_format, IMAGE_FORMATS)
+        mci2e_flags.append('--format=%s' % img_format)
 
     if cfgdata is None:
         with open(DEF_MEPH2_CONFIG) as fp:
@@ -112,7 +118,7 @@ def create_version(arch, release, version_name, img_url, out_d,
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
     manifest_path = PATH_FORMATS['manifest'] % subs
 
-    gencmd = ([mci2e] + vflags +
+    gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
                img_url, os.path.join(out_d, rootimg_path)])
