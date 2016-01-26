@@ -2,6 +2,7 @@
 
 VERBOSITY=1
 TEMP_D=""
+VALID_FORMATS=( auto img-tar root-image-gz root-image root-tar )
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -24,6 +25,13 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
                        P is ',' delimited: kernel-name,kernel,ramdisk[,flags]
          --manifest M  write the dpkg manifest to M
     -v | --verbose     increase verbosity
+    -f | --format   F  source-image is of format F. default: auto.
+                       must be one of: ${VALID_FORMATS[*]}
+                         auto: determine based on file and name heuristics
+                         root-tar: tarball of / (supports .tar.xz .tar.gz)
+                         root-image: filesytem (ext[234] in a file)
+                         root-image-gz: root-image that is compressed with gzip
+                         img-tar: tarball of root image (image file named .img)
 
    Example:
      ${0##*/} --kernel=linux-generic \\
@@ -396,6 +404,17 @@ handle_kpack() {
     done
 }
 
+inargs() {
+    #inargs(needle, [haystack])
+    # return true if needle is in haystack
+    local needle="$1" i=""
+    shift
+    for i in "$@"; do
+        [ "$i" = "$needle" ] && return 0
+    done
+    return 1
+}
+
 main() {
     local short_opts="a:fhk:p:v"
     local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,verbose"
@@ -435,6 +454,12 @@ main() {
     PATH="$(dirname "$0"):$PATH"
     command -v "maas-cloudimg2ephemeral" >/dev/null 2>&1 ||
         { error "do not have maas-cloudimg2ephemeral in path"; return 1; }
+
+    inargs "$fmt" "${VALID_FORMATS[@]}" || {
+        error "provided '--format=$fmt' not a valid format:" \
+            "${VALID_FORMATS[*]}"
+        return 1;
+    }
 
     [ -z "$kpkg" ] && {
         error "no '--kernel' provided, choosing 'linux-generic'"
