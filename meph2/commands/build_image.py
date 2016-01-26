@@ -99,7 +99,7 @@ def main():
         img_url=args.img_url, out_d=args.output_d,
         include_di=args.enable_di, cfgdata=cfgdata,
         common_tags=ALL_ITEM_TAGS,
-        verbosity=vlevel, image_format=args.image_format)
+        verbosity=vlevel, img_format=args.image_format)
 
     dump_stream_data(args.output_d, copy.deepcopy(cvret),
                      CONTENT_ID, args.version_name)
