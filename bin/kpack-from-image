@@ -158,6 +158,24 @@ clean_local_udev_rules() {
 insist_running_in_container() {
     local root="${1:-/}"
     ln -sf /bin/true "${root%/}/bin/running-in-container"
+
+    local sdv="/usr/bin/systemd-detect-virt"
+    local fpsdv="${root%/}${sdv}"
+    if [ -x "${fpsdv}" ]; then
+        # make 'systemd-detect-virt X' exit true for any value of
+        # X in -c/--container -r/--chroot
+        mv "${fpsdv}" "$fpsdv.real" && cat > "$fpsdv" <<"EOF"
+#!/bin/sh
+args=" $* "
+hasarg() { [ "${args#* $1 }" != "$args" -o "${args#* $2 }" != "$args" ]; }
+hasarg -q --quiet && msg=: || msg=echo
+hasarg -c --container && { $msg "lxc"; exit 0; }
+hasarg -r --chroot && { $msg "chroot"; exit 0; }
+exec "$0.real" "$@"
+EOF
+        [ $? -eq 0 ] || { error "failed writing $sdv"; return 1; }
+        chmod 755 "$fpsdv" || { error "failed chmod $fpsdv"; return 1; }
+    fi
 }
 
 vrun() {
