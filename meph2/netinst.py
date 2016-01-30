@@ -53,7 +53,7 @@ POCKETS = {
 POCKETS_PROPOSED = POCKETS.copy()
 POCKETS_PROPOSED.update({'proposed': '-proposed'})
 
-ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64")
+ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64", "s390x")
 YYYYMMDD_RE = re.compile("20[0-9][0-9](0[0-9]|1[012])[0-3][0-9]ubuntu.*")
 FILES_PREFIX = "files/"
 
