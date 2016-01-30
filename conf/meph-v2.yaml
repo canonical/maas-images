@@ -39,14 +39,15 @@ releases:
  - version: "16.04"
    release: xenial
    kernels:
-    - [xenial,  armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_x]
-    - [xenial,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [xenial,  i386,    hwe-w,    generic,   linux-generic,            *sa_hwe_x]
     - [xenial,  amd64,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
-    - [xenial,  ppc64el, hwe-w,    generic,   linux-generic,            *sa_hwe_x]
     - [xenial,  arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
-    - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [xenial,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [xenial,  armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_x]
+    - [xenial,  i386,    hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  ppc64el, hwe-w,    generic,   linux-generic,            *sa_hwe_x]
+    - [xenial,  s390x,   hwe-w,    generic,   linux-generic,            *sa_hwe_x]
  - version: "15.10"
    builtin_kernel: linux-generic
    release: wily
