@@ -150,6 +150,22 @@
  "generic/cdrom/initrd.gz": null,
  "generic/cdrom/vmlinuz": null,
  "generic/debian.exec": null,
+ "generic/initrd.debian": null,
+ "generic/initrd.ubuntu": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": null,
+  "kernel-flavor": "generic",
+  "kernel-release": "BASE"
+ },
+ "generic/kernel.debian": null,
+ "generic/kernel.ubuntu": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": null,
+  "kernel-flavor": "generic",
+  "kernel-release": "BASE"
+ },
  "generic/netboot/beagleboard/MLO": null,
  "generic/netboot/beagleboard/boot.img-fb.gz": null,
  "generic/netboot/beagleboard/boot.img-serial.gz": null,
