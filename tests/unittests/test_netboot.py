@@ -4,9 +4,9 @@ import os
 
 from meph2 import netinst
 
+
 # results contains responses from get_file_item_data
 # for all existing data that came into it (some filtered for brevity)
-# with a run of 
 def load_json_data(fname):
     fpath = os.path.join(os.path.dirname(__file__), fname)
     with open(fpath, "r") as fp:
@@ -15,6 +15,7 @@ def load_json_data(fname):
 
 class TestFilePathData(TestCase):
     gfdata = None
+
     @classmethod
     def setUpClass(cls):
         cls.gfdata = load_json_data('file_item_data.json')
