@@ -21,7 +21,7 @@ from simplestreams.log import LOG
 
 from .url_helper import geturl, geturl_len, geturl_text, UrlError
 from .util import dump_data
-from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
+from .ubuntu_info import RELEASES, SUPPORTED
 
 
 APACHE_PARSE_RE = re.compile(r'''
@@ -53,7 +53,7 @@ POCKETS = {
 POCKETS_PROPOSED = POCKETS.copy()
 POCKETS_PROPOSED.update({'proposed': '-proposed'})
 
-ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64")
+ARCHES = ("i386", "amd64", "ppc64el", "armhf", "arm64", "s390x")
 YYYYMMDD_RE = re.compile("20[0-9][0-9](0[0-9]|1[012])[0-3][0-9]ubuntu.*")
 FILES_PREFIX = "files/"
 
@@ -69,8 +69,36 @@ FLAVOR_COLLISIONS = {
     "generic-lpae": "glp",
 }
 
+KERNEL_FLAVORS = (
+    'armadaxp',
+    'generic',
+    'generic-lpae',
+    'highbank',
+    'keystone',
+    'non-pae',
+    'omap',
+    'omap4',
+)
+
 DTB_TO_FORMAT = {
     "apm-mustang.dtb": "xgene"
+}
+
+IMAGE_FORMATS = (
+    'beagleboard',
+    'default',
+    'pandaboard',
+    'tegra',
+    'wandboard',
+    'wandboard-quad',
+    'xgene',
+)
+
+FTYPE_MATCHES = {
+    "initrd": re.compile(r"(initrd.gz|initrd.ubuntu|uInitrd)$").search,
+    "kernel": re.compile(r"(kernel.ubuntu|linux|uImage|"
+                         "vmlinux|vmlinuz)$").search,
+    "dtb": re.compile(r".dtb$").search,
 }
 
 # #
@@ -250,89 +278,80 @@ def get_file_item_data(path, release="base"):
     #    /installer-armhf/current/images/MD5SUMS
     #    /installer-ppc64el/current/images/MD5SUMS
     # return either None (not a kernel/initrd/dtb)
-    # or a tuple of release-kernel, kernel-flavor, initrd-flavor, filetype
-
+    # or a dictionary of:
+    #   release-kernel, kernel-flavor, initrd-flavor, filetype, image_format
+    #   release-kernel is 'wily' if trusty-hwe-w
+    #   filetype is 'dtb', 'initrd.' or 'kernel'
     # at the moment the only 'initrd-flavor' that we're supporting is netboot
-    if path.find("netboot") < 0 and path.find("device-tree") < 0:
-        return None
-    iflavor = "netboot"
+    ftype = None
+    image_format = None
+    initrd_flavor = "netboot"
+    kernel_flavor = None
+    kernel_release = None
+    # image-format
+    #  "beagleboard", "default", "pandaboard",
+    #  "tegra", "wandboard", "wandboard-quad", "xgene",
 
-    path = path.replace("/netboot/", "/")
+    # kernel-flavor
+    # "armadaxp", "generic", "generic-lpae", "highbank",
+    # "keystone", "non-pae", "omap", "omap4",
 
-    # 'xen' is only historic now, but was a initrd flavor.
-    path = path.replace("-xen/xen", "/xen")
-    path = re.sub("netboot/ubuntu-installer/[^/]*/", "netboot/generic/", path)
-    toks = path.split("/")
-    if len(toks) == 2:
-        if toks[0] == "netboot":
-            path = "netboot/generic/" + toks[1]
-        else:
-            path = "netboot/" + toks[0] + "/" + toks[1]
+    ptoks = path.split("/")
 
-    # generic/xgene/uInitrd is generic flavor,
-    # xgene-uboot or xgene-uboot-mustang image
-    imgfmt = "default"
-    if (len(toks) == 4 and toks[1] == "generic" and
-            (toks[3].startswith('uI'))):
-        path = "%s-netboot/%s/%s" % (release, toks[1], toks[3])
-        imgfmt = toks[2]
-        # xgene-uboot -> xgene
-        imgfmt = re.sub("-uboot$", "", imgfmt)
-    elif (len(toks) == 2 and toks[0] == "device-tree" and
-          toks[1].endswith('dtb')):
-        path = "%s-netboot/generic/%s" % (release, toks[1])
-        if toks[1] in DTB_TO_FORMAT:
-            imgfmt = DTB_TO_FORMAT[toks[1]]
-    # trusty & utopic used this layout for arm64
-    elif (len(toks) == 3 and toks[0] == "generic" and
-            (toks[2].startswith('uI') or toks[2].endswith('dtb'))):
-        path = "%s-netboot/%s/%s" % (release, toks[0], toks[2])
-        imgfmt = toks[1]
+    # paths with 'xen' or 'cdrom' would be other initrd-flavors
+    # essentially just blacklist paths with these toks
+    other_iflavor_toks = ('xen', 'cdrom', 'gtk')
+    for other in other_iflavor_toks:
+        if other in path:
+            return None
 
-    path = re.sub("^netboot/", "%s-netboot/" % release, path)
-    if path.find("-netboot/") < 1:
-        return None
-    path = re.sub("/ubuntu-installer/[^/]*/", "/", path)
-    path = re.sub("/(vmlinu[xz]|linux|uImage)$", "/kernel", path)
-    path = re.sub("/(initrd.gz|initrd|uInitrd)$", "/initrd", path)
-    path = re.sub("/[^/]*.dtb", "/dtb", path)
-    path = re.sub("-netboot", "", path)
-    try:
-        (frel, kflavor, ftype) = path.split("/")
-    except ValueError:
+    # file type
+    for (cftype, match) in FTYPE_MATCHES.items():
+        if match(path):
+            ftype = cftype
+            break
+    if not ftype:
         return None
 
-    # realize that 'utopic-generic' is not a kernel flavor but
-    # 'generic' flavor in utopic release.
-    if frel == release:
-        for r in RELEASES.keys():
-            if kflavor.startswith(r + "-"):
-                frel, kflavor = kflavor.split("-", 1)
+    # kernel release.  all kernel release paths start with <release>-
+    releases = RELEASES.keys()
+    kernel_release = release
+    for rel in RELEASES.keys():
+        if path.startswith(rel + "-"):
+            kernel_release = rel
+            break
+
+    # image format
+    bname = ptoks[-1]
+    image_format = 'default'
+    if bname in DTB_TO_FORMAT:
+        # specific/known path based on basename
+        image_format = DTB_TO_FORMAT[bname]
+    elif 'xgene-uboot' in ptoks:
+        image_format = 'xgene'
+    elif len(ptoks) == 4:
+        for ifmt in IMAGE_FORMATS:
+            if ifmt in ptoks:
+                image_format = ifmt
                 break
 
-    if kflavor in INVALID_KERNEL_FLAVORS:
-        return None
+    # kernel flavor
+    # if an element of te path contains a known kernel flavor
+    # or <release>-<flavor>
+    kernel_flavor = "generic"
+    for kflav in KERNEL_FLAVORS:
+        if kflav in ptoks:
+            kernel_flavor = kflav
+            break
+        else:
+            for r in releases:
+                if "%s-%s" % (r, kflav) in ptoks:
+                    kernel_flavor = kflav
+                    break
 
-    if ftype not in ("kernel", "initrd", "dtb"):
-        return None
-
-    # frel (file release) is 'quantal' for hardware enablement
-    # kernel from quantal, while 'release' is 'precise'.
-    # this check below effectively only allows <release>-netboot/
-    # for LTS releases > lucid.
-    if (frel != release and
-            (release not in LTS_RELEASES or release < "precise")):
-        return None
-
-    ret = {'kernel-flavor': kflavor, 'ftype': ftype, 'kernel-release': frel,
-           'image-format': imgfmt}
-    if ftype == 'initrd':
-        ret['initrd-flavor'] = iflavor
-    else:
-        # this works around bug in condense.
-        ret['initrd-flavor'] = None
-
-    return ret
+    return {'ftype': ftype, 'image-format': image_format,
+            'initrd-flavor': initrd_flavor, "kernel-flavor": kernel_flavor,
+            'kernel-release': kernel_release}
 
 
 def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
@@ -374,7 +393,7 @@ def mine_md(url, release):
 
     versions = {}
 
-    regex = re.compile(".*(netboot|device-tree)")
+    regex = re.compile("^(.*netboot|.*device-tree|generic/)")
     for (di_ver, pubdate) in usable:
         versions[di_ver] = {'items': {}}
         curp = '/'.join((url, di_ver, 'images',))
