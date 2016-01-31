@@ -21,25 +21,7 @@ from simplestreams.log import LOG
 
 from .url_helper import geturl, geturl_len, geturl_text, UrlError
 from .util import dump_data
-#from .ubuntu_info import RELEASES, LTS_RELEASES, SUPPORTED
-#FIXME_START
-RELEASES = {
-'lucid': 1,
-'maverick': 2,
-'natty': 3,
-'oneiric': 4,
-'precise': 5,
-'quantal': 6,
-'raring': 7,
-'saucy': 8,
-'trusty': 9,
-'utopic': 10,
-'vivid': 11,
-'wily': 12,
-'xenial': 13,}
-LTS_RELEASES = ('precise', 'trusty', 'xenial')
-SUPPORTED = ('precise', 'trusty', 'wily', 'xenial')
-#FIXME_END
+from .ubuntu_info import RELEASES, SUPPORTED
 
 
 APACHE_PARSE_RE = re.compile(r'''
@@ -95,7 +77,7 @@ KERNEL_FLAVORS = (
     'keystone',
     'non-pae',
     'omap',
-    'omap4', 
+    'omap4',
 )
 
 DTB_TO_FORMAT = {
@@ -114,7 +96,8 @@ IMAGE_FORMATS = (
 
 FTYPE_MATCHES = {
     "initrd": re.compile(r"(initrd.gz|initrd.ubuntu|uInitrd)$").search,
-    "kernel": re.compile(r"(kernel.ubuntu|linux|uImage|vmlinux|vmlinuz)$").search,
+    "kernel": re.compile(r"(kernel.ubuntu|linux|uImage|"
+                         "vmlinux|vmlinuz)$").search,
     "dtb": re.compile(r".dtb$").search,
 }
 
@@ -338,7 +321,7 @@ def get_file_item_data(path, release="base"):
             kernel_release = rel
             break
 
-    # image format 
+    # image format
     bname = ptoks[-1]
     image_format = 'default'
     if bname in DTB_TO_FORMAT:
@@ -351,14 +334,6 @@ def get_file_item_data(path, release="base"):
             if ifmt in ptoks:
                 image_format = ifmt
                 break
-        # if path has 4 tokens then image format is the second to last
-        #   generic/netboot/tegra/tegra20-harmony.dtb
-        #   generic/netboot/wandboard/uInitrd
-        #   generic/netboot/wandboard-quad/uImage
-        #   generic/netboot/wandboard-quad/uInitrd
-        #   generic/netboot/beagleboard/uImage: {
-        # otherwise use 'default'
-        #image_format = ptoks[2]
 
     # kernel flavor
     # if an element of te path contains a known kernel flavor
@@ -374,10 +349,9 @@ def get_file_item_data(path, release="base"):
                     kernel_flavor = kflav
                     break
 
-    return {'ftype': ftype, 'image-format': image_format, 
+    return {'ftype': ftype, 'image-format': image_format,
             'initrd-flavor': initrd_flavor, "kernel-flavor": kernel_flavor,
             'kernel-release': kernel_release}
-    
 
 
 def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
