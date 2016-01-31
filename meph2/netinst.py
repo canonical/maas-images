@@ -393,7 +393,7 @@ def mine_md(url, release):
 
     versions = {}
 
-    regex = re.compile(".*(netboot|device-tree)")
+    regex = re.compile("^(.*netboot|.*device-tree|generic/)")
     for (di_ver, pubdate) in usable:
         versions[di_ver] = {'items': {}}
         curp = '/'.join((url, di_ver, 'images',))
