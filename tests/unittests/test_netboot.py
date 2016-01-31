@@ -21,7 +21,7 @@ class TestFilePathData(TestCase):
 
     def test_file_item_data(self):
         release = "trusty"
-        for fpath in self.gfdata:
+        for fpath in sorted(self.gfdata):
             if self.gfdata[fpath]:
                 expected = self.gfdata[fpath].copy()
                 if expected['kernel-release'] == "BASE":
@@ -29,7 +29,7 @@ class TestFilePathData(TestCase):
             else:
                 expected = None
             found = netinst.get_file_item_data(fpath, release=release)
-            self.assertEqual(expected, found)
+            self.assertEqual((fpath, expected), (fpath, found))
 
     def test_file_item_data_single_path(self):
         paths = ["generic/kernel.ubuntu", "generic/initrd.ubuntu"]
