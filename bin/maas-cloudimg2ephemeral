@@ -372,6 +372,15 @@ apply_updates_chrooted() {
     ensure_iscsi_initramfs_support "/" "$release" ||
         { "ensure_iscsi_initramfs_support / $release failed"; return 1; }
 
+    change="create /lib/modules (LP: #1543204)"
+    if [ ! -d "/lib/modules" ]; then
+        log_change true "$change"
+        mkdir /lib/modules ||
+            { error "failed to create /lib/modules"; return 1; }
+    else
+        log_change false "$change"
+    fi
+
     change="update-initramfs"
     if [ "$kpkg" != "none" ]; then
         local k="" i=""
