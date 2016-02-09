@@ -257,7 +257,6 @@ apply_updates_chrooted() {
         log_change false "$change"
     fi
 
-    local removes="^linux-.*"
     local arch_pkgs="" toremove="" removed="" installed=""
     local add_pkgs="" rel_pkgs="" kernel_pkg=""
     if [ "$kpkg" != "none" ]; then
@@ -277,21 +276,17 @@ apply_updates_chrooted() {
         arm64|armhf) arch_pkgs="u-boot-tools";;
     esac
 
-    toremove=$(set -f; set -o pipefail; set -e;
-        rlist=""
-        inst=$(dpkg-query --show)
-        for r in $removes; do
-            matches=$(printf "%s\n" "$inst" |
-                      awk '$1 ~ pm { printf("%s ",$1); }' "pm=$r")
-            rlist="$rlist $matches"
-        done
-      echo ${rlist}
-    )
+    local removes="^linux-.*" keeps="^linux-base$" pkglist=""
+    pkglist=$(dpkg-query --show) || { error "failed dpkg-query"; return 1; }
+    toremove=$(echo "$pkglist" |
+            awk '$1 ~ rm && $1 !~ keeps { printf("%s ",$1); }' \
+                "rm=$removes" "keeps=$keeps") &&
+         toremove="${toremove% }"
     [ $? -eq 0 ] || { error "failed getting list to remove"; return 1; }
-      
+
     change="removing linux kernel packages."
     if [ -z "$toremove" ]; then
-        error "nothing installed matched: $removes. nothing to remove"
+        error "nothing to remove: nothing match '$removes' and not '$keeps'."
         log_change false "$change"
     else
         debug 1 "removing: $toremove"
