@@ -264,10 +264,10 @@ chrooted() {
             { skip_update=false; debug 1 "enabling update due to proposed"; }
     fi
 
-    # trusty and wily do not have mdadm installed in the image
+    # trusty and wily do not have mdadm or lvm2 installed in the image
     # but we want those modules included (LP: #1519470)
     case "$rel" in
-        trusty|wily) pkgs=( mdadm "${pkgs[@]}" );;
+        trusty|wily) pkgs=( lvm2 mdadm "${pkgs[@]}" );;
     esac
 
     $skip_update || apt-get update -q ||
