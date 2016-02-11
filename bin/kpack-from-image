@@ -45,6 +45,28 @@ debug() {
     error "${@}"
 }
 
+disable_services() {
+    local dir="$1"
+    cat > "$dir/usr/sbin/policy-rc.d" <<"EOF"
+#!/bin/sh
+while true; do
+    case "$1" in
+        -*) shift ;;
+        makedev) exit 0 ;;
+        x11-common) exit 0 ;;
+        *) exit 101 ;;
+    esac
+done
+EOF
+    [ $? -eq 0 ] && chmod 755 "$dir/usr/sbin/policy-rc.d" ||
+        { error "failed to write policy-rc.d"; return 1; }
+}
+
+undisable_services() {
+    local dir="$1"
+    rm -f "$dir/usr/sbin/policy-rc.d"
+}
+
 kernel_from_mp() {
     # this is the unwrapped function that actually does everything
     # it essentially gets called by mount-image-callback.
@@ -265,12 +287,19 @@ chrooted() {
 
     insist_running_in_container / ||
         { error "failed to set running-in-container to true"; return 1; }
+
+    disable_services / ||
+        { error "failed to disable services before apt installs"; return 1; }
+
     vrun 1 "installing packages" \
         env DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet \
             $copymods "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
         { error "failed install of $copymods ${pkgs[*]}"; return 1; }
+
+    undisable_services / ||
+        { error "failed to re-enable services after apt installs"; return 1; }
 
     [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
 
