@@ -49,7 +49,7 @@ kernel_from_mp() {
     # this is the unwrapped function that actually does everything
     # it essentially gets called by mount-image-callback.
     local short_opts="hv"
-    local long_opts="chown-to:,help,kihelper:,proposed,chown-to:,verbose"
+    local long_opts="chown-to:,help,kihelper:,proposed,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -406,7 +406,7 @@ main() {
 
     gid=$(id -g)
     uid=$(id -u)
-    chown_to="$gid:$uid"
+    chown_to="$uid:$gid"
 
     local mic=""
     mic=$(which mount-image-callback) ||
