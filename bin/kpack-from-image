@@ -112,8 +112,16 @@ kernel_from_mp() {
             kihelper="$myd/$kihelper"
         fi
     fi
-    [ -d "$outd" ] || mkdir -p "$outd" ||
-        { error "failed mkdir $outd"; return 1; }
+    if [ ! -d "$outd" ]; then
+        mkdir -p "$outd" ||
+            { error "failed mkdir $outd"; return 1; }
+        if [ -n "$chown_to" ]; then
+            chown "$chown_to" "$outd" || {
+                error "failed chown output dir '$outd' to '$chown_to'";
+                return 1;
+            }
+        fi
+    fi
 
     local ch_outd="/tmp/output"
     KPACK_SKIP_APT_UPDATE=$skip_update CHROOTED_VERBOSITY=$VERBOSITY \
