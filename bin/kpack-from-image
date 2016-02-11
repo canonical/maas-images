@@ -238,7 +238,7 @@ chrooted() {
     # installs all packages (arguments), writes kernel
     # and initramfs and 'verflav' to /tmp/ 
     VERBOSITY=${CHROOTED_VERBOSITY:-${VERBOSITY}}
-    local pkgs="" kpkg="" copymods zzgrub emd="" out pkg
+    local pkgs="" kpkg="" copymods zzgrub emd="" out pkg rel
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
     local proposed=${PROPOSED:-false} proposed_lfile=""
     local verflav initrd kernel
@@ -253,16 +253,22 @@ chrooted() {
     touch "$stamp"
 
     # add proposed if necessary
+    rel=$(lsb_release -sc) ||
+        { error "failed to read release"; return 1; }
     if $proposed; then
-        local rel mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
-        rel=$(lsb_release -sc) ||
-            { error "failed to read release"; return 1; }
+        local mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
         proposed_lfile="/etc/apt/sources.list.d/proposed-$rel.list"
         debug 1 "adding proposed ($mirror) to $proposed_lfile"
         echo "deb $mirror ${rel}-proposed main" > "$proposed_lfile"
         $skip_update && 
             { skip_update=false; debug 1 "enabling update due to proposed"; }
     fi
+
+    # trusty and wily do not have mdadm installed in the image
+    # but we want those modules included (LP: #1519470)
+    case "$rel" in
+        trusty|wily) pkgs=( mdadm "${pkgs[@]}" );;
+    esac
 
     $skip_update || apt-get update -q ||
         { error "apt-get update failed"; return 1; }
