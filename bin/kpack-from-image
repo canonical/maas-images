@@ -67,6 +67,31 @@ undisable_services() {
     rm -f "$dir/usr/sbin/policy-rc.d"
 }
 
+_chroot() {
+    local dir="$1"
+    shift
+    if [ "$dir" = "/" ]; then
+        "$@"
+    else
+        chroot "$dir" "$@"
+    fi
+}
+
+replace_newaliases() {
+    local dir="$1"
+    debug 1 "hacking around newaliases in root (LP: #1531299)"
+    _chroot "$dir" dpkg-divert --local --rename --add /usr/bin/newaliases &&
+        ln -s /bin/true "$dir/usr/bin/newaliases"
+}
+
+unreplace_newaliases() {
+    local dir="$1" chroot_dir=""
+    debug 1 "un-diverting newaliases in root"
+    [ "$dir/bin/true" -ef "$dir/usr/bin/newaliases" ] || return 0
+    rm -f "$dir/usr/bin/newaliases"
+    _chroot "$dir" dpkg-divert --local --rename --remove /usr/bin/newaliases
+}
+
 kernel_from_mp() {
     # this is the unwrapped function that actually does everything
     # it essentially gets called by mount-image-callback.
@@ -305,6 +330,9 @@ chrooted() {
     disable_services / ||
         { error "failed to disable services before apt installs"; return 1; }
 
+    replace_newaliases / ||
+        { error "failed to replace newaliases"; return 1; }
+
     vrun 1 "installing packages" \
         env DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet \
@@ -314,6 +342,9 @@ chrooted() {
 
     undisable_services / ||
         { error "failed to re-enable services after apt installs"; return 1; }
+
+    unreplace_newaliases / ||
+        { error "failed to un-replace newaliases"; return 1; }
 
     [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
 
