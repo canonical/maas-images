@@ -291,8 +291,9 @@ chrooted() {
 
     # trusty and wily do not have mdadm or lvm2 installed in the image
     # but we want those modules included (LP: #1519470)
+    # the packages are expected to be in xenial already
     case "$rel" in
-        trusty|wily) pkgs=( lvm2 mdadm "${pkgs[@]}" );;
+        precise|trusty|wily) pkgs=( lvm2 mdadm "${pkgs[@]}" );;
     esac
 
     $skip_update || apt-get update -q ||
