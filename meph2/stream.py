@@ -1,5 +1,6 @@
 from . import DEF_MEPH2_CONFIG, util
-from . netinst import POCKETS, POCKETS_PROPOSED, get_di_kernelinfo
+from . netinst import (POCKETS, POCKETS_PROPOSED, get_di_kernelinfo, 
+                       release_common_tags)
 from .ubuntu_info import REL2VER
 
 import os
@@ -178,10 +179,7 @@ def create_version(arch, release, version_name, img_url, out_d,
         common.update(ALL_ITEM_TAGS)
 
         if release in REL2VER:
-            relkeys = ('release', 'release_codename', 'release_title',
-                       'supported', 'support_eol')
-            common.update({k:v for k, v in REL2VER[release].items()
-                           if k in relkeys})
+            common.update(release_common_tags(release))
 
         if common_tags:
             common.update(common_tags)

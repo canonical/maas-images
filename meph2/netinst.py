@@ -576,6 +576,8 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None,
                 rdata['products'][pname] = {
                     'release': data['release'], 'version': data['version'],
                     'arch': data['arch'], 'versions': versions}
+                rdata['products'][pname].update(
+                    release_common_tags(data['release']))
             else:
                 rdata['products'][pname]['versions'].update(versions)
 
@@ -628,6 +630,10 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None, pockets=None):
     sutil.walk_products(netproducts, cb_item=fillitems)
 
     return (smirror, items)
+
+def release_common_tags(release):
+    relkeys = ('release', 'release_codename', 'release_title', 'support_eol')
+    return {k:v for k, v in REL2VER[release].items() if k in relkeys}
 
 
 def main():
