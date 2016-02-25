@@ -179,7 +179,7 @@ def create_version(arch, release, version_name, img_url, out_d,
 
         if release in REL2VER:
             relkeys = ('release', 'release_codename', 'release_title',
-                       'support_eol')
+                       'supported', 'support_eol')
             common.update({k:v for k, v in REL2VER[release].items()
                            if k in relkeys})
 
