@@ -21,7 +21,7 @@ from simplestreams.log import LOG
 
 from .url_helper import geturl, geturl_len, geturl_text, UrlError
 from .util import dump_data
-from .ubuntu_info import RELEASES, SUPPORTED
+from .ubuntu_info import REL2VER, SUPPORTED
 
 
 APACHE_PARSE_RE = re.compile(r'''
@@ -314,9 +314,9 @@ def get_file_item_data(path, release="base"):
         return None
 
     # kernel release.  all kernel release paths start with <release>-
-    releases = RELEASES.keys()
+    releases = REL2VER.keys()
     kernel_release = release
-    for rel in RELEASES.keys():
+    for rel in REL2VER.keys():
         if path.startswith(rel + "-"):
             kernel_release = rel
             break
@@ -531,7 +531,7 @@ def get_products_data(content_id=CONTENT_ID, arches=ARCHES, releases=None,
         t.start()
 
     for release in releases:
-        ver = RELEASES[release]['version']
+        ver = REL2VER[release]['version']
         for (pocket, psuffix) in pockets.items():
             for arch in arches:
                 mirror = HTTP_MIRRORS.get(arch, HTTP_MIRRORS.get('default'))

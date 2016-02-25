@@ -1,5 +1,6 @@
 from . import DEF_MEPH2_CONFIG, util
 from . netinst import POCKETS, POCKETS_PROPOSED, get_di_kernelinfo
+from .ubuntu_info import REL2VER
 
 import os
 import subprocess
@@ -174,7 +175,8 @@ def create_version(arch, release, version_name, img_url, out_d,
         common = {'subarches': ','.join(subarches), 'krel': krel,
                   'release': release, 'version': version, 'arch': arch,
                   'subarch': psubarch, 'kflavor': flavor}
-        common.update(ALL_ITEM_TAGS)
+        if release in REL2VER:
+            common.update(REL2VER[release])
         if common_tags:
             common.update(common_tags)
 

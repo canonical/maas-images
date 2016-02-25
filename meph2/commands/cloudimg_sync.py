@@ -8,7 +8,7 @@ from simplestreams import mirrors
 from simplestreams import filters
 
 from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
-from meph2.stream import ALL_ITEM_TAGS, CONTENT_ID, create_version
+from meph2.stream import CONTENT_ID, create_version
 
 import argparse
 import copy
@@ -129,16 +129,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                      vername, self.rebuilds[vername])
             vername = self.rebuilds[vername]
 
-        # these are copied from the source stream if they're present
-        copy_if_avail = ('os', 'os_title', 'release_title', 'release_codename')
-        all_item_tags = ALL_ITEM_TAGS.copy()
-        all_item_tags.update({k: flat[k] for k in copy_if_avail if k in flat})
-
         cvret = create_version(
             arch=arch, release=release, version_name=vername,
             img_url=contentsource.url, out_d=self.out_d,
             include_di=self.enable_di,
-            cfgdata=self.cfgdata, common_tags=all_item_tags)
+            cfgdata=self.cfgdata)
 
         for prodname, items in cvret.items():
             for i in items:
