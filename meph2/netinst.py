@@ -631,9 +631,10 @@ def get_di_kernelinfo(releases=None, arches=None, asof=None, pockets=None):
 
     return (smirror, items)
 
+
 def release_common_tags(release):
     relkeys = ('release', 'release_codename', 'release_title', 'support_eol')
-    return {k:v for k, v in REL2VER[release].items() if k in relkeys}
+    return {k: v for k, v in REL2VER[release].items() if k in relkeys}
 
 
 def main():

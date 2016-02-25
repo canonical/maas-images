@@ -1,5 +1,5 @@
 from . import DEF_MEPH2_CONFIG, util
-from . netinst import (POCKETS, POCKETS_PROPOSED, get_di_kernelinfo, 
+from . netinst import (POCKETS, POCKETS_PROPOSED, get_di_kernelinfo,
                        release_common_tags)
 from .ubuntu_info import REL2VER
 
