@@ -8,7 +8,7 @@ import yaml
 
 from simplestreams.log import LOG
 
-ALL_ITEM_TAGS = {'label': 'daily'}
+ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
 
 CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
@@ -175,8 +175,14 @@ def create_version(arch, release, version_name, img_url, out_d,
         common = {'subarches': ','.join(subarches), 'krel': krel,
                   'release': release, 'version': version, 'arch': arch,
                   'subarch': psubarch, 'kflavor': flavor}
+        common.update(ALL_ITEM_TAGS)
+
         if release in REL2VER:
-            common.update(REL2VER[release])
+            relkeys = ('release', 'release_codename', 'release_title',
+                       'support_eol')
+            common.update({k:v for k, v in REL2VER[release].items()
+                           if k in relkeys})
+
         if common_tags:
             common.update(common_tags)
 
