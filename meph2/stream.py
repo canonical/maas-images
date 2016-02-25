@@ -1,5 +1,7 @@
 from . import DEF_MEPH2_CONFIG, util
-from . netinst import POCKETS, POCKETS_PROPOSED, get_di_kernelinfo
+from . netinst import (POCKETS, POCKETS_PROPOSED, get_di_kernelinfo,
+                       release_common_tags)
+from .ubuntu_info import REL2VER
 
 import os
 import subprocess
@@ -7,7 +9,7 @@ import yaml
 
 from simplestreams.log import LOG
 
-ALL_ITEM_TAGS = {'label': 'daily'}
+ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
 
 CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
 PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
@@ -175,6 +177,10 @@ def create_version(arch, release, version_name, img_url, out_d,
                   'release': release, 'version': version, 'arch': arch,
                   'subarch': psubarch, 'kflavor': flavor}
         common.update(ALL_ITEM_TAGS)
+
+        if release in REL2VER:
+            common.update(release_common_tags(release))
+
         if common_tags:
             common.update(common_tags)
 

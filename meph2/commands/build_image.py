@@ -5,7 +5,7 @@ from simplestreams import util as sutil
 
 from meph2 import DEF_MEPH2_CONFIG, util
 from meph2.stream import (
-    ALL_ITEM_TAGS, CONTENT_ID, create_version, IMAGE_FORMATS)
+    CONTENT_ID, create_version, IMAGE_FORMATS)
 
 import argparse
 import copy
@@ -98,7 +98,6 @@ def main():
         arch=args.arch, release=args.release, version_name=args.version_name,
         img_url=args.img_url, out_d=args.output_d,
         include_di=args.enable_di, cfgdata=cfgdata,
-        common_tags=ALL_ITEM_TAGS,
         verbosity=vlevel, img_format=args.image_format)
 
     dump_stream_data(args.output_d, copy.deepcopy(cvret),
