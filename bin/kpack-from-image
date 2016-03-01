@@ -240,24 +240,6 @@ vrun() {
     "$@"
 }
 
-fix_kernel_img_conf() {
-    # remove link_in_boot=yes for LP: #1536810
-    local root="${1:-/}"
-    local kimg_conf="/etc/kernel-img.conf"
-    local kfpath="${root%/}${kimg_conf}"
-    if [ ! -f "$kfpath" ]; then
-        debug 1 "${kimg_conf}: did not exist. not modifying."
-        return 0
-    fi
-    if ! grep -qi "^link_in_boot.*yes" "${kfpath}"; then
-        debug 1 "$kimg_conf: 'link_in_boot = yes' not found. not modifying."
-        return 0
-    fi
-    debug 1 "${kimg_conf}: disabling 'link_in_boot=yes'"
-    sed -i '/^link_in_boot = [Yy][Ee][Ss]/d' "$kfpath"
-    return
-}
-
 chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
@@ -318,9 +300,6 @@ chrooted() {
 
     ensure_iscsi_initramfs_support / ||
         { error "failed to enable iscsi initramfs support"; return 1; }
-
-    fix_kernel_img_conf / ||
-        { error "failed to fix kernel-img.conf"; return 1; }
 
     clean_local_udev_rules / ||
         { error "failed configuring additional modules!"; return 1; }
