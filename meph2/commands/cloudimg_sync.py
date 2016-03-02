@@ -30,6 +30,7 @@ DEFAULT_ARCHES = {
     'ppc64le': ['ppc64el'],
     'armhf': ['armhf'],
     'aarch64': ['arm64', 'armhf'],
+    's390x': ['s390x'],
 }
 
 
