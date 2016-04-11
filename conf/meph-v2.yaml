@@ -112,6 +112,11 @@ releases:
     - [wily,    armhf,   hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
     - [wily,    i386,    hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
     - [wily,    ppc64el, hwe-w,    generic,  linux-generic-lts-wily,    *sa_hwe_w]
+    - [xenial,  amd64,   hwe-x,    generic,  linux-generic-lts-xenial,  *sa_hwe_x]
+    - [xenial,  arm64,   hwe-x,    generic,  linux-generic-lts-xenial,  *sa_hwe_x]
+    - [xenial,  armhf,   hwe-x,    generic,  linux-generic-lts-xenial,  *sa_hwe_x]
+    - [xenial,  i386,    hwe-x,    generic,  linux-generic-lts-xenial,  *sa_hwe_x]
+    - [xenial,  ppc64el, hwe-x,    generic,  linux-generic-lts-xenial,  *sa_hwe_x]
  - version: "13.10"
    builtin_kernel: linux-generic
    release: saucy
