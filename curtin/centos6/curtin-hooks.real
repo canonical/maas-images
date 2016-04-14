@@ -6,6 +6,7 @@ from __future__ import (
     unicode_literals,
     )
 
+import codecs
 import os
 import re
 import sys
@@ -83,13 +84,8 @@ def get_root_info(target):
 
 def read_file(path):
     """Returns content of a file."""
-    with open(path, 'rb') as stream:
-        # Python 2 returns a str object while Python 3 returns a bytes object
-        content = stream.read()
-        if isinstance(content, bytes):
-            return content.decode('utf-8')
-        else:
-            return content.encode('utf-8')
+    with codecs.open(path, encoding='utf-8') as stream:
+        return stream.read()
 
 
 def write_fstab(target, curtin_fstab):
