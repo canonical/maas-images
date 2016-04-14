@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source /etc/os-release
+
+# Ubuntu 16.04 only ships with Python 3 while previous versions only ship
+# with Python 2. Check which version is available and run with that version.
+if (( $(echo "$VERSION_ID 16.04" | awk '{print ($1 < $2)}') )); then
+    /usr/bin/env python ${0}.real
+else
+    /usr/bin/env python3 ${0}.real
+fi
