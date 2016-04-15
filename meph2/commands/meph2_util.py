@@ -332,7 +332,9 @@ def get_sha256_meta_images(url):
     """
     ret = dict()
     content = geturl_text(url)
-    prog = re.compile('[0-9]{8}(_[0-9]+)')
+    # CentOS has two version strings a long version uses the format YYYYMMDD_XX
+    # while a short version uses YYMM. Detect both
+    prog = re.compile('([\d]{8}(_[\d]+))|(\d{4})')
 
     for i in content.split('\n'):
         try:
@@ -346,6 +348,11 @@ def get_sha256_meta_images(url):
         if m is None:
             continue
         img_version = m.group(0)
+
+        # Turn the short version string into a long version string so that MAAS
+        # uses the latest version, not the longest
+        if len(img_version) == 4:
+            img_version = "20%s01_01" % img_version
 
         # Prefer compressed image over uncompressed
         if (img_version in ret and
