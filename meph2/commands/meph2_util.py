@@ -332,8 +332,11 @@ def get_sha256_meta_images(url):
     """
     ret = dict()
     content = geturl_text(url)
-    # CentOS has two version strings a long version uses the format YYYYMMDD_XX
-    # while a short version uses YYMM. Detect both
+    # http://cloud.centos.org/centos/ contains images using two version
+    # strings. The first is only used on older images and uses the format
+    # YYYYMMDD_XX. The second is used on images generated monthly using the
+    # format YYMM. We know the second format is referencing the year and month
+    # by looking at the timestamp of each image.
     prog = re.compile('([\d]{8}(_[\d]+))|(\d{4})')
 
     for i in content.split('\n'):
