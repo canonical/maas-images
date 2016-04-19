@@ -332,7 +332,12 @@ def get_sha256_meta_images(url):
     """
     ret = dict()
     content = geturl_text(url)
-    prog = re.compile('[0-9]{8}(_[0-9]+)')
+    # http://cloud.centos.org/centos/ contains images using two version
+    # strings. The first is only used on older images and uses the format
+    # YYYYMMDD_XX. The second is used on images generated monthly using the
+    # format YYMM. We know the second format is referencing the year and month
+    # by looking at the timestamp of each image.
+    prog = re.compile('([\d]{8}(_[\d]+))|(\d{4})')
 
     for i in content.split('\n'):
         try:
@@ -346,6 +351,11 @@ def get_sha256_meta_images(url):
         if m is None:
             continue
         img_version = m.group(0)
+
+        # Turn the short version string into a long version string so that MAAS
+        # uses the latest version, not the longest
+        if len(img_version) == 4:
+            img_version = "20%s01_01" % img_version
 
         # Prefer compressed image over uncompressed
         if (img_version in ret and
