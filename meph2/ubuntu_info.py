@@ -37,6 +37,7 @@ __RELEASE_DATA = (
     ("15.04", "Vivid Vervet", False),
     ("15.10", "Wily Werewolf", False),
     ("16.04", "Xenial Xerus", True),
+    ("16.10", "Yakkety Yak", False),
 )
 
 
