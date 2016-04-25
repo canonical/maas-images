@@ -21,11 +21,13 @@ subarches:
  - &sa_hwe_v  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &sa_hwe_w  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &sa_hwe_x  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
+ - &sa_hwe_y  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
+ - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
 
 misc:
  - &glpae generic-lpae
@@ -39,15 +41,15 @@ releases:
  - version: "16.10"
    release: yakkety
    kernels:
-    - [xenial,  amd64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
-    - [xenial,  arm64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
-    - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
-    - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
-    - [xenial,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [xenial,  armhf,   hwe-y,    generic,   linux-generic,            *arm_hwe_y]
-    - [xenial,  i386,    hwe-y,    generic,   linux-generic,            *sa_hwe_y]
-    - [xenial,  ppc64el, hwe-y,    generic,   linux-generic,            *sa_hwe_y]
-    - [xenial,  s390x,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  amd64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  arm64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [yakkety,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [yakkety,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [yakkety,  armhf,   hwe-y,    generic,   linux-generic,            *arm_hwe_y]
+    - [yakkety,  i386,    hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  ppc64el, hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  s390x,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
  - version: "16.04"
    release: xenial
    kernels:
