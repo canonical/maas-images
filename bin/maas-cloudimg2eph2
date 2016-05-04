@@ -32,6 +32,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
                          root-image: filesytem (ext[234] in a file)
                          root-image-gz: root-image that is compressed with gzip
                          root-tar: tarball of / (supports .tar.xz .tar.gz)
+                         squashfs-image: a squahsfs image (.squashfs)
 
    Example:
      ${0##*/} --kernel=linux-generic \\
