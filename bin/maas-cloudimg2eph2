@@ -2,7 +2,7 @@
 
 VERBOSITY=1
 TEMP_D=""
-VALID_FORMATS=( auto img-tar root-image root-image-gz root-tar )
+VALID_FORMATS=( auto img-tar root-image root-image-gz root-tar squashfs-image )
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -74,6 +74,38 @@ get_img_from_tar() {
     mv "$found" "$out" && rm -Rf "$mtmp"
 }
 
+squashfs_to_image() {
+    local squashimg="$1" output="$2" tempd="$3" size="4G"
+    local mtmp=$(mktemp -d "${tempd}/root_tar_to_image.XXXXXX")
+    local xout="" ret=""
+    local srcmp="$mtmp/src" trgmp="$mtmp/target"
+    truncate "--size=$size" "$output" || {
+        error "failed to create file of $size in $output"
+        return 1
+    }
+    mkdir "$srcmp" "$trgmp" || {
+        error "failed mkdir $srcmp $trgmp"
+        return 1;
+    }
+        
+    out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
+        { error "failed mkfs.ext4 -F '$output'"; return 1; }
+    debug 1 "turning squahsfs image in $squashimg to ext4 image in $output"
+    sudo bash -ec 'src="$1"; srcmp="$2"; img="$3"; trgmp="$4";
+        mounts=""
+        cleanup() { for m in $mounts; do umount "$m"; done; }
+        trap cleanup EXIT
+        mount -o loop "$src" "$srcmp"
+        mounts="$srcmp"
+        mount -o loop "$img" "$trgmp"
+        mounts="$srcmp $trgmp"
+        rsync --archive --sparse "$srcmp/" "$trgmp/"' \
+        "squashimg-to-image" "$squashimg" "$srcmp" "$output" "$trgmp"
+    ret=$?
+    rm -Rf "$mtmp" || return
+    return $ret
+}
+
 root_tar_to_image() {
     local tball="$1" output="$2" tempd="$3" size="4G"
     local mtmp=$(mktemp -d "${tempd}/root_tar_to_image.XXXXXX")
@@ -110,6 +142,7 @@ get_img_file() {
                 ;;
             "POSIX tar"*) fmt="img-tar";;
             *ext[234]\ filesystem*) fmt="root-image";;
+            *[Ss]quashfs*) fmt="squashfs-image";;
             *)
                 # if the above failed (on trusty a .tar.gz file was reported
                 # as a Minux file system) then try filename based heuristics
@@ -117,6 +150,7 @@ get_img_file() {
                     *-root.t??|*-root.tar|*-root.tar.??) fmt="root-tar";;
                     *.tar.gz|*.tgz|*.tar) fmt="img-tar";;
                     *.gz) fmt="root-image-gz";;
+                    *.squashfs) fmt="squashfs-image";;
                     *) 
                         error "WARN: file '$input' did not match name hueristics"
                         fmt="root-image";;
@@ -134,8 +168,10 @@ get_img_file() {
             ln -s "$(readlink -f "$input")" "$output";;
         root-tar)
             root_tar_to_image "$input" "$output" "$tempd";;
+        squashfs-image)
+            squashfs_to_image "$input" "$output" "$tempd";;
         *)
-            error "Unknonwn format '$fmt'";
+            error "Unknown format '$fmt'";
             return 1;;
     esac
     _RET="$fmt"
