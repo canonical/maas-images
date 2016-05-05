@@ -28,7 +28,8 @@ PATH_FORMATS = {
     'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
 }
 PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
-IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz', 'root-tar']
+IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz',
+                 'root-tar', 'squashfs-image']
 
 
 def create_version(arch, release, version_name, img_url, out_d,
