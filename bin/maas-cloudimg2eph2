@@ -92,16 +92,14 @@ squashfs_to_image() {
     out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
         { error "failed mkfs.ext4 -F '$output'"; return 1; }
     debug 1 "turning squahsfs image in $squashimg to ext4 image in $output"
-    sudo bash -ec 'src="$1"; srcmp="$2"; img="$3"; trgmp="$4";
+    sudo bash -ec 'src="$1"; img="$2"; trgmp="$3";
         mounts=""
         cleanup() { for m in $mounts; do umount "$m"; done; }
         trap cleanup EXIT
-        mount -o loop "$src" "$srcmp"
-        mounts="$srcmp"
         mount -o loop "$img" "$trgmp"
-        mounts="$srcmp $trgmp"
-        rsync --archive --sparse "$srcmp/" "$trgmp/"' \
-        "squashimg-to-image" "$squashimg" "$srcmp" "$output" "$trgmp"
+        mounts="$trgmp"
+        unsquashfs -force -xattrs -dest "$trgmp" "$src"' \
+        "squashimg-to-image" "$squashimg" "$output" "$trgmp"
     ret=$?
     rm -Rf "$mtmp" || return
     return $ret

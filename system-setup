@@ -30,6 +30,7 @@ DEPS_FULL=(
     python3-distro-info
     python3-requests
     python3-yaml
+    squashfs-tools
     zerofree
 )
 
