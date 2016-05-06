@@ -80,6 +80,10 @@ squashfs_to_image() {
     local mtmp=$(mktemp -d "${tempd}/root_tar_to_image.XXXXXX")
     local xout="" ret=""
     local srcmp="$mtmp/src" trgmp="$mtmp/target"
+    command -v unsquashfs >/dev/null 2>&1 || {
+        error "unsquashfs is not available. apt-get install squashfs-tools".
+        return 1;
+    }
     truncate "--size=$size" "$output" || {
         error "failed to create file of $size in $output"
         return 1
@@ -127,7 +131,7 @@ root_tar_to_image() {
 }
 
 get_img_file() {
-    local fout="" fmt="$1" input="$2" output="$3" tempd="$4"
+    local fout="" fmt="$1" input="$2" output="$3" tempd="$4" ret=""
     if [ "$fmt" = "auto" ]; then
         fout=$(LANG=C file "$input") ||
             { error "failed: file $input"; return 1; }
@@ -173,6 +177,11 @@ get_img_file() {
             error "Unknown format '$fmt'";
             return 1;;
     esac
+    ret=$?
+    [ $ret -eq 0 ] || {
+        error "failed converting $fmt from $input to $output [$?]"
+        return $ret
+    }
     _RET="$fmt"
 }
 
