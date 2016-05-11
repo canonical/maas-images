@@ -158,7 +158,12 @@ def create_version(arch, release, version_name, img_url, out_d,
             boot_keys.append('boot-dtb')
 
         if include_di:
-            curdi = di_kinfo[flavor][krel][kdata['di-format']]
+            msg = "flavor=%s krel=%s kdata=%s" % (flavor, krel, kdata)
+            try:
+                curdi = di_kinfo[flavor][krel][kdata['di-format']]
+            except KeyError:
+                raise KeyError("no d-i kernel info for " + msg)
+
             di_version = curdi['di-kernel']['version_name']
             subs.update({'di_version': di_version})
             di_keys = ['di-kernel', 'di-initrd']

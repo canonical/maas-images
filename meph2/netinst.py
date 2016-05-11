@@ -302,7 +302,7 @@ def get_file_item_data(path, release="base"):
     # essentially just blacklist paths with these toks
     other_iflavor_toks = ('xen', 'cdrom', 'gtk')
     for other in other_iflavor_toks:
-        if other in path:
+        if other + "/" in path:
             return None
 
     # file type

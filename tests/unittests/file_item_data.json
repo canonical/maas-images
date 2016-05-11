@@ -1371,5 +1371,20 @@
   "kernel-flavor": "generic",
   "kernel-release": "wily"
  },
- "wily-netboot/xen/xm-debian.cfg": null
+ "wily-netboot/xen/xm-debian.cfg": null,
+ "xenial-generic/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-generic/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-netboot/ubuntu-installer/amd64/pxelinux.0": null
 }
