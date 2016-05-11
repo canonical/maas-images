@@ -11,10 +11,8 @@ import os
 import re
 import sys
 
-sys.path.append('/curtin')
 from curtin import (
     block,
-    net,
     util,
     )
 
@@ -112,9 +110,9 @@ def strip_kernel_params(params, strip_params=[]):
     for param in params:
         remove = False
         for strip in strip_params:
-             if param.startswith(strip):
-                 remove = True
-                 break
+            if param.startswith(strip):
+                remove = True
+                break
         if remove is False:
             new_params.append(param)
     return new_params
@@ -186,7 +184,7 @@ def get_grub_root(target):
             'quit',
             ]).encode('utf-8')
         out, err = in_chroot(['grub', '--batch'],
-            data=data, capture=True)
+                             data=data, capture=True)
         regex = re.search('^\s+(\(.+?\))$', out, re.MULTILINE)
         return regex.groups()[0]
 
@@ -201,7 +199,7 @@ def grub_install(target, root):
             'quit',
             ]).encode('utf-8')
         in_chroot(['grub', '--batch'],
-            data=data)
+                  data=data)
 
 
 def set_autorelabel(target):
@@ -254,7 +252,8 @@ def get_ipv4_config(iface, data):
     if 'hwaddress' in data:
         config.append('HWADDR="%s"' % data['hwaddress'])
     else:
-        # Last ditch effort, use the device name, it probably won't match though!
+        # Last ditch effort, use the device name, it probably won't match
+        # though!
         config.append('DEVICE="%s"' % iface)
     if data['auto']:
         config.append('ONBOOT="yes"')

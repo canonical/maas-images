@@ -8,16 +8,14 @@ from __future__ import (
 
 import codecs
 import os
-import re
 import sys
 import shutil
 
-sys.path.append('/curtin')
 from curtin import (
     block,
-    net,
     util,
     )
+
 
 """
 CentOS 7
@@ -106,9 +104,9 @@ def strip_kernel_params(params, strip_params=[]):
     for param in params:
         remove = False
         for strip in strip_params:
-             if param.startswith(strip):
-                 remove = True
-                 break
+            if param.startswith(strip):
+                remove = True
+                break
         if remove is False:
             new_params.append(param)
     return new_params

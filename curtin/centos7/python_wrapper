@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PYTHONPATH='/curtin'
+
 # Ubuntu 16.04 only ships with Python 3 while previous versions only ship
 # with Python 2.
 if type -p python > /dev/null; then

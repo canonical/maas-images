@@ -10,7 +10,6 @@ import json
 import os
 import sys
 
-sys.path.append('/curtin')
 from curtin import util
 
 
@@ -55,7 +54,7 @@ def extract_maas_parameters(config):
                 elif key == 'oauth_consumer_key':
                     params['consumer_key'] = value
     return params
-                 
+
 
 def get_maas_debconf_selections(config):
     """Gets the debconf selections from the curtin config."""
@@ -85,7 +84,7 @@ def main():
         print("Config was not provided in the environment.")
         sys.exit(1)
     config = load_config(config_f)
-    
+
     debconf = get_maas_debconf_selections(config)
     if debconf is None:
         print("Failed to get the debconf_selections.")
