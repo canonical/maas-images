@@ -225,6 +225,8 @@ apply_updates_chrooted() {
             { error "failed writing to $IMAGES_PPA_FILE"; return 1; }
         printf "%s\n" "$IMAGES_PPA_APT_KEY" | apt-key add - ||
             { error "apt-key add failed!"; return 1; }
+        debug 1 "addition of PPA turns dist-upgrade on"
+        dist_upgrade=1
     else
         log_change false "$change"
         debug 1 "not adding images ppa to release=$release"
