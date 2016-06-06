@@ -11,7 +11,7 @@ import sys
 import subprocess
 import yaml
 
-from meph2 import util, ubuntu_info
+from meph2 import util
 from meph2.url_helper import geturl_text
 
 from simplestreams import (
@@ -100,16 +100,6 @@ SUBCOMMANDS = {
             COMMON_FLAGS['keyring'],
             ('max', {'type': int}), ('target', {}),
             ('filters', {'nargs': '*', 'default': []}),
-        ]
-    },
-    'clean-unsupported': {
-        'help': 'clean streams metadata only to keep supported items',
-        'opts': [
-            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
-            COMMON_FLAGS['keyring'],
-            ('target', {}),
-            ('--removed-stream',
-             {'help': 'create stream of removed products'}),
         ]
     },
     'find-orphans': {
@@ -332,61 +322,6 @@ class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
                                                        data, src,
                                                        target, pedigree)
         self.removed_versions.append((self.tcontent_id, pedigree,))
-
-
-class UbuntuUnsupportedMirrorWriter(BareMirrorWriter):
-
-    def filter_product(self, data, src, target, pedigree):
-        data = sutil.products_exdata(src, pedigree)
-        is_ubuntu_os = (
-            'os' not in data or data['os'] == 'ubuntu')
-        if is_ubuntu_os and data['release'] not in ubuntu_info.SUPPORTED:
-            return True
-        return False
-
-
-class UbuntuCleanUnsupportedMirrorWriter(BareMirrorWriter):
-
-    def __init__(self, config, objectstore, remove):
-        super(UbuntuCleanUnsupportedMirrorWriter, self).__init__(
-            config, objectstore)
-        self.remove = remove
-
-    def sync_products(self, reader, path=None, src=None, content=None):
-        (src, content) = mirrors._get_data_content(path, src, content, reader)
-
-        sutil.expand_tree(src)
-
-        mirrors.check_tree_paths(src)
-
-        content_id = src['content_id']
-        target = self.load_products(path, content_id)
-        if not target:
-            target = sutil.stringitems(src)
-
-        sutil.expand_tree(target)
-
-        stree = src.get('products', {})
-        if 'products' not in target:
-            target['products'] = {}
-
-        for prodname, product in stree.items():
-            data = sutil.products_exdata(src, (prodname,))
-            is_ubuntu_os = (
-                'os' not in data or data['os'] == 'ubuntu')
-            if is_ubuntu_os and data['release'] not in ubuntu_info.SUPPORTED:
-                self.removed_versions.append((prodname,))
-                if self.remove:
-                    self.remove_product(product, src, target, (prodname,))
-
-        self.insert_products(path, target, content)
-
-    def remove_product(self, data, src, target, pedigree):
-        # Delete all items in all versions.
-        for vername, version in data.get('versions', {}).items():
-            for itemname, item in version.get('items', {}).items():
-                if 'path' in item:
-                    self.store.remove(item['path'])
 
 
 def get_sha256_meta_images(url):
@@ -697,52 +632,6 @@ def main_clean_md(args):
     tmirror.sync(smirror, mirror_path)
 
     gen_index_and_sign(mirror_url, not args.no_sign)
-    return 0
-
-
-def main_clean_unsupported(args):
-    (target_url, target_path) = sutil.path_from_mirror_url(args.target, None)
-    policy = partial(util.endswith_policy, target_path, args.keyring)
-
-    if args.dry_run:
-        smirror = mirrors.UrlMirrorReader(target_url, policy=policy)
-        tstore = objectstores.FileStore(target_url)
-        tmirror = UbuntuCleanUnsupportedMirrorWriter(
-            config={}, objectstore=tstore, remove=False)
-        tmirror.sync(smirror, target_path)
-        for pedigree in tmirror.removed_versions:
-            sys.stderr.write("remove " + '/'.join(pedigree) + "\n")
-        return 0
-
-    if args.removed_stream:
-        # Copy unsupported releases to removed.
-        (removed_url, removed_path) = sutil.path_from_mirror_url(
-            args.removed_stream, None)
-        smirror = mirrors.UrlMirrorReader(target_url, policy=policy)
-        tstore = objectstores.FileStore(removed_url)
-        tmirror = UbuntuUnsupportedMirrorWriter(
-            config={'max_items': 1}, objectstore=tstore)
-        tmirror.sync(smirror, target_path)
-        gen_index_and_sign(removed_url, not args.no_sign)
-
-    # Remove the unsupported releases from target.
-    smirror = mirrors.UrlMirrorReader(target_url, policy=policy)
-    tstore = objectstores.FileStore(target_url)
-    tmirror = UbuntuCleanUnsupportedMirrorWriter(
-        config={}, objectstore=tstore, remove=True)
-    tmirror.sync(smirror, target_path)
-    gen_index_and_sign(target_url, not args.no_sign)
-
-    # Remove any directories that are now empty.
-    for dir, _, _ in os.walk(target_url, topdown=False):
-        if dir == target_url:
-            break
-        else:
-            try:
-                os.rmdir(dir)
-            except OSError:
-                pass
-
     return 0
 
 
