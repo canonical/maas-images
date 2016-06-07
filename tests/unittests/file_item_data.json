@@ -133,6 +133,35 @@
   "kernel-flavor": "generic",
   "kernel-release": "BASE"
  },
+ "e500/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "e500",
+  "kernel-release": "BASE"
+ },
+ "e500/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "e500",
+  "kernel-release": "BASE"
+ },
+ "e500mc/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "e500mc",
+  "kernel-release": "BASE"
+ },
+ "e500mc/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "e500mc",
+  "kernel-release": "BASE"
+ },
+ "e500/cdrom/vmlinux": null,
  "generic-lpae/netboot/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
@@ -633,6 +662,35 @@
   "image-format": "default",
   "initrd-flavor": "netboot",
   "kernel-flavor": "omap4",
+  "kernel-release": "BASE"
+ },
+ "powerpc/hd-media/vmlinux": null,
+ "powerpc/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc",
+  "kernel-release": "BASE"
+ },
+ "powerpc/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc",
+  "kernel-release": "BASE"
+ },
+ "powerpc64/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc64",
+  "kernel-release": "BASE"
+ },
+ "powerpc64/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc64",
   "kernel-release": "BASE"
  },
  "quantal-netboot-xen/netboot/xen/initrd.gz": null,
@@ -1372,11 +1430,18 @@
   "kernel-release": "wily"
  },
  "wily-netboot/xen/xm-debian.cfg": null,
- "xenial-generic/netboot/initrd.gz": {
+ "xenial-e500mc/netboot/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
   "initrd-flavor": "netboot",
-  "kernel-flavor": "generic",
+  "kernel-flavor": "e500mc",
+  "kernel-release": "xenial"
+ },
+ "xenial-e500mc/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "e500mc",
   "kernel-release": "xenial"
  },
  "xenial-generic/netboot/initrd.gz": {
@@ -1386,5 +1451,26 @@
   "kernel-flavor": "generic",
   "kernel-release": "xenial"
  },
- "xenial-netboot/ubuntu-installer/amd64/pxelinux.0": null
+ "xenial-generic/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-netboot/ubuntu-installer/amd64/pxelinux.0": null,
+ "xenial-powerpc64/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc64",
+  "kernel-release": "xenial"
+ },
+ "xenial-powerpc64/netboot/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "powerpc64",
+  "kernel-release": "xenial"
+ }
 }
