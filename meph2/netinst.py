@@ -65,12 +65,18 @@ GPG_KEYRING = "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
 CONTENT_ID = "com.ubuntu.installer:released:netboot"
 
 FLAVOR_COLLISIONS = {
-    "omap4": "om4",
+    "e500": "e50",
+    "e500mc": "e5m",
     "generic-lpae": "glp",
+    "omap4": "om4",
+    "powerpc": "ppc",
+    "powerpc64": "pp6",
 }
 
 KERNEL_FLAVORS = (
     'armadaxp',
+    'e500',
+    'e500mc',
     'generic',
     'generic-lpae',
     'highbank',
@@ -78,6 +84,8 @@ KERNEL_FLAVORS = (
     'non-pae',
     'omap',
     'omap4',
+    'powerpc',
+    'powerpc64',
 )
 
 DTB_TO_FORMAT = {
