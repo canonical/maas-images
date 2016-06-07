@@ -64,6 +64,10 @@ INVALID_KERNEL_FLAVORS = ("xen", "gtk")
 GPG_KEYRING = "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
 CONTENT_ID = "com.ubuntu.installer:released:netboot"
 
+# see get_kfile_key for how a file item key is generated.
+# flavor can be long, but only 3 chars are used for it in the keyname.
+# This dictionary maintains a static list of flavors that match the first
+# 3 chars and thus need other representation.
 FLAVOR_COLLISIONS = {
     "e500": "e50",
     "e500mc": "e5m",
