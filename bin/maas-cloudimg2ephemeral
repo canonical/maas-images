@@ -360,11 +360,18 @@ apply_updates_chrooted() {
         ls -l /usr/bin/newaliases
     fi
 
+    # xenial should not need the symlink, but shipped GA with it
+    # so it is there for now.  Releases pre-xenial do need it.
     change="symlink ENI for cloud-initramfs-dyn-netconf (LP: #1534205)"
     local f=/etc/network/interfaces
-    log_change true "$change"
-    mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
-        { error "failed to link dynamic interfaces"; return 1; }
+    case "$release" in
+        precise|quantal|raring|saucy|trusty|utopic|vivid|wily|xenial)
+            log_change true "$change"
+            mv "$f" "$f.dist" && ln -sf ../../run/network/dynamic-interfaces "$f" ||
+                { error "failed to link dynamic interfaces"; return 1; }
+            ;;
+        *) log_change false "$change";;
+    esac
 
     ensure_iscsi_initramfs_support "/" "$release" ||
         { "ensure_iscsi_initramfs_support / $release failed"; return 1; }
