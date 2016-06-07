@@ -109,6 +109,8 @@ FTYPE_MATCHES = {
     "dtb": re.compile(r".dtb$").search,
 }
 
+IGNORED_INITRD_FLAVORS =  ('xen', 'cdrom', 'gtk', 'hd-media')
+
 # #
 # # Under a path like: MIRROR/precise-updates/main/installer-i386/
 # #  we find a listing of directories like:
@@ -308,7 +310,7 @@ def get_file_item_data(path, release="base"):
 
     # paths with 'xen' or 'cdrom' would be other initrd-flavors
     # essentially just blacklist paths with these toks
-    other_iflavor_toks = ('xen', 'cdrom', 'gtk')
+    other_iflavor_toks = IGNORED_INITRD_FLAVORS
     for other in other_iflavor_toks:
         if other + "/" in path:
             return None
