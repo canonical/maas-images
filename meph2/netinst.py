@@ -64,13 +64,23 @@ INVALID_KERNEL_FLAVORS = ("xen", "gtk")
 GPG_KEYRING = "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
 CONTENT_ID = "com.ubuntu.installer:released:netboot"
 
+# see get_kfile_key for how a file item key is generated.
+# flavor can be long, but only 3 chars are used for it in the keyname.
+# This dictionary maintains a static list of flavors that match the first
+# 3 chars and thus need other representation.
 FLAVOR_COLLISIONS = {
-    "omap4": "om4",
+    "e500": "e50",
+    "e500mc": "e5m",
     "generic-lpae": "glp",
+    "omap4": "om4",
+    "powerpc": "ppc",
+    "powerpc64": "pp6",
 }
 
 KERNEL_FLAVORS = (
     'armadaxp',
+    'e500',
+    'e500mc',
     'generic',
     'generic-lpae',
     'highbank',
@@ -78,6 +88,8 @@ KERNEL_FLAVORS = (
     'non-pae',
     'omap',
     'omap4',
+    'powerpc',
+    'powerpc64',
 )
 
 DTB_TO_FORMAT = {
@@ -100,6 +112,8 @@ FTYPE_MATCHES = {
                          "vmlinux|vmlinuz)$").search,
     "dtb": re.compile(r".dtb$").search,
 }
+
+IGNORED_INITRD_FLAVORS =  ('xen', 'cdrom', 'gtk', 'hd-media')
 
 # #
 # # Under a path like: MIRROR/precise-updates/main/installer-i386/
@@ -300,7 +314,7 @@ def get_file_item_data(path, release="base"):
 
     # paths with 'xen' or 'cdrom' would be other initrd-flavors
     # essentially just blacklist paths with these toks
-    other_iflavor_toks = ('xen', 'cdrom', 'gtk')
+    other_iflavor_toks = IGNORED_INITRD_FLAVORS
     for other in other_iflavor_toks:
         if other + "/" in path:
             return None
