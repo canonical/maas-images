@@ -92,7 +92,7 @@ squashfs_to_image() {
         error "failed mkdir $srcmp $trgmp"
         return 1;
     }
-        
+
     out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
         { error "failed mkfs.ext4 -F '$output'"; return 1; }
     debug 1 "turning squahsfs image in $squashimg to ext4 image in $output"
@@ -523,6 +523,14 @@ main() {
                 src="${TEMP_D}/${src_in##*/}"
                 wget "$src_in" --dot-style=mega -O "$src" ||
                     { error "failed download $src_in"; return 1; }
+                if [[ "$src_in" == *squashfs ]]; then
+                    wget "${src_in}.manifest" --dot-style=mega \
+                        -O "${src}.manifest" ||
+                        {
+                            error "failed download ${src_in}.manifest"
+                            return 1
+                        }
+                fi
                 ;;
             file://*)
                 [ -f "${src_in#file://}" ] ||
@@ -620,6 +628,21 @@ main() {
         mv --force "$timg" "$output" ||
             { error "failed move to $output"; return 1; }
     fi
+
+    if [[ "$src" == *squashfs ]]; then
+        output_dir=$(dirname $output)
+        cp "$src" "$output_dir" || {
+            error "copy SquashFS image from $src -> $output_dir failed"
+            return 1;
+        }
+        cp "${src}.manifest" "$output_dir" || {
+            error \
+                "copy SquashFS image manifest from ${src}.manifest -> " \
+                "$output_dir failed"
+            return 1;
+        }
+    fi
+
     ddebug 1 "finished"
     return 0
 }

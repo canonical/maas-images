@@ -20,6 +20,10 @@ DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
     'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
     'manifest': PATH_COMMON + "%(version_name)s/root-image.manifest",
+    'squashfs': PATH_COMMON + "%(version_name)s/%(img_name)s",
+    'squashfs.manifest': (
+        PATH_COMMON + "%(version_name)s/%(img_name)s.manifest"
+    ),
     'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
     'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
     'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
@@ -116,7 +120,8 @@ def create_version(arch, release, version_name, img_url, out_d,
     newitems = {}
 
     subs = {'release': release, 'arch': arch,
-            'version_name': version_name, 'version': version}
+            'version_name': version_name, 'version': version,
+            'img_name': os.path.basename(img_url)}
 
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
     manifest_path = PATH_FORMATS['manifest'] % subs
@@ -151,6 +156,8 @@ def create_version(arch, release, version_name, img_url, out_d,
 
         boot_keys = ['boot-kernel', 'boot-initrd']
         ikeys = boot_keys + ['root-image.gz', 'manifest']
+        if img_url.endswith('.squashfs'):
+            ikeys += ['squashfs', 'squashfs.manifest']
 
         dtb = kdata.get('dtb')
         if dtb:
