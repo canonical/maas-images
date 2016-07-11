@@ -93,7 +93,7 @@ squashfs_to_image() {
         return 1;
     }
         
-    out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
+    out=$(mkfs.ext4 -O ^metadata_csum -F "$output" -L "cloudimg-rootfs" 2>&1) ||
         { error "failed mkfs.ext4 -F '$output'"; return 1; }
     debug 1 "turning squahsfs image in $squashimg to ext4 image in $output"
     sudo bash -ec 'src="$1"; img="$2"; trgmp="$3";
@@ -116,7 +116,7 @@ root_tar_to_image() {
     truncate "--size=$size" "$output" ||
         return "failed to create file of $size in $output"
     mkdir "$mp"
-    out=$(mkfs.ext4 -F "$output" -L "cloudimg-rootfs" 2>&1) ||
+    out=$(mkfs.ext4 -O ^metadata_csum -F "$output" -L "cloudimg-rootfs" 2>&1) ||
         { error "failed mkfs.ext4 -F '$output'"; return 1; }
     debug 1 "turning root tarball in $tball to image in $output"
     sudo bash -ec 'tball="$1"; img="$2"; mp="$3";
