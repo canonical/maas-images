@@ -81,9 +81,14 @@ mkfs_ext4() {
             " feature_flags='${feature_flags}'"
     debug 2 "mkfs cmd: ${cmd[*]}"
 
-    out=$("${cmd[@]}" 2>&1) ||
-        { error "failed ${cmd[*]}"; error "$out"; return 1; }
-    return
+    local ret=0
+    out=$("${cmd[@]}" 2>&1)
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        error "failed [$ret]: ${cmd[*]}";
+        error "$out";
+    fi
+    return $ret
 }
 
 get_img_from_tar() {
