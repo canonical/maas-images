@@ -1,0 +1,43 @@
+product_id: "com.ubuntu.maas.daily:bootloaders-bases:{bootloader}"
+content_id: "com.ubuntu.maas:daily:bootloaders-bases-download"
+
+release: xenial
+bootloaders:
+ - bootloader: pxe
+   packages:
+    - pxelinux
+    - syslinux-common
+   arch: amd64
+   archive: http://archive.ubuntu.com/ubuntu
+   files:
+    - /usr/lib/PXELINUX/pxelinux.0
+    - /usr/lib/syslinux/modules/bios/chain.c32
+    - /usr/lib/syslinux/modules/bios/ifcpu64.c32
+ - bootloader: uefi
+   packages:
+    - shim-signed
+    - grub-efi-amd64-signed
+   arch: amd64
+   archive: http://archive.ubuntu.com/ubuntu
+   files:
+    - /usr/lib/shim/shim.efi.signed
+    - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed
+    - /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed
+ - bootloader: uefi-arm64
+   packages:
+    - grub-efi-arm64-bin
+   arch: arm64
+   archive: http://ports.ubuntu.com
+   files:
+    - /usr/lib/grub/arm64-efi/
+   grub_format: arm64-efi
+   grub_output: grubaa64.efi
+ - bootloader: powerkvm
+   packages:
+    - grub-ieee1275-bin
+   arch: ppc64el
+   archive: http://ports.ubuntu.com
+   files:
+    - /usr/lib/grub/powerpc-ieee1275/
+   grub_format: powerpc-ieee1275
+   grub_output: bootppc64.bin
