@@ -410,10 +410,12 @@ def load_product_streams(src):
 def load_products(path, product_streams):
     products = {}
     for product_stream in product_streams:
-        with contentsource.UrlContentSource(
-                os.path.join(path, product_stream)) as tcs:
-            product_listing = sutil.load_content(tcs.read())
-        products.update(product_listing['products'])
+        product_stream_path = os.path.join(path, product_stream)
+        if os.path.exists(product_stream_path):
+            with contentsource.UrlContentSource(
+                    product_stream_path) as tcs:
+                product_listing = sutil.load_content(tcs.read())
+                products.update(product_listing['products'])
     return products
 
 
@@ -611,14 +613,15 @@ def main_import(args):
             print("Error: Unable to find config file %s" % args.import_cfg)
             os.exit(1)
 
-    target_product_streams = load_product_streams(args.target)
-    target_products = load_products(args.target, target_product_streams)
-
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)
 
+    target_product_stream = os.path.join(
+        'streams', 'v1', cfgdata['content_id'] + '.json')
+
     product_tree = util.empty_iid_products(cfgdata['content_id'])
-    product_tree['products'] = target_products
+    product_tree['products'] = load_products(
+        args.target, [target_product_stream])
     product_tree['updated'] = sutil.timestamp()
     product_tree['datatype'] = 'image-downloads'
 
@@ -634,8 +637,7 @@ def main_import(args):
     if not os.path.exists(md_d):
         os.makedirs(md_d)
 
-    product_tree_fn = cfgdata['content_id'] + '.json'
-    with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
+    with open(os.path.join(args.target, target_product_stream), 'wb') as fp:
         fp.write(util.dump_data(product_tree))
 
     gen_index_and_sign(args.target, not args.no_sign)    
