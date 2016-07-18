@@ -11,8 +11,7 @@ bootloaders:
    archive: http://archive.ubuntu.com/ubuntu
    files:
     - /usr/lib/PXELINUX/pxelinux.0
-    - /usr/lib/syslinux/modules/bios/chain.c32
-    - /usr/lib/syslinux/modules/bios/ifcpu64.c32
+    - /usr/lib/syslinux/modules/bios/*.c32
  - bootloader: uefi
    packages:
     - shim-signed

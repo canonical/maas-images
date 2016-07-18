@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import glob
 import copy
 import os
 from functools import partial
@@ -555,7 +556,7 @@ def import_bootloaders(args, product_tree, cfgdata):
             product_tree['products'][product_id] = {
                 'label': 'daily',
                 'arch': bootloader['arch'],
-                'os': bootloader['bootloader'],
+                'boot_loader': True,
                 'versions': {},
                 }
         path = os.path.join(
@@ -589,17 +590,24 @@ def import_bootloaders(args, product_tree, cfgdata):
                     }
         else:
             items = {}
-            for f in bootloader['files']:
-                basename = os.path.basename(f)
-                sha256, size = get_file_info(os.path.join(dest, basename))
-                items[basename] = {
-                    'ftype': 'bootloader',
-                    'sha256': sha256,
-                    'path': os.path.join(path, basename),
-                    'size': size,
-                }
-            product_tree['products'][product_id]['versions'][
-                package['Version']] = items
+            for i in bootloader['files']:
+                basename = os.path.basename(i)
+                dest_file = os.path.join(dest, basename)
+                if '*' in dest_file or '?' in dest_file:
+                    unglobbed_files = glob.glob(dest_file)
+                else:
+                    unglobbed_files = [dest_file]
+                for f in unglobbed_files:
+                    basename = os.path.basename(f)
+                    sha256, size = get_file_info(f)
+                    items[basename] = {
+                        'ftype': 'bootloader',
+                        'sha256': sha256,
+                        'path': os.path.join(path, basename),
+                        'size': size,
+                    }
+                product_tree['products'][product_id]['versions'][
+                    package['Version']] = items
 
 
 

@@ -151,10 +151,15 @@ def extract_files_from_packages(
         subprocess.check_output(['dpkg', '-x', pkg_path, tmp])
 
     if grub_format is None:
-        for f in files:
-            shutil.copyfile(
-                "%s/%s" % (tmp, f),
-                "%s/%s" % (dest, os.path.basename(f)))
+        for i in files:
+            src = "%s/%s" % (tmp, i)
+            if '*' in src or '?' in src:
+                unglobbed_files = glob.glob(src)
+            else:
+                unglobbed_files = [src]
+            for f in unglobbed_files:
+                dest_file = "%s/%s" % (dest, os.path.basename(f))
+                shutil.copyfile(f, dest_file)
     else:
         # You can only tell grub to use modules from one directory
         modules_path = "%s/%s" % (tmp, files[0])
