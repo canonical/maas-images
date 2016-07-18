@@ -607,7 +607,7 @@ def import_bootloaders(args, product_tree, cfgdata):
                         'size': size,
                     }
                 product_tree['products'][product_id]['versions'][
-                    package['Version']] = items
+                    package['Version']] = {'items': items}
 
 
 
