@@ -556,7 +556,6 @@ def import_bootloaders(args, product_tree, cfgdata):
             product_tree['products'][product_id] = {
                 'label': 'daily',
                 'arch': bootloader['arch'],
-                'boot_loader': True,
                 'versions': {},
                 }
         path = os.path.join(
