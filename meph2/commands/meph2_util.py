@@ -497,7 +497,7 @@ def import_sha256(args, product_tree, cfgdata):
 
         for (image, image_info) in images.items():
             if (
-                    product_id in product_tree['products'] and 
+                    product_id in product_tree['products'] and
                     image in product_tree['products'][product_id]['versions']):
                 print(
                     "Product %s at version %s exists, skipping" % (
@@ -544,7 +544,7 @@ def import_bootloaders(args, product_tree, cfgdata):
             bootloader['arch'], cfgdata['release'])
 
         if (
-                product_id in product_tree['products'] and 
+                product_id in product_tree['products'] and
                 package['Version'] in product_tree['products'][product_id][
                     'versions']):
             print(
@@ -578,16 +578,16 @@ def import_bootloaders(args, product_tree, cfgdata):
             sha256, size = get_file_info(dest)
             product_tree['products'][product_id]['versions'][
                 package['Version']] = {
-                    'items': {
-                        bootloader['grub_output']: {
-                            'ftype': 'bootloader',
-                            'sha256': sha256,
-                            'path': os.path.join(
-                                path, bootloader['grub_output']),
-                            'size': size,
-                            }
+                'items': {
+                    bootloader['grub_output']: {
+                        'ftype': 'bootloader',
+                        'sha256': sha256,
+                        'path': os.path.join(
+                            path, bootloader['grub_output']),
+                        'size': size,
                         }
                     }
+                }
         else:
             items = {}
             for i in bootloader['files']:
@@ -608,7 +608,6 @@ def import_bootloaders(args, product_tree, cfgdata):
                     }
                 product_tree['products'][product_id]['versions'][
                     package['Version']] = {'items': items}
-
 
 
 def main_import(args):
@@ -648,7 +647,7 @@ def main_import(args):
     with open(os.path.join(args.target, target_product_stream), 'wb') as fp:
         fp.write(util.dump_data(product_tree))
 
-    gen_index_and_sign(args.target, not args.no_sign)    
+    gen_index_and_sign(args.target, not args.no_sign)
 
 
 def main_merge(args):

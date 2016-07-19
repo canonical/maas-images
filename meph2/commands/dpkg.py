@@ -81,8 +81,9 @@ def get_packages(base_url, architecture, pkg_name):
 
     # Download the packages file and verify the SHA256SUM
     pkg_data = get_file(packages_url)
+    regex_path = re.escape(path)
     sha256sum = re.search(
-        ("^\s*?(\w{64})\s*[0-9]+\s+%s$" % path).encode('utf-8'),
+        ("^\s*?([a-fA-F0-9]{64})\s*[0-9]+\s+%s$" % regex_path).encode('utf-8'),
         release_file,
         re.MULTILINE).group(1)
     if get_sha256(pkg_data).encode('utf-8') != sha256sum:
@@ -170,8 +171,8 @@ def extract_files_from_packages(
             modules.append(module_name)
         subprocess.check_output(
             ['grub-mkimage',
-            '-o', dest,
-            '-O', grub_format,
-            '-d', modules_path,
-            '-c', dest] + modules)
+             '-o', dest,
+             '-O', grub_format,
+             '-d', modules_path,
+             '-c', dest] + modules)
     shutil.rmtree(tmp)
