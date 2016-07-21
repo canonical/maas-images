@@ -539,11 +539,9 @@ def import_bootloaders(args, product_tree, cfgdata):
     for bootloader in cfgdata['bootloaders']:
         product_id = cfgdata['product_id'].format(
             bootloader=bootloader['bootloader'])
-        # Allow an individual bootloader to override the global release
-        release = bootloader.get('release', cfgdata['release'])
         package = get_package(
             bootloader['archive'], bootloader['packages'][0],
-            bootloader['arch'], release)
+            bootloader['arch'], bootloader['release'])
 
         if (
                 product_id in product_tree['products'] and
@@ -577,7 +575,7 @@ def import_bootloaders(args, product_tree, cfgdata):
                 product_id, package['Version']))
         extract_files_from_packages(
             bootloader['archive'], bootloader['packages'],
-            bootloader['arch'], bootloader['files'], cfgdata['release'],
+            bootloader['arch'], bootloader['files'], bootloader['release'],
             dest, grub_format)
         if grub_format is not None:
             sha256, size = get_file_info(dest)

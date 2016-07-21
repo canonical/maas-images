@@ -1,8 +1,6 @@
 product_id: "com.ubuntu.maas.daily:bootloaders-bases:{bootloader}"
 content_id: "com.ubuntu.maas:daily:bootloaders-bases-download"
 
-# The release to pull the packages from, can be overridden by the bootloader
-release: xenial
 bootloaders:
  - bootloader: pxe
    packages:
@@ -10,6 +8,7 @@ bootloaders:
     - syslinux-common
    arch: amd64
    archive: http://archive.ubuntu.com/ubuntu
+   release: xenial
    files:
     - /usr/lib/PXELINUX/pxelinux.0
     - /usr/lib/syslinux/modules/bios/*.c32
@@ -19,6 +18,7 @@ bootloaders:
     - grub-efi-amd64-signed
    arch: amd64
    archive: http://archive.ubuntu.com/ubuntu
+   release: xenial
    files:
     - /usr/lib/shim/shim.efi.signed
     - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed
@@ -28,6 +28,7 @@ bootloaders:
     - grub-efi-arm64-bin
    arch: arm64
    archive: http://ports.ubuntu.com
+   release: xenial
    files:
     - /usr/lib/grub/arm64-efi/
    grub_format: arm64-efi
@@ -37,6 +38,7 @@ bootloaders:
     - grub-ieee1275-bin
    arch: ppc64el
    archive: http://ports.ubuntu.com
+   release: xenial
    files:
     - /usr/lib/grub/powerpc-ieee1275/
    grub_format: powerpc-ieee1275
