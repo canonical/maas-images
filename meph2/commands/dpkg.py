@@ -1,4 +1,5 @@
 from platform import linux_distribution
+import apt_pkg
 import shutil
 import subprocess
 import hashlib
@@ -120,23 +121,27 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
              given the path of the downloaded file."""
     global _packages
     release = get_distro_release() if release is None else release
-    for dist in ('%s-updates' % release, release):
+    package = None
+    apt_pkg.init()
+    # Find the latest version of the package
+    for dist in ('%s-updates' % release, '%s-security' % release, release):
         base_url = '%s/dists/%s' % (archive, dist)
         packages = get_packages(base_url, architecture, pkg_name)
         if pkg_name in packages:
-            package = packages[pkg_name]
-            if dest is not None:
-                pkg_data = get_file('%s/%s' % (archive, package['Filename']))
-                if package['SHA256'] != get_sha256(pkg_data):
-                    sys.stderr.write(
-                        'SHA256 mismatch on %s from %s' % (pkg_name, base_url))
-                    sys.exit(1)
-                pkg_path = os.path.join(
-                    dest, os.path.basename(package['Filename']))
-                with open(pkg_path, 'wb') as stream:
-                    stream.write(pkg_data)
-            return package
-    return None
+            if package is None or apt_pkg.version_compare(
+                    packages[pkg_name]['Version'], package['Version']) > 0:
+                package = packages[pkg_name]
+    # Download it if it was found and a dest was set
+    if package is not None and dest is not None:
+        pkg_data = get_file('%s/%s' % (archive, package['Filename']))
+        if package['SHA256'] != get_sha256(pkg_data):
+            sys.stderr.write(
+                'SHA256 mismatch on %s from %s' % (pkg_name, base_url))
+            sys.exit(1)
+        pkg_path = os.path.join(dest, os.path.basename(package['Filename']))
+        with open(pkg_path, 'wb') as stream:
+            stream.write(pkg_data)
+    return package
 
 
 def extract_files_from_packages(

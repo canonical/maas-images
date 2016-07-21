@@ -482,7 +482,7 @@ def import_sha256(args, product_tree, cfgdata):
         images = get_sha256_meta_images(url)
         base_url = os.path.dirname(url)
 
-        if product_tree['products'].get(product_id, None) is None:
+        if product_tree['products'].get(product_id) is None:
             print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
                 'subarches': 'generic',
@@ -539,9 +539,11 @@ def import_bootloaders(args, product_tree, cfgdata):
     for bootloader in cfgdata['bootloaders']:
         product_id = cfgdata['product_id'].format(
             bootloader=bootloader['bootloader'])
+        # Allow an individual bootloader to override the global release
+        release = bootloader.get('release', cfgdata['release'])
         package = get_package(
             bootloader['archive'], bootloader['packages'][0],
-            bootloader['arch'], cfgdata['release'])
+            bootloader['arch'], release)
 
         if (
                 product_id in product_tree['products'] and
@@ -551,11 +553,15 @@ def import_bootloaders(args, product_tree, cfgdata):
                 "Product %s at version %s exists, skipping" % (
                     product_id, package['Version']))
             continue
-        if product_tree['products'].get(product_id, None) is None:
+        if product_tree['products'].get(product_id) is None:
             print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
                 'label': 'daily',
                 'arch': bootloader['arch'],
+                'subarch': 'generic',
+                'subarches': 'generic',
+                'os': 'bootloader',
+                'release': bootloader['bootloader'],
                 'versions': {},
                 }
         path = os.path.join(
@@ -563,7 +569,7 @@ def import_bootloaders(args, product_tree, cfgdata):
             package['Version'])
         dest = os.path.join(args.target, path)
         os.makedirs(dest)
-        grub_format = bootloader.get('grub_format', None)
+        grub_format = bootloader.get('grub_format')
         if grub_format is not None:
             dest = os.path.join(dest, bootloader['grub_output'])
         print(
