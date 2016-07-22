@@ -66,7 +66,7 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config, rebuilds=None,
-                 verbosity=0):
+                 verbosity=0, squashfs=False):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         if rebuilds is None:
             rebuilds = {}
@@ -75,7 +75,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
-        self.enable_di = self.config.get('enable_di', True)
+        self.squashfs = squashfs
+        if self.squashfs:
+            # As of MAAS 2.0 DI is no longer supported but SquashFS is.
+            # Since the DI won't be used don't generate them.
+            self.enable_di = False
+        else:
+            self.enable_di = self.config.get('enable_di', True)
 
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
@@ -152,10 +158,25 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         for prodname, items in cvret.items():
             for i in items:
-                # Verify upstream SHA256 of SquashFS images and add SHA256 and
-                # size to our stream.
+                filename = os.path.join(self.out_d, items[i]['path'])
+                if 'squashfs' in i and not self.squashfs:
+                    # If we're not publishing the SquashFS image but one
+                    # was used to generate root-image.gz delete it.
+                    os.remove(filename)
+                    continue
+                elif i == 'root-image.gz' and self.squashfs:
+                    # If we're publishing the SquashFS image we don't need the
+                    # root-image after its been used to generate kernels
+                    os.remove(filename)
+                    continue
+                elif i == 'manifest' and self.squashfs:
+                    # If we're publishing the SquashFS image we don't need the
+                    # root-image manifest either.
+                    os.remove(filename)
+                    continue
                 if i == 'squashfs':
-                    filename = os.path.join(self.out_d, items[i]['path'])
+                    # Verify upstream SHA256 of SquashFS images and add
+                    # SHA256 and size to our stream.                
                     self._verify_sha256(filename, flat['sha256'])
                     items[i]['sha256'] = flat['sha256']
                     items[i]['size'] = int(flat['size'])
@@ -163,12 +184,11 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     manifest_pedigree = pedigree[:2] + ('squashfs.manifest',)
                     manifest_flat = sutil.products_exdata(
                         src, manifest_pedigree)
-                    filename = os.path.join(self.out_d, items[i]['path'])
                     self._verify_sha256(filename, manifest_flat['sha256'])
                     items[i]['sha256'] = manifest_flat['sha256']
                     items[i]['size'] = int(manifest_flat['size'])
-                sutil.products_set(self.content_t, items[i],
-                                   (prodname, vername, i))
+                sutil.products_set(
+                    self.content_t, items[i], (prodname, vername, i))
 
     def insert_products(self, path, target, content):
         tree = copy.deepcopy(self.content_t)
@@ -246,6 +266,9 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
                         type=argparse.FileType('w'))
+    parser.add_argument('--squashfs', action='store_true', default=False,
+                        help='Download SquashFS root file systems if available'
+    )
 
     parser.add_argument('output_d')
     parser.add_argument('filters', nargs='*', default=[])
@@ -306,7 +329,8 @@ def main():
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
-                                 rebuilds=rebuilds, verbosity=vlevel)
+                                 rebuilds=rebuilds, verbosity=vlevel,
+                                 squashfs=args.squashfs)
 
     tmirror.sync(smirror, initial_path)
 

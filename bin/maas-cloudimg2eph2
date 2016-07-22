@@ -549,14 +549,6 @@ main() {
                 src="${TEMP_D}/${src_in##*/}"
                 wget "$src_in" --dot-style=mega -O "$src" ||
                     { error "failed download $src_in"; return 1; }
-                if [[ "$src_in" == *squashfs ]]; then
-                    wget "${src_in}.manifest" --dot-style=mega \
-                        -O "${src}.manifest" ||
-                        {
-                            error "failed download ${src_in}.manifest"
-                            return 1
-                        }
-                fi
                 ;;
             file://*)
                 [ -f "${src_in#file://}" ] ||
@@ -659,12 +651,6 @@ main() {
         output_dir=$(dirname $output)
         cp "$src" "$output_dir" || {
             error "copy SquashFS image from $src -> $output_dir failed"
-            return 1;
-        }
-        cp "${src}.manifest" "$output_dir" || {
-            error \
-                "copy SquashFS image manifest from ${src}.manifest -> " \
-                "$output_dir failed"
             return 1;
         }
     fi
