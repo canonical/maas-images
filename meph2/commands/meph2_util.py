@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import glob
 import copy
 import os
 from functools import partial
@@ -13,6 +14,10 @@ import yaml
 
 from meph2 import util
 from meph2.url_helper import geturl_text
+from meph2.commands.dpkg import (
+    get_package,
+    extract_files_from_packages,
+)
 
 from simplestreams import (
     contentsource,
@@ -406,10 +411,12 @@ def load_product_streams(src):
 def load_products(path, product_streams):
     products = {}
     for product_stream in product_streams:
-        with contentsource.UrlContentSource(
-                os.path.join(path, product_stream)) as tcs:
-            product_listing = sutil.load_content(tcs.read())
-        products.update(product_listing['products'])
+        product_stream_path = os.path.join(path, product_stream)
+        if os.path.exists(product_stream_path):
+            with contentsource.UrlContentSource(
+                    product_stream_path) as tcs:
+                product_listing = sutil.load_content(tcs.read())
+                products.update(product_listing['products'])
     return products
 
 
@@ -455,25 +462,7 @@ def main_insert(args):
     return 0
 
 
-def main_import(args):
-    cfg_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
-    if not os.path.exists(cfg_path):
-        if os.path.exists(args.import_cfg):
-            cfg_path = args.import_cfg
-        else:
-            print("Error: Unable to find config file %s" % args.import_cfg)
-            os.exit(1)
-
-    target_product_streams = load_product_streams(args.target)
-    target_products = load_products(args.target, target_product_streams)
-
-    with open(cfg_path) as fp:
-        cfgdata = yaml.load(fp)
-
-    product_tree = util.empty_iid_products(cfgdata['content_id'])
-    product_tree['updated'] = sutil.timestamp()
-    product_tree['datatype'] = 'image-downloads'
+def import_sha256(args, product_tree, cfgdata):
     for (release, release_info) in cfgdata['versions'].items():
         if 'arch' in release_info:
             arch = release_info['arch']
@@ -483,34 +472,40 @@ def main_import(args):
             os_name = release_info['os']
         else:
             os_name = cfgdata['os']
-
-        product_id = cfgdata['product_id'].format(
-            version=release_info['version'], arch=arch)
-
-        # If the product already exists don't regenerate the image, just copy
-        # its metadata
-        if product_id in target_products:
-            product_tree['products'][product_id] = target_products[product_id]
-            continue
-
-        product_tree['products'][product_id] = {
-            'subarches': 'generic',
-            'label': 'daily',
-            'subarch': 'generic',
-            'arch': arch,
-            'os': os_name,
-            'version': release_info['version'],
-            'release': release,
-            'versions': {},
-            }
         if 'path_version' in release_info:
             path_version = release_info['path_version']
         else:
             path_version = release_info['version']
+        product_id = cfgdata['product_id'].format(
+            version=release_info['version'], arch=arch)
         url = cfgdata['sha256_meta_data_path'].format(version=path_version)
-        base_url = os.path.dirname(url)
         images = get_sha256_meta_images(url)
+        base_url = os.path.dirname(url)
+
+        if product_tree['products'].get(product_id) is None:
+            print("Creating new product %s" % product_id)
+            product_tree['products'][product_id] = {
+                'subarches': 'generic',
+                'label': 'daily',
+                'subarch': 'generic',
+                'arch': arch,
+                'os': os_name,
+                'version': release_info['version'],
+                'release': release,
+                'versions': {},
+            }
+
         for (image, image_info) in images.items():
+            if (
+                    product_id in product_tree['products'] and
+                    image in product_tree['products'][product_id]['versions']):
+                print(
+                    "Product %s at version %s exists, skipping" % (
+                        product_id, image))
+                continue
+            print(
+                "Downloading and creating %s version %s" % (
+                    (product_id, image)))
             image_path = '/'.join([release, arch, image, 'root-tgz'])
             real_image_path = os.path.join(
                 os.path.realpath(args.target), image_path)
@@ -528,12 +523,131 @@ def main_import(args):
                         }
                     }
                 }
+
+
+def get_file_info(f):
+    size = 0
+    sha256 = hashlib.sha256()
+    with open(f, 'rb') as f:
+        for chunk in iter(lambda: f.read(2**15), b''):
+            sha256.update(chunk)
+            size += len(chunk)
+    return sha256.hexdigest(), size
+
+
+def import_bootloaders(args, product_tree, cfgdata):
+    for bootloader in cfgdata['bootloaders']:
+        product_id = cfgdata['product_id'].format(
+            bootloader=bootloader['bootloader'])
+        package = get_package(
+            bootloader['archive'], bootloader['packages'][0],
+            bootloader['arch'], bootloader['release'])
+
+        if (
+                product_id in product_tree['products'] and
+                package['Version'] in product_tree['products'][product_id][
+                    'versions']):
+            print(
+                "Product %s at version %s exists, skipping" % (
+                    product_id, package['Version']))
+            continue
+        if product_tree['products'].get(product_id) is None:
+            print("Creating new product %s" % product_id)
+            product_tree['products'][product_id] = {
+                'label': 'daily',
+                'arch': bootloader['arch'],
+                'subarch': 'generic',
+                'subarches': 'generic',
+                'os': 'bootloader',
+                'release': bootloader['bootloader'],
+                'versions': {},
+                }
+        path = os.path.join(
+            'bootloaders', bootloader['bootloader'], bootloader['arch'],
+            package['Version'])
+        dest = os.path.join(args.target, path)
+        os.makedirs(dest)
+        grub_format = bootloader.get('grub_format')
+        if grub_format is not None:
+            dest = os.path.join(dest, bootloader['grub_output'])
+        print(
+            "Downloading and creating %s version %s" % (
+                product_id, package['Version']))
+        extract_files_from_packages(
+            bootloader['archive'], bootloader['packages'],
+            bootloader['arch'], bootloader['files'], bootloader['release'],
+            dest, grub_format)
+        if grub_format is not None:
+            sha256, size = get_file_info(dest)
+            product_tree['products'][product_id]['versions'][
+                package['Version']] = {
+                'items': {
+                    bootloader['grub_output']: {
+                        'ftype': 'bootloader',
+                        'sha256': sha256,
+                        'path': os.path.join(
+                            path, bootloader['grub_output']),
+                        'size': size,
+                        }
+                    }
+                }
+        else:
+            items = {}
+            for i in bootloader['files']:
+                basename = os.path.basename(i)
+                dest_file = os.path.join(dest, basename)
+                if '*' in dest_file or '?' in dest_file:
+                    unglobbed_files = glob.glob(dest_file)
+                else:
+                    unglobbed_files = [dest_file]
+                for f in unglobbed_files:
+                    basename = os.path.basename(f)
+                    sha256, size = get_file_info(f)
+                    items[basename] = {
+                        'ftype': 'bootloader',
+                        'sha256': sha256,
+                        'path': os.path.join(path, basename),
+                        'size': size,
+                    }
+                product_tree['products'][product_id]['versions'][
+                    package['Version']] = {'items': items}
+
+
+def main_import(args):
+    cfg_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
+    if not os.path.exists(cfg_path):
+        if os.path.exists(args.import_cfg):
+            cfg_path = args.import_cfg
+        else:
+            print("Error: Unable to find config file %s" % args.import_cfg)
+            os.exit(1)
+
+    with open(cfg_path) as fp:
+        cfgdata = yaml.load(fp)
+
+    target_product_stream = os.path.join(
+        'streams', 'v1', cfgdata['content_id'] + '.json')
+
+    product_tree = util.empty_iid_products(cfgdata['content_id'])
+    product_tree['products'] = load_products(
+        args.target, [target_product_stream])
+    product_tree['updated'] = sutil.timestamp()
+    product_tree['datatype'] = 'image-downloads'
+
+    if cfgdata.get('sha256_meta_data_path', None) is not None:
+        import_sha256(args, product_tree, cfgdata)
+    elif cfgdata.get('bootloaders', None) is not None:
+        import_bootloaders(args, product_tree, cfgdata)
+    else:
+        sys.stderr.write('Unsupported import yaml!')
+        sys.exit(1)
+
     md_d = os.path.join(args.target, 'streams', 'v1')
     if not os.path.exists(md_d):
         os.makedirs(md_d)
 
-    product_tree_fn = cfgdata['content_id'] + '.json'
-    with open(os.path.join(md_d, product_tree_fn), 'wb') as fp:
+    with open(os.path.join(args.target, target_product_stream), 'wb') as fp:
         fp.write(util.dump_data(product_tree))
 
     gen_index_and_sign(args.target, not args.no_sign)

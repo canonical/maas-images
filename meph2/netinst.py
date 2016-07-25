@@ -113,7 +113,7 @@ FTYPE_MATCHES = {
     "dtb": re.compile(r".dtb$").search,
 }
 
-IGNORED_INITRD_FLAVORS =  ('xen', 'cdrom', 'gtk', 'hd-media')
+IGNORED_INITRD_FLAVORS = ('xen', 'cdrom', 'gtk', 'hd-media')
 
 # #
 # # Under a path like: MIRROR/precise-updates/main/installer-i386/
