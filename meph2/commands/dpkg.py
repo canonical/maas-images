@@ -12,31 +12,13 @@ import tempfile
 import urllib.request
 import glob
 
+from meph2.url_helper import geturl
+
 
 def get_distro_release():
     """Returns the release name for the running distro."""
     disname, version, codename = linux_distribution()
     return codename
-
-
-def get_file(url):
-    """Downloads the file from the given URL into memory.
-
-    :param url" URL to download
-    :return: File data, or None
-    """
-    # Build a newer opener so that the environment is checked for proxy
-    # URLs. Using urllib2.urlopen() means that we'd only be using the
-    # proxies as defined when urlopen() was called the first time.
-    try:
-        response = urllib.request.build_opener().open(url)
-        return response.read()
-    except urllib.error.URLError as e:
-        sys.stderr.write("Unable to download %s: %s" % (url, str(e.reason)))
-        sys.exit(1)
-    except BaseException as e:
-        sys.stderr.write("Unable to download %s: %s" % (url, str(e)))
-        sys.exit(1)
 
 
 def get_sha256(data):
@@ -76,12 +58,12 @@ def get_packages(base_url, architecture, pkg_name):
     packages_url = '%s/%s' % (base_url, path)
     if packages_url in _packages:
         return _packages[packages_url]
-    release_file = get_file(release_url)
-    release_file_gpg = get_file('%s.gpg' % release_url)
+    release_file = geturl(release_url)
+    release_file_gpg = geturl('%s.gpg' % release_url)
     gpg_verify_data(release_file_gpg, release_file)
 
     # Download the packages file and verify the SHA256SUM
-    pkg_data = get_file(packages_url)
+    pkg_data = geturl(packages_url)
     regex_path = re.escape(path)
     sha256sum = re.search(
         ("^\s*?([a-fA-F0-9]{64})\s*[0-9]+\s+%s$" % regex_path).encode('utf-8'),
@@ -133,7 +115,7 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
                 package = packages[pkg_name]
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
-        pkg_data = get_file('%s/%s' % (archive, package['Filename']))
+        pkg_data = geturl('%s/%s' % (archive, package['Filename']))
         if package['SHA256'] != get_sha256(pkg_data):
             sys.stderr.write(
                 'SHA256 mismatch on %s from %s' % (pkg_name, base_url))

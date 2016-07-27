@@ -1,5 +1,5 @@
-product_id: "com.ubuntu.maas.daily:bootloaders-bases:{bootloader}"
-content_id: "com.ubuntu.maas:daily:bootloaders-bases-download"
+product_id: "com.ubuntu.maas.daily:1:bootloaders-bases:{bootloader}"
+content_id: "com.ubuntu.maas:daily:1:bootloaders-bases-download"
 
 bootloaders:
  - bootloader: pxe
