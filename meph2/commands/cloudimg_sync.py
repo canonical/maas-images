@@ -11,6 +11,7 @@ from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
 from meph2.stream import CONTENT_ID, create_version
 
 import argparse
+import glob
 import copy
 import hashlib
 import os
@@ -137,6 +138,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 'Expected SHA256 %s got %s on %s' %
                 (expected_sha256, sha256.hexdigest(), filename))
 
+    def _remove_unused(self, filename):
+        """Remove the specified file if a squashfs image exists."""
+        squashfs_image = os.path.join(os.path.dirname(filename), '*.squashfs')
+        if len(glob.glob(squashfs_image)) > 0 and os.path.exists(filename):
+            os.remove(filename)
+
     def insert_item(self, data, src, target, pedigree, contentsource):
         # create the ephemeral root
 
@@ -167,16 +174,16 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 elif i == 'root-image.gz' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
                     # root-image after its been used to generate kernels
-                    os.remove(filename)
+                    self._remove_unused(filename)
                     continue
                 elif i == 'manifest' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
                     # root-image manifest either.
-                    os.remove(filename)
+                    self._remove_unused(filename)
                     continue
                 if i == 'squashfs':
                     # Verify upstream SHA256 of SquashFS images and add
-                    # SHA256 and size to our stream.                
+                    # SHA256 and size to our stream.
                     self._verify_sha256(filename, flat['sha256'])
                     items[i]['sha256'] = flat['sha256']
                     items[i]['size'] = int(flat['size'])
@@ -268,7 +275,7 @@ def main():
                         type=argparse.FileType('w'))
     parser.add_argument('--squashfs', action='store_true', default=False,
                         help='Download SquashFS root file systems if available'
-    )
+                        )
 
     parser.add_argument('output_d')
     parser.add_argument('filters', nargs='*', default=[])
