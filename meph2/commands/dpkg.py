@@ -140,14 +140,24 @@ def extract_files_from_packages(
 
     if grub_format is None:
         for i in files:
-            src = "%s/%s" % (tmp, i)
-            if '*' in src or '?' in src:
+            if '*' in i or '?' in i:
+                # Copy all files using a wild card
+                src = "%s/%s" % (tmp, i)
                 unglobbed_files = glob.glob(src)
+                for f in unglobbed_files:
+                    dest_file = "%s/%s" % (dest, os.path.basename(f))
+                    shutil.copyfile(f, dest_file)
+            elif ',' in i:
+                # Copy the a file from the package using a new name
+                src_file, dest_file = i.split(',')
+                src_file = "%s/%s" % (tmp, src_file)
+                dest_file = "%s/%s" % (dest, dest_file)
+                shutil.copyfile(src_file, dest_file)
             else:
-                unglobbed_files = [src]
-            for f in unglobbed_files:
-                dest_file = "%s/%s" % (dest, os.path.basename(f))
-                shutil.copyfile(f, dest_file)
+                # Straight copy
+                src_file = "%s/%s" % (tmp,  i)
+                dest_file = "%s/%s" % (dest, os.path.basename(src_file))
+                shutil.copyfile(src_file, dest_file)
     else:
         # You can only tell grub to use modules from one directory
         modules_path = "%s/%s" % (tmp, files[0])

@@ -20,9 +20,8 @@ bootloaders:
    archive: http://archive.ubuntu.com/ubuntu
    release: xenial
    files:
-    - /usr/lib/shim/shim.efi.signed
-    - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed
-    - /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed
+    - /usr/lib/shim/shim.efi.signed, bootx64.efi
+    - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
  - bootloader: uefi-arm64
    packages:
     - grub-efi-arm64-bin
