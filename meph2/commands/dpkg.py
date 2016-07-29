@@ -128,7 +128,7 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
 
 def extract_files_from_packages(
         archive, packages, architecture, files, release, dest,
-        grub_format=None):
+        grub_format=None, grub_config=None):
     tmp = tempfile.mkdtemp(prefix='maas-images-')
     for package in packages:
         package = get_package(archive, package, architecture, release, tmp)
@@ -156,10 +156,22 @@ def extract_files_from_packages(
             module_filename = os.path.basename(module_path)
             module_name, _ = os.path.splitext(module_filename)
             modules.append(module_name)
-        subprocess.check_output(
-            ['grub-mkimage',
-             '-o', dest,
-             '-O', grub_format,
-             '-d', modules_path,
-             '-c', dest] + modules)
+        if grub_config is not None:
+            grub_config_path = os.path.join(tmp, 'grub.cfg')
+            with open(grub_config_path, 'w') as f:
+                f.writelines(grub_config)
+            subprocess.check_output(
+                ['grub-mkimage',
+                 '-o', dest,
+                 '-O', grub_format,
+                 '-d', modules_path,
+                 '-c', grub_config_path,
+                ] + modules)
+        else:
+            subprocess.check_output(
+                ['grub-mkimage',
+                 '-o', dest,
+                 '-O', grub_format,
+                 '-d', modules_path,
+                ] + modules)
     shutil.rmtree(tmp)

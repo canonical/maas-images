@@ -576,7 +576,7 @@ def import_bootloaders(args, product_tree, cfgdata):
         extract_files_from_packages(
             bootloader['archive'], bootloader['packages'],
             bootloader['arch'], bootloader['files'], bootloader['release'],
-            dest, grub_format)
+            dest, grub_format, bootloader.get('grub_config'))
         if grub_format is not None:
             sha256, size = get_file_info(dest)
             product_tree['products'][product_id]['versions'][

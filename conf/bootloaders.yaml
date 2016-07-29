@@ -33,6 +33,15 @@ bootloaders:
     - /usr/lib/grub/arm64-efi/
    grub_format: arm64-efi
    grub_output: grubaa64.efi
+   grub_config: |
+      # MAAS GRUB2 pre-loader configuration file
+      
+      # Load based on MAC address first.
+      configfile (pxe)/grub/grub.cfg-${net_default_mac}
+
+      # Failed to load based on MAC address.
+      # Load arm64 by default, UEFI only supported by 64-bit
+      configfile (pxe)/grub/grub.cfg-default-arm64
  - bootloader: powerkvm
    packages:
     - grub-ieee1275-bin
@@ -43,3 +52,6 @@ bootloaders:
     - /usr/lib/grub/powerpc-ieee1275/
    grub_format: powerpc-ieee1275
    grub_output: bootppc64.bin
+   grub_config: |
+      configfile (pxe)/grub/grub.cfg-${net_default_mac}
+      configfile (pxe)/grub/grub.cfg-default-ppc64el
