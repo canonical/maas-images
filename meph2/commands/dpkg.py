@@ -150,8 +150,8 @@ def extract_files_from_packages(
             elif ',' in i:
                 # Copy the a file from the package using a new name
                 src_file, dest_file = i.split(',')
-                src_file = "%s/%s" % (tmp, src_file)
-                dest_file = "%s/%s" % (dest, dest_file)
+                src_file = "%s/%s" % (tmp, src_file.strip())
+                dest_file = "%s/%s" % (dest, dest_file.strip())
                 shutil.copyfile(src_file, dest_file)
             else:
                 # Straight copy

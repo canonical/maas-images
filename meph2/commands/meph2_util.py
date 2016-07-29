@@ -603,6 +603,7 @@ def import_bootloaders(args, product_tree, cfgdata):
                     # If we're renaming the file from the package use the new
                     # name.
                     _, basename = i.split(',')
+                    basename = basename.strip()
                     dest_file = os.path.join(dest, basename)
                     unglobbed_files = [dest_file]
                 else:
