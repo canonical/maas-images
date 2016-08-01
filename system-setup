@@ -32,6 +32,7 @@ DEPS_FULL=(
     python3-yaml
     squashfs-tools
     zerofree
+    dpkg                   # To compare bootloader package versions
 )
 
 apt_get() {

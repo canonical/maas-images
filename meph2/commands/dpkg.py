@@ -1,5 +1,4 @@
 from platform import linux_distribution
-import apt_pkg
 import shutil
 import subprocess
 import hashlib
@@ -93,6 +92,11 @@ def get_packages(base_url, architecture, pkg_name):
     return _packages[packages_url]
 
 
+def dpkg_a_newer_than_b(ver_a, ver_b):
+    ret = subprocess.call(['dpkg', '--compare-versions', ver_a, 'ge', ver_b])
+    return ret == 0
+
+
 def get_package(archive, pkg_name, architecture, release=None, dest=None):
     """Look through the archives for package metadata. If a dest is given
     download the package.
@@ -102,13 +106,12 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
     global _packages
     release = get_distro_release() if release is None else release
     package = None
-    apt_pkg.init()
     # Find the latest version of the package
     for dist in ('%s-updates' % release, '%s-security' % release, release):
         base_url = '%s/dists/%s' % (archive, dist)
         packages = get_packages(base_url, architecture, pkg_name)
         if pkg_name in packages:
-            if package is None or apt_pkg.version_compare(
+            if package is None or dpkg_a_newer_than_b(
                     packages[pkg_name]['Version'], package['Version']) > 0:
                 package = packages[pkg_name]
     # Download it if it was found and a dest was set
