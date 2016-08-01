@@ -646,6 +646,15 @@ main() {
         mv --force "$timg" "$output" ||
             { error "failed move to $output"; return 1; }
     fi
+
+    if [[ "$src" == *squashfs ]]; then
+        output_dir=$(dirname $output)
+        cp "$src" "$output_dir" || {
+            error "copy SquashFS image from $src -> $output_dir failed"
+            return 1;
+        }
+    fi
+
     ddebug 1 "finished"
     return 0
 }

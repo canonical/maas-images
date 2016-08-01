@@ -629,7 +629,7 @@ def main_import(args):
             cfg_path = args.import_cfg
         else:
             print("Error: Unable to find config file %s" % args.import_cfg)
-            os.exit(1)
+            sys.exit(1)
 
     with open(cfg_path) as fp:
         cfgdata = yaml.load(fp)

@@ -11,7 +11,9 @@ from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
 from meph2.stream import CONTENT_ID, create_version
 
 import argparse
+import glob
 import copy
+import hashlib
 import os
 import sys
 import yaml
@@ -65,7 +67,7 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(self, config, out_d, target, v2config, rebuilds=None,
-                 verbosity=0):
+                 verbosity=0, squashfs=False):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         if rebuilds is None:
             rebuilds = {}
@@ -74,7 +76,13 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
-        self.enable_di = self.config.get('enable_di', True)
+        self.squashfs = squashfs
+        if self.squashfs:
+            # As of MAAS 2.0 DI is no longer supported but SquashFS is.
+            # Since the DI won't be used don't generate them.
+            self.enable_di = False
+        else:
+            self.enable_di = self.config.get('enable_di', True)
 
         with open(v2config) as fp:
             cfgdata = yaml.load(fp)
@@ -117,6 +125,25 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.content_t = my_prods
         return v2_to_cloudimg_products(my_prods, rebuilds=self.rebuilds)
 
+    def _verify_sha256(self, filename, expected_sha256):
+        sha256 = hashlib.sha256()
+        with open(filename, 'rb') as f:
+            while True:
+                data = f.read(2**18)
+                if not data:
+                    break
+                sha256.update(data)
+        if sha256.hexdigest() != expected_sha256:
+            raise ValueError(
+                'Expected SHA256 %s got %s on %s' %
+                (expected_sha256, sha256.hexdigest(), filename))
+
+    def _remove_unused(self, filename):
+        """Remove the specified file if a squashfs image exists."""
+        squashfs_image = os.path.join(os.path.dirname(filename), '*.squashfs')
+        if len(glob.glob(squashfs_image)) > 0 and os.path.exists(filename):
+            os.remove(filename)
+
     def insert_item(self, data, src, target, pedigree, contentsource):
         # create the ephemeral root
 
@@ -138,8 +165,37 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         for prodname, items in cvret.items():
             for i in items:
-                sutil.products_set(self.content_t, items[i],
-                                   (prodname, vername, i))
+                filename = os.path.join(self.out_d, items[i]['path'])
+                if 'squashfs' in i and not self.squashfs:
+                    # If we're not publishing the SquashFS image but one
+                    # was used to generate root-image.gz delete it.
+                    os.remove(filename)
+                    continue
+                elif i == 'root-image.gz' and self.squashfs:
+                    # If we're publishing the SquashFS image we don't need the
+                    # root-image after its been used to generate kernels
+                    self._remove_unused(filename)
+                    continue
+                elif i == 'manifest' and self.squashfs:
+                    # If we're publishing the SquashFS image we don't need the
+                    # root-image manifest either.
+                    self._remove_unused(filename)
+                    continue
+                if i == 'squashfs':
+                    # Verify upstream SHA256 of SquashFS images and add
+                    # SHA256 and size to our stream.
+                    self._verify_sha256(filename, flat['sha256'])
+                    items[i]['sha256'] = flat['sha256']
+                    items[i]['size'] = int(flat['size'])
+                elif i == 'squashfs.manifest':
+                    manifest_pedigree = pedigree[:2] + ('squashfs.manifest',)
+                    manifest_flat = sutil.products_exdata(
+                        src, manifest_pedigree)
+                    self._verify_sha256(filename, manifest_flat['sha256'])
+                    items[i]['sha256'] = manifest_flat['sha256']
+                    items[i]['size'] = int(manifest_flat['size'])
+                sutil.products_set(
+                    self.content_t, items[i], (prodname, vername, i))
 
     def insert_products(self, path, target, content):
         tree = copy.deepcopy(self.content_t)
@@ -184,7 +240,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         return True
 
     def filter_item(self, data, src, target, pedigree):
-        if data['ftype'] != "tar.gz":
+        # Only use tar.gz if no SquashFS image is available
+        if data['ftype'] == 'tar.gz':
+            product = src['products'][pedigree[0]]['versions'][pedigree[1]]
+            if 'squashfs' in product['items'].keys():
+                return False
+        elif data['ftype'] != 'squashfs':
             return False
         return filters.filter_item(self.filters, data, src, pedigree)
 
@@ -212,6 +273,9 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
                         type=argparse.FileType('w'))
+    parser.add_argument('--squashfs', action='store_true', default=False,
+                        help='Download SquashFS root file systems if available'
+                        )
 
     parser.add_argument('output_d')
     parser.add_argument('filters', nargs='*', default=[])
@@ -272,7 +336,8 @@ def main():
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
-                                 rebuilds=rebuilds, verbosity=vlevel)
+                                 rebuilds=rebuilds, verbosity=vlevel,
+                                 squashfs=args.squashfs)
 
     tmirror.sync(smirror, initial_path)
 
