@@ -112,7 +112,7 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
         packages = get_packages(base_url, architecture, pkg_name)
         if pkg_name in packages:
             if package is None or dpkg_a_newer_than_b(
-                    packages[pkg_name]['Version'], package['Version']) > 0:
+                    packages[pkg_name]['Version'], package['Version']):
                 package = packages[pkg_name]
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
