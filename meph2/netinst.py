@@ -391,6 +391,22 @@ def get_kfile_key(release, kernel_release, kflavor, iflavor, ftype,
             iflavtok + fmttok)
 
 
+def file_data_equal(existing, other):
+    # raise exception with message if 'existing' differes from 'other'
+    # except for in fields in 'skip'. (default to skipping url and pubdate)
+    skip = ['url', 'pubdate']
+
+    # we allow basename to differ as long as it is not a dtb file.
+    # as dtb files use basename in their publish path.
+    if existing.get('ftype') != 'dtb' and other.get('ftype') != 'dtb':
+        skip.append('basename')
+
+    ex1 = {k: v for k, v in existing.items() if k not in skip}
+    other1 = {k: v for k, v in other.items() if k not in skip}
+
+    return ex1 == other1
+
+
 def mine_md(url, release):
     # url is like:
     #  http://archive.ubuntu.com/ubuntu/dists/precise-updates/main
@@ -434,13 +450,23 @@ def mine_md(url, release):
                                 imgfmt=data.get('image-format'),
                                 basename=data.get('basename'))
 
-            if key in versions[di_ver]['items']:
-                raise Exception(
-                    "Name Collision: %s[%s]: %s.\nCollided with: %s" %
-                    (key, release, data, versions[di_ver]['items'][key]))
-
             curfile = flist[path].copy()
             curfile.update(data)
+            if key in versions[di_ver]['items']:
+                existing = versions[di_ver]['items'][key]
+                if not file_data_equal(curfile, existing):
+                    raise Exception(
+                        "Name Collision: %s[%s]: %s.\nCollided with: %s" %
+                        (key, release,
+                         json.dumps(curfile, indent=1, sort_keys=True,
+                                    separators=(',', ': ')),
+                         json.dumps(existing, indent=1, sort_keys=True,
+                                    separators=(',', ': '))))
+                else:
+                    LOG.info("Name Collision avoided for %s[%s]. found at:"
+                             " \n%s\n %s\n",
+                             key, release, existing['url'], curfile['url'])
+
             versions[di_ver]['items'][key] = curfile
 
     return versions

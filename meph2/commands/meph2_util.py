@@ -576,7 +576,7 @@ def import_bootloaders(args, product_tree, cfgdata):
         extract_files_from_packages(
             bootloader['archive'], bootloader['packages'],
             bootloader['arch'], bootloader['files'], bootloader['release'],
-            dest, grub_format)
+            dest, grub_format, bootloader.get('grub_config'))
         if grub_format is not None:
             sha256, size = get_file_info(dest)
             product_tree['products'][product_id]['versions'][
@@ -597,7 +597,15 @@ def import_bootloaders(args, product_tree, cfgdata):
                 basename = os.path.basename(i)
                 dest_file = os.path.join(dest, basename)
                 if '*' in dest_file or '?' in dest_file:
+                    # Process multiple files copied with a wildcard
                     unglobbed_files = glob.glob(dest_file)
+                elif ',' in dest_file:
+                    # If we're renaming the file from the package use the new
+                    # name.
+                    _, basename = i.split(',')
+                    basename = basename.strip()
+                    dest_file = os.path.join(dest, basename)
+                    unglobbed_files = [dest_file]
                 else:
                     unglobbed_files = [dest_file]
                 for f in unglobbed_files:

@@ -1451,8 +1451,22 @@
   "kernel-flavor": "generic",
   "kernel-release": "xenial"
  },
- "xenial-generic/netboot/initrd.gz": {
+ "xenial-generic/netboot/vmlinuz": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-generic/netboot/ubuntu-installer/arm64/initrd.gz": {
   "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-generic/netboot/ubuntu-installer/arm64/linux": {
+  "ftype": "kernel",
   "image-format": "default",
   "initrd-flavor": "netboot",
   "kernel-flavor": "generic",

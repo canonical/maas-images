@@ -1,5 +1,4 @@
 from platform import linux_distribution
-import apt_pkg
 import shutil
 import subprocess
 import hashlib
@@ -9,34 +8,18 @@ import os
 import re
 import sys
 import tempfile
-import urllib.request
 import glob
+
+from meph2.url_helper import geturl
+
+# Cache packages
+_packages = {}
 
 
 def get_distro_release():
     """Returns the release name for the running distro."""
     disname, version, codename = linux_distribution()
     return codename
-
-
-def get_file(url):
-    """Downloads the file from the given URL into memory.
-
-    :param url" URL to download
-    :return: File data, or None
-    """
-    # Build a newer opener so that the environment is checked for proxy
-    # URLs. Using urllib2.urlopen() means that we'd only be using the
-    # proxies as defined when urlopen() was called the first time.
-    try:
-        response = urllib.request.build_opener().open(url)
-        return response.read()
-    except urllib.error.URLError as e:
-        sys.stderr.write("Unable to download %s: %s" % (url, str(e.reason)))
-        sys.exit(1)
-    except BaseException as e:
-        sys.stderr.write("Unable to download %s: %s" % (url, str(e)))
-        sys.exit(1)
 
 
 def get_sha256(data):
@@ -64,10 +47,6 @@ def gpg_verify_data(signature, data_file):
     shutil.rmtree(tmp, ignore_errors=True)
 
 
-# Cache packages
-_packages = {}
-
-
 def get_packages(base_url, architecture, pkg_name):
     """Gets the package list from the archive verified."""
     global _packages
@@ -76,12 +55,12 @@ def get_packages(base_url, architecture, pkg_name):
     packages_url = '%s/%s' % (base_url, path)
     if packages_url in _packages:
         return _packages[packages_url]
-    release_file = get_file(release_url)
-    release_file_gpg = get_file('%s.gpg' % release_url)
+    release_file = geturl(release_url)
+    release_file_gpg = geturl('%s.gpg' % release_url)
     gpg_verify_data(release_file_gpg, release_file)
 
     # Download the packages file and verify the SHA256SUM
-    pkg_data = get_file(packages_url)
+    pkg_data = geturl(packages_url)
     regex_path = re.escape(path)
     sha256sum = re.search(
         ("^\s*?([a-fA-F0-9]{64})\s*[0-9]+\s+%s$" % regex_path).encode('utf-8'),
@@ -113,6 +92,11 @@ def get_packages(base_url, architecture, pkg_name):
     return _packages[packages_url]
 
 
+def dpkg_a_newer_than_b(ver_a, ver_b):
+    ret = subprocess.call(['dpkg', '--compare-versions', ver_a, 'ge', ver_b])
+    return ret == 0
+
+
 def get_package(archive, pkg_name, architecture, release=None, dest=None):
     """Look through the archives for package metadata. If a dest is given
     download the package.
@@ -122,18 +106,17 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
     global _packages
     release = get_distro_release() if release is None else release
     package = None
-    apt_pkg.init()
     # Find the latest version of the package
     for dist in ('%s-updates' % release, '%s-security' % release, release):
         base_url = '%s/dists/%s' % (archive, dist)
         packages = get_packages(base_url, architecture, pkg_name)
         if pkg_name in packages:
-            if package is None or apt_pkg.version_compare(
+            if package is None or dpkg_a_newer_than_b(
                     packages[pkg_name]['Version'], package['Version']) > 0:
                 package = packages[pkg_name]
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
-        pkg_data = get_file('%s/%s' % (archive, package['Filename']))
+        pkg_data = geturl('%s/%s' % (archive, package['Filename']))
         if package['SHA256'] != get_sha256(pkg_data):
             sys.stderr.write(
                 'SHA256 mismatch on %s from %s' % (pkg_name, base_url))
@@ -146,7 +129,7 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
 
 def extract_files_from_packages(
         archive, packages, architecture, files, release, dest,
-        grub_format=None):
+        grub_format=None, grub_config=None):
     tmp = tempfile.mkdtemp(prefix='maas-images-')
     for package in packages:
         package = get_package(archive, package, architecture, release, tmp)
@@ -158,14 +141,24 @@ def extract_files_from_packages(
 
     if grub_format is None:
         for i in files:
-            src = "%s/%s" % (tmp, i)
-            if '*' in src or '?' in src:
+            if '*' in i or '?' in i:
+                # Copy all files using a wild card
+                src = "%s/%s" % (tmp, i)
                 unglobbed_files = glob.glob(src)
+                for f in unglobbed_files:
+                    dest_file = "%s/%s" % (dest, os.path.basename(f))
+                    shutil.copyfile(f, dest_file)
+            elif ',' in i:
+                # Copy the a file from the package using a new name
+                src_file, dest_file = i.split(',')
+                src_file = "%s/%s" % (tmp, src_file.strip())
+                dest_file = "%s/%s" % (dest, dest_file.strip())
+                shutil.copyfile(src_file, dest_file)
             else:
-                unglobbed_files = [src]
-            for f in unglobbed_files:
-                dest_file = "%s/%s" % (dest, os.path.basename(f))
-                shutil.copyfile(f, dest_file)
+                # Straight copy
+                src_file = "%s/%s" % (tmp,  i)
+                dest_file = "%s/%s" % (dest, os.path.basename(src_file))
+                shutil.copyfile(src_file, dest_file)
     else:
         # You can only tell grub to use modules from one directory
         modules_path = "%s/%s" % (tmp, files[0])
@@ -174,10 +167,22 @@ def extract_files_from_packages(
             module_filename = os.path.basename(module_path)
             module_name, _ = os.path.splitext(module_filename)
             modules.append(module_name)
-        subprocess.check_output(
-            ['grub-mkimage',
-             '-o', dest,
-             '-O', grub_format,
-             '-d', modules_path,
-             '-c', dest] + modules)
+        if grub_config is not None:
+            grub_config_path = os.path.join(tmp, 'grub.cfg')
+            with open(grub_config_path, 'w') as f:
+                f.writelines(grub_config)
+            subprocess.check_output(
+                ['grub-mkimage',
+                 '-o', dest,
+                 '-O', grub_format,
+                 '-d', modules_path,
+                 '-c', grub_config_path,
+                 ] + modules)
+        else:
+            subprocess.check_output(
+                ['grub-mkimage',
+                 '-o', dest,
+                 '-O', grub_format,
+                 '-d', modules_path,
+                 ] + modules)
     shutil.rmtree(tmp)
