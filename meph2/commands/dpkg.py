@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import hashlib
 import io
-import lzma
 import os
 import re
 import sys
@@ -13,6 +12,11 @@ import urllib.request
 import glob
 
 from meph2.url_helper import geturl
+
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 
 
 def get_distro_release():
