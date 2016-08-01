@@ -9,10 +9,12 @@ import os
 import re
 import sys
 import tempfile
-import urllib.request
 import glob
 
 from meph2.url_helper import geturl
+
+# Cache packages
+_packages = {}
 
 
 def get_distro_release():
@@ -44,10 +46,6 @@ def gpg_verify_data(signature, data_file):
         stderr=subprocess.STDOUT)
 
     shutil.rmtree(tmp, ignore_errors=True)
-
-
-# Cache packages
-_packages = {}
 
 
 def get_packages(base_url, architecture, pkg_name):
@@ -176,12 +174,12 @@ def extract_files_from_packages(
                  '-O', grub_format,
                  '-d', modules_path,
                  '-c', grub_config_path,
-                ] + modules)
+                 ] + modules)
         else:
             subprocess.check_output(
                 ['grub-mkimage',
                  '-o', dest,
                  '-O', grub_format,
                  '-d', modules_path,
-                ] + modules)
+                 ] + modules)
     shutil.rmtree(tmp)
