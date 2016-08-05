@@ -138,12 +138,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 'Expected SHA256 %s got %s on %s' %
                 (expected_sha256, sha256.hexdigest(), filename))
 
-    def _remove_unused(self, filename):
-        """Remove the specified file if a squashfs image exists."""
-        squashfs_image = os.path.join(os.path.dirname(filename), '*.squashfs')
-        if len(glob.glob(squashfs_image)) > 0 and os.path.exists(filename):
-            os.remove(filename)
-
     def insert_item(self, data, src, target, pedigree, contentsource):
         # create the ephemeral root
 
@@ -173,14 +167,26 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     continue
                 elif i == 'root-image.gz' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
-                    # root-image after its been used to generate kernels
-                    self._remove_unused(filename)
-                    continue
+                    # root-image after its been used to generate kernels. Older
+                    # Ubuntu releases (<16.04) don't have SquashFS images
+                    # published, so only remove if a SquashFS file exists.
+                    squashfs_image = os.path.join(
+                        os.path.dirname(filename), '*.squashfs')
+                    if (
+                            len(glob.glob(squashfs_image)) > 0 and
+                            os.path.exists(filename)):
+                        os.remove(filename)
+                        continue
                 elif i == 'manifest' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
                     # root-image manifest either.
-                    self._remove_unused(filename)
-                    continue
+                    squashfs_image = os.path.join(
+                        os.path.dirname(filename), '*.squashfs')
+                    if (
+                            len(glob.glob(squashfs_image)) > 0 and
+                            os.path.exists(filename)):
+                        os.remove(filename)
+                        continue
                 if i == 'squashfs':
                     # Verify upstream SHA256 of SquashFS images and add
                     # SHA256 and size to our stream.
