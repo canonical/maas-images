@@ -163,7 +163,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                 if 'squashfs' in i and not self.squashfs:
                     # If we're not publishing the SquashFS image but one
                     # was used to generate root-image.gz delete it.
-                    os.remove(filename)
+                    if os.path.exists(filename):
+                        os.remove(filename)
                     continue
                 elif i == 'root-image.gz' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
@@ -171,7 +172,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     # Ubuntu releases (<16.04) don't have SquashFS images
                     # published, so only remove if a SquashFS file exists.
                     squashfs_image = os.path.join(
-                        os.path.dirname(filename), '*.squashfs')
+                        os.path.dirname(filename), '*squashfs')
                     if len(glob.glob(squashfs_image)) > 0:
                         if os.path.exists(filename):
                             os.remove(filename)
@@ -180,7 +181,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     # If we're publishing the SquashFS image we don't need the
                     # root-image manifest either.
                     squashfs_image = os.path.join(
-                        os.path.dirname(filename), '*.squashfs')
+                        os.path.dirname(filename), '*squashfs')
                     if len(glob.glob(squashfs_image)) > 0:
                         if os.path.exists(filename):
                             os.remove(filename)
