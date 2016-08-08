@@ -172,20 +172,18 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                     # published, so only remove if a SquashFS file exists.
                     squashfs_image = os.path.join(
                         os.path.dirname(filename), '*.squashfs')
-                    if (
-                            len(glob.glob(squashfs_image)) > 0 and
-                            os.path.exists(filename)):
-                        os.remove(filename)
+                    if len(glob.glob(squashfs_image)) > 0:
+                        if os.path.exists(filename):
+                            os.remove(filename)
                         continue
                 elif i == 'manifest' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
                     # root-image manifest either.
                     squashfs_image = os.path.join(
                         os.path.dirname(filename), '*.squashfs')
-                    if (
-                            len(glob.glob(squashfs_image)) > 0 and
-                            os.path.exists(filename)):
-                        os.remove(filename)
+                    if len(glob.glob(squashfs_image)) > 0:
+                        if os.path.exists(filename):
+                            os.remove(filename)
                         continue
                 if i == 'squashfs':
                     # Verify upstream SHA256 of SquashFS images and add
