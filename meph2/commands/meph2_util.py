@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
-import glob
+from datetime import datetime
 import copy
 import os
 from functools import partial
@@ -176,8 +176,12 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             (pedigree, sutil.products_exdata(
                 src, pedigree, include_top=False,
                 insert_fieldnames=False)),)
+
         return super(BareMirrorWriter, self).insert_item(
             data, src, target, pedigree, contentsource)
+
+    def remove_item(self, data, src, target, pedigree):
+        return
 
     def remove_version(self, data, src, target, pedigree):
         # sync doesnt filter on things to be removed, so
@@ -186,9 +190,6 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
             return
 
         self.removed_versions.append(pedigree)
-
-    def remove_item(self, data, src, target, pedigree):
-        return
 
     def insert_products(self, path, target, content):
         # insert_item and insert_products would not be strictly necessary
@@ -231,7 +232,9 @@ class BareMirrorWriter(mirrors.ObjectFilterMirror):
 
         sutil.products_condense(
             self.tproducts,
-            sticky=['di_version', 'kpackage', 'sha256', 'md5', 'path'])
+            sticky=[
+                'di_version', 'kpackage', 'sha256', 'md5', 'path', 'ftype',
+                'src_package', 'src_version', 'src_release'])
 
         self.tproducts['updated'] = sutil.timestamp()
 
@@ -525,100 +528,90 @@ def import_sha256(args, product_tree, cfgdata):
                 }
 
 
-def get_file_info(f):
-    size = 0
-    sha256 = hashlib.sha256()
-    with open(f, 'rb') as f:
-        for chunk in iter(lambda: f.read(2**15), b''):
-            sha256.update(chunk)
-            size += len(chunk)
-    return sha256.hexdigest(), size
-
-
 def import_bootloaders(args, product_tree, cfgdata):
-    for bootloader in cfgdata['bootloaders']:
+    for firmware_platform in cfgdata['bootloaders']:
         product_id = cfgdata['product_id'].format(
-            bootloader=bootloader['bootloader'])
-        package = get_package(
-            bootloader['archive'], bootloader['packages'][0],
-            bootloader['arch'], bootloader['release'])
-
-        if (
-                product_id in product_tree['products'] and
-                package['Version'] in product_tree['products'][product_id][
-                    'versions']):
+            firmware_platform=firmware_platform['firmware-platform'],
+            arch=firmware_platform['arch'])
+        # Compile a list of the latest packages in the archive this bootloader
+        # pulls files from
+        src_packages = {}
+        for package in firmware_platform['packages']:
+            package_info = get_package(
+                firmware_platform['archive'], package,
+                firmware_platform['arch'], firmware_platform['release'])
+            # Some source packages include the package version in the source
+            # name. Only take the name, not the version.
+            src_package_name = package_info['Source'].split(' ')[0]
+            src_packages[src_package_name] = {
+                'src_version': package_info['Version'],
+                'src_release': firmware_platform['release'],
+                'found': False,
+            }
+        # Check if the bootloader has been built from the latest version of
+        # the packages in the archive
+        if product_id in product_tree['products']:
+            versions = product_tree['products'][product_id]['versions']
+            for data in versions.values():
+                for item in data['items'].values():
+                    src_package = src_packages.get(item['src_package'])
+                    if (
+                            src_package is not None and
+                            src_package['src_version'] == item['src_version']
+                            and
+                            src_package['src_release'] == item['src_release']):
+                        src_packages[item['src_package']]['found'] = True
+        bootloader_uptodate = True
+        for src_package in src_packages.values():
+            if not src_package['found']:
+                bootloader_uptodate = False
+        # Bootloader built from the latest packages already in stream
+        if bootloader_uptodate:
             print(
-                "Product %s at version %s exists, skipping" % (
-                    product_id, package['Version']))
+                "Product %s built from the latest package set, skipping"
+                % product_id)
             continue
+        # Find an unused version
+        today = datetime.utcnow().strftime('%Y%m%d')
+        point = 0
+        while True:
+            version = "%s.%d" % (today, point)
+            products = product_tree['products']
+            if (
+                    product_id not in products or
+                    version not in products[product_id]['versions'].keys()):
+                break
+            point += 1
         if product_tree['products'].get(product_id) is None:
             print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
                 'label': 'daily',
-                'arch': bootloader['arch'],
-                'subarch': 'generic',
-                'subarches': 'generic',
-                'os': 'bootloader',
-                'release': bootloader['bootloader'],
+                'arch': firmware_platform['arch'],
+                'arches': firmware_platform['arches'],
+                'os': firmware_platform['os'],
+                'bootloader-type': firmware_platform['firmware-platform'],
                 'versions': {},
                 }
         path = os.path.join(
-            'bootloaders', bootloader['bootloader'], bootloader['arch'],
-            package['Version'])
+            'bootloaders', firmware_platform['firmware-platform'],
+            firmware_platform['arch'], version)
         dest = os.path.join(args.target, path)
         os.makedirs(dest)
-        grub_format = bootloader.get('grub_format')
+        grub_format = firmware_platform.get('grub_format')
         if grub_format is not None:
-            dest = os.path.join(dest, bootloader['grub_output'])
+            dest = os.path.join(dest, firmware_platform['grub_output'])
         print(
             "Downloading and creating %s version %s" % (
-                product_id, package['Version']))
-        extract_files_from_packages(
-            bootloader['archive'], bootloader['packages'],
-            bootloader['arch'], bootloader['files'], bootloader['release'],
-            dest, grub_format, bootloader.get('grub_config'))
-        if grub_format is not None:
-            sha256, size = get_file_info(dest)
-            product_tree['products'][product_id]['versions'][
-                package['Version']] = {
-                'items': {
-                    bootloader['grub_output']: {
-                        'ftype': 'bootloader',
-                        'sha256': sha256,
-                        'path': os.path.join(
-                            path, bootloader['grub_output']),
-                        'size': size,
-                        }
-                    }
-                }
-        else:
-            items = {}
-            for i in bootloader['files']:
-                basename = os.path.basename(i)
-                dest_file = os.path.join(dest, basename)
-                if '*' in dest_file or '?' in dest_file:
-                    # Process multiple files copied with a wildcard
-                    unglobbed_files = glob.glob(dest_file)
-                elif ',' in dest_file:
-                    # If we're renaming the file from the package use the new
-                    # name.
-                    _, basename = i.split(',')
-                    basename = basename.strip()
-                    dest_file = os.path.join(dest, basename)
-                    unglobbed_files = [dest_file]
-                else:
-                    unglobbed_files = [dest_file]
-                for f in unglobbed_files:
-                    basename = os.path.basename(f)
-                    sha256, size = get_file_info(f)
-                    items[basename] = {
-                        'ftype': 'bootloader',
-                        'sha256': sha256,
-                        'path': os.path.join(path, basename),
-                        'size': size,
-                    }
-                product_tree['products'][product_id]['versions'][
-                    package['Version']] = {'items': items}
+                product_id, version))
+        items = extract_files_from_packages(
+            firmware_platform['archive'], firmware_platform['packages'],
+            firmware_platform['arch'], firmware_platform['files'],
+            firmware_platform['release'], args.target, path, grub_format,
+            firmware_platform.get('grub_config'),
+            firmware_platform.get('grub_output'))
+        product_tree['products'][product_id]['versions'][version] = {
+            'items': items
+        }
 
 
 def main_import(args):
