@@ -66,8 +66,8 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
 
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
-    def __init__(self, config, out_d, target, v2config, rebuilds=None,
-                 verbosity=0, squashfs=False):
+    def __init__(
+            self, config, out_d, target, v2config, rebuilds=None, verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         if rebuilds is None:
             rebuilds = {}
@@ -76,17 +76,18 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.target = target
         self.v2config = v2config
         self.filters = self.config.get('filters', [])
-        self.squashfs = squashfs
-        if self.squashfs:
+        with open(v2config) as fp:
+            cfgdata = yaml.load(fp)
+        self.cfgdata = cfgdata
+        if self.cfgdata.get('squashfs'):
+            self.squashfs = True
             # As of MAAS 2.0 DI is no longer supported but SquashFS is.
             # Since the DI won't be used don't generate them.
             self.enable_di = False
         else:
+            self.squashfs = False
             self.enable_di = self.config.get('enable_di', True)
 
-        with open(v2config) as fp:
-            cfgdata = yaml.load(fp)
-        self.cfgdata = cfgdata
         self.releases = []
         for r in [k['release'] for k in cfgdata['releases']]:
             if r not in ubuntu_info.SUPPORTED:
@@ -278,9 +279,6 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
                         type=argparse.FileType('w'))
-    parser.add_argument('--squashfs', action='store_true', default=False,
-                        help='Download SquashFS root file systems if available'
-                        )
 
     parser.add_argument('output_d')
     parser.add_argument('filters', nargs='*', default=[])
@@ -341,8 +339,7 @@ def main():
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
                                  target=args.target, v2config=args.config,
-                                 rebuilds=rebuilds, verbosity=vlevel,
-                                 squashfs=args.squashfs)
+                                 rebuilds=rebuilds, verbosity=vlevel)
 
     tmirror.sync(smirror, initial_path)
 
