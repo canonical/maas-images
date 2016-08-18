@@ -161,16 +161,23 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         for prodname, items in cvret.items():
             for i in items:
                 filename = os.path.join(self.out_d, items[i]['path'])
-                if 'squashfs' in i and not self.squashfs:
-                    # If we're not publishing the SquashFS image but one
-                    # was used to generate root-image.gz delete it.
-                    if os.path.exists(filename):
-                        os.remove(filename)
-                    continue
+                if i == 'squashfs':
+                    if self.squashfs:
+                        # Verify upstream SHA256 of SquashFS images and add the
+                        # SHA256 and size to our stream.
+                        self._verify_sha256(filename, flat['sha256'])
+                        items[i]['sha256'] = flat['sha256']
+                        items[i]['size'] = int(flat['size'])
+                    else:
+                        # If we're not publishing the SquashFS image but one
+                        # was used to generate root-image.gz delete it.
+                        if os.path.exists(filename):
+                            os.remove(filename)
+                        continue
                 elif i == 'root-image.gz' and self.squashfs:
                     # If we're publishing the SquashFS image we don't need the
-                    # root-image after its been used to generate kernels. Older
-                    # Ubuntu releases (<16.04) don't have SquashFS images
+                    # root-image after its been used to extract the kernels.
+                    # Older Ubuntu releases (<16.04) don't have SquashFS images
                     # published, so only remove if a SquashFS file exists.
                     squashfs_image = os.path.join(
                         os.path.dirname(filename), '*squashfs')
@@ -187,19 +194,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                         if os.path.exists(filename):
                             os.remove(filename)
                         continue
-                if i == 'squashfs':
-                    # Verify upstream SHA256 of SquashFS images and add
-                    # SHA256 and size to our stream.
-                    self._verify_sha256(filename, flat['sha256'])
-                    items[i]['sha256'] = flat['sha256']
-                    items[i]['size'] = int(flat['size'])
-                elif i == 'squashfs.manifest':
-                    manifest_pedigree = pedigree[:2] + ('squashfs.manifest',)
-                    manifest_flat = sutil.products_exdata(
-                        src, manifest_pedigree)
-                    self._verify_sha256(filename, manifest_flat['sha256'])
-                    items[i]['sha256'] = manifest_flat['sha256']
-                    items[i]['size'] = int(manifest_flat['size'])
                 sutil.products_set(
                     self.content_t, items[i], (prodname, vername, i))
 

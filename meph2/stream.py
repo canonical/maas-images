@@ -20,10 +20,7 @@ DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
     'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
     'manifest': PATH_COMMON + "%(version_name)s/root-image.manifest",
-    'squashfs': PATH_COMMON + "%(version_name)s/%(img_name)s",
-    'squashfs.manifest': (
-        PATH_COMMON + "%(version_name)s/%(img_name)s.manifest"
-    ),
+    'squashfs': PATH_COMMON + "%(version_name)s/squashfs",
     'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
     'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
     'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
@@ -120,8 +117,7 @@ def create_version(arch, release, version_name, img_url, out_d,
     newitems = {}
 
     subs = {'release': release, 'arch': arch,
-            'version_name': version_name, 'version': version,
-            'img_name': os.path.basename(img_url)}
+            'version_name': version_name, 'version': version}
 
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
     manifest_path = PATH_FORMATS['manifest'] % subs
@@ -242,6 +238,13 @@ def create_version(arch, release, version_name, img_url, out_d,
         LOG.info("running: %s" % gencmd)
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
+
+    # If we're downloading a SquashFS file rename it to its filetype
+    if img_url.endswith('squashfs'):
+        base_dir = os.path.join(out_d, release, arch, version_name)
+        src_squash = os.path.join(base_dir, os.path.basename(img_url))
+        dst_squash = os.path.join(base_dir, 'squashfs')
+        os.rename(src_squash, dst_squash)
 
     # get checksum and size of new files created
     file_info = {}
