@@ -531,6 +531,7 @@ def import_sha256(args, product_tree, cfgdata):
 def import_bootloaders(args, product_tree, cfgdata):
     for firmware_platform in cfgdata['bootloaders']:
         product_id = cfgdata['product_id'].format(
+            os=firmware_platform['os'],
             firmware_platform=firmware_platform['firmware-platform'],
             arch=firmware_platform['arch'])
         # Compile a list of the latest packages in the archive this bootloader

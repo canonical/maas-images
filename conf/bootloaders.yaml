@@ -1,4 +1,4 @@
-product_id: "com.ubuntu.maas.daily:1:bootloader:{firmware_platform}:{arch}"
+product_id: "com.ubuntu.maas.daily:1:{os}:{firmware_platform}:{arch}"
 content_id: "com.ubuntu.maas:daily:1:bootloader-download"
 
 bootloaders:
