@@ -16,148 +16,22 @@
 # hwe-<release version>. Because the version has a '.' in it we keep the old
 # naming format for the anchors.
 subarches:
- - &sa_hwe_p
-   - generic
-   - hwe-p
- - &sa_hwe_q
-   - generic
-   - hwe-p
-   - hwe-q
- - &sa_hwe_r
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
- - &sa_hwe_s
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
- - &sa_hwe_t
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
- - &sa_hwe_u
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
- - &sa_hwe_v
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
- - &sa_hwe_w
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
- - &sa_hwe_x
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
-   - hwe-16.04
-   - hwe-16.04-lowlatency
- - &sa_hwe_y
-   - generic
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
-   - hwe-16.04
-   - hwe-16.04-lowlatency
-   - hwe-16.10
- - &arm_hwe_t
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
- - &arm_hwe_u
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
- - &arm_hwe_v
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
- - &arm_hwe_w
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
- - &arm_hwe_x
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
-   - hwe-16.04
-   - hwe-16.04-lowlatency
- - &arm_hwe_y
-   - generic
-   - highbank
-   - hwe-p
-   - hwe-q
-   - hwe-r
-   - hwe-s
-   - hwe-t
-   - hwe-u
-   - hwe-v
-   - hwe-w
-   - hwe-16.04
-   - hwe-16.04-lowlatency
-   - hwe-16.10
+ - &sa_hwe_p [generic, hwe-p]
+ - &sa_hwe_q [generic, hwe-p, hwe-q]
+ - &sa_hwe_r [generic, hwe-p, hwe-q, hwe-r]
+ - &sa_hwe_s [generic, hwe-p, hwe-q, hwe-r, hwe-s]
+ - &sa_hwe_t [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+ - &sa_hwe_u [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
+ - &sa_hwe_v [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
+ - &sa_hwe_w [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
+ - &sa_hwe_x [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-16.04, hwe-16.04-lowlatency]
+ - &sa_hwe_y [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-16.04, hwe-16.04-lowlatency, hwe-16.10]
+ - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
+ - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
+ - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
+ - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
+ - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-16.04, hwe-16.04-lowlatency]
+ - &arm_hwe_y [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-16.04, hwe-16.04-lowlatency, hwe-16.10]
 
 misc:
  - &glpae generic-lpae
@@ -171,181 +45,33 @@ releases:
  - version: "16.10"
    release: yakkety
    kernels:
-    -
-      - yakkety
-      - amd64
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *sa_hwe_y
-    -
-      - yakkety
-      - arm64
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *sa_hwe_y
-    - 
-      - yakkety
-      - arm64
-      - *mustang
-      - generic
-      - linux-generic
-      - [*mustang]
-      - *kh-mustang
-    -
-      - yakkety
-      - arm64
-      - *xguboot
-      - generic
-      - linux-generic
-      - [*xguboot]
-      - *kh-xgene
-    -
-      - yakkety
-      - armhf
-      - *glpae
-      - *glpae
-      - linux-generic-lpae
-      - [*glpae]
-    -
-      - yakkety
-      - armhf
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *arm_hwe_y
-    -
-      - yakkety
-      - i386
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *sa_hwe_y
-    -
-      - yakkety
-      - ppc64el
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *sa_hwe_y
-    -
-      - yakkety
-      - s390x
-      - hwe-16.10
-      - generic
-      - linux-generic
-      - *sa_hwe_y
+    - [yakkety,    amd64,   hwe-16.10,             generic,     linux-generic,                        *sa_hwe_y]
+    - [yakkety,    arm64,   hwe-16.10,             generic,     linux-generic,                        *sa_hwe_y]
+    - [yakkety,    arm64,   *mustang,              generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [yakkety,    arm64,   *xguboot,              generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [yakkety,    armhf,   *glpae,                *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [yakkety,    armhf,   hwe-16.10,             generic,     linux-generic,                        *arm_hwe_y]
+    - [yakkety,    i386,    hwe-16.10,             generic,     linux-generic,                        *sa_hwe_y]
+    - [yakkety,    ppc64el, hwe-16.10,             generic,     linux-generic,                        *sa_hwe_y]
+    - [yakkety,    s390x,   hwe-16.10,             generic,     linux-generic,                        *sa_hwe_y]
  - version: "16.04"
    release: xenial
    kernels:
-    -
-      - xenial
-      - amd64
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *sa_hwe_x
-    -
-      - xenial
-      - amd64
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *sa_hwe_x
-    -
-      - xenial
-      - arm64
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *sa_hwe_x
-    -
-      - xenial
-      - arm64
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *sa_hwe_x
-    -
-      - xenial
-      - arm64
-      - *mustang
-      - generic
-      - linux-generic
-      - [*mustang]
-      - *kh-mustang
-    -
-      - xenial
-      - arm64
-      - *xguboot
-      - generic
-      - linux-generic
-      - [*xguboot]
-      - *kh-xgene
-    -
-      - xenial
-      - armhf
-      - *glpae
-      - *glpae
-      - linux-generic-lpae
-      - [*glpae]
-    -
-      - xenial
-      - armhf
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *arm_hwe_x
-    -
-      - xenial
-      - armhf
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *arm_hwe_x
-    -
-      - xenial
-      - i386
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *sa_hwe_x
-    -
-      - xenial
-      - i386
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *sa_hwe_x
-    -
-      - xenial
-      - ppc64el
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *sa_hwe_x
-    -
-      - xenial
-      - ppc64el
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *sa_hwe_x
-    -
-      - xenial
-      - s390x
-      - hwe-16.04
-      - generic
-      - linux-generic
-      - *sa_hwe_x
-    -
-      - xenial
-      - s390x
-      - hwe-16.04-lowlatency
-      - lowlatency
-      - linux-image-lowlatency-lts-xenial
-      - *sa_hwe_x
+    - [xenial,     amd64,   hwe-16.04,             generic,     linux-generic,                        *sa_hwe_x]
+    - [xenial,     amd64,   hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
+    - [xenial,     arm64,   hwe-16.04,             generic,     linux-generic,                        *sa_hwe_x]
+    - [xenial,     arm64,   hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
+    - [xenial,     arm64,   *mustang,              generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [xenial,     arm64,   *xguboot,              generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [xenial,     armhf,   *glpae,                *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [xenial,     armhf,   hwe-16.04,             generic,     linux-generic,                        *arm_hwe_x]
+    - [xenial,     armhf,   hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *arm_hwe_x]
+    - [xenial,     i386,    hwe-16.04,             generic,     linux-generic,                        *sa_hwe_x]
+    - [xenial,     i386,    hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
+    - [xenial,     ppc64el, hwe-16.04,             generic,     linux-generic,                        *sa_hwe_x]
+    - [xenial,     ppc64el, hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
+    - [xenial,     s390x,   hwe-16.04,             generic,     linux-generic,                        *sa_hwe_x]
+    - [xenial,     s390x,   hwe-16.04-lowlatency,  lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
  - version: "14.04"
    builtin_kernel: linux-generic
    release: trusty
