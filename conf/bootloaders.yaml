@@ -9,7 +9,7 @@ bootloaders:
    arch: i386
    arches: i386,amd64
    archive: http://archive.ubuntu.com/ubuntu
-   release: yakkety
+   release: xenial
    os: pxelinux
    files:
     - /usr/lib/PXELINUX/pxelinux.0
@@ -21,7 +21,7 @@ bootloaders:
    arch: amd64
    arches: amd64
    archive: http://archive.ubuntu.com/ubuntu
-   release: yakkety
+   release: xenial
    os: grub-efi-signed
    files:
     - /usr/lib/shim/shim.efi.signed, bootx64.efi
@@ -32,7 +32,7 @@ bootloaders:
    arch: arm64
    arches: arm64
    archive: http://ports.ubuntu.com
-   release: yakkety
+   release: xenial
    os: grub-efi
    files:
     - /usr/lib/grub/arm64-efi/
@@ -53,7 +53,7 @@ bootloaders:
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
-   release: yakkety
+   release: xenial
    os: grub-ieee1275
    files:
     - /usr/lib/grub/powerpc-ieee1275/
