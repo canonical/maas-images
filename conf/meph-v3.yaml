@@ -406,3 +406,5 @@ squashfs: True
 ##     http://ports.ubuntu.com/ubuntu-ports/dists/precise-updates/main/installer-armhf/current/images/MD5SUMS
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
+
+# vi: syntax=yaml nowrap
