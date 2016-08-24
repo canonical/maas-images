@@ -17,3 +17,5 @@ versions:
         version: 6.6
         release_title: "CentOS 6.6"
         curtin_files: "{curtin_path}/centos6"
+
+# vi: syntax=yaml nowrap

@@ -54,3 +54,5 @@ bootloaders:
    grub_config: |
       configfile (pxe)/grub/grub.cfg-${net_default_mac}
       configfile (pxe)/grub/grub.cfg-default-ppc64el
+
+# vi: syntax=yaml nowrap
