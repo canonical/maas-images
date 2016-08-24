@@ -154,6 +154,7 @@ def create_version(arch, release, version_name, img_url, out_d,
         ikeys = boot_keys + ['root-image.gz', 'manifest']
         if img_url.endswith('.squashfs'):
             ikeys += ['squashfs']
+            newpaths.add(PATH_FORMATS['squashfs'] % subs)
 
         dtb = kdata.get('dtb')
         if dtb:
