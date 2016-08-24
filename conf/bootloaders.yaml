@@ -12,8 +12,8 @@ bootloaders:
    release: xenial
    os: pxelinux
    files:
-    - /usr/lib/PXELINUX/pxelinux.0
-    - /usr/lib/syslinux/modules/bios/*.c32
+    - usr/lib/PXELINUX/pxelinux.0
+    - usr/lib/syslinux/modules/bios/*.c32
  - firmware-platform: uefi
    packages:
     - shim-signed
@@ -24,8 +24,8 @@ bootloaders:
    release: xenial
    os: grub-efi-signed
    files:
-    - /usr/lib/shim/shim.efi.signed, bootx64.efi
-    - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
+    - usr/lib/shim/shim.efi.signed, bootx64.efi
+    - usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
  - firmware-platform: uefi
    packages:
     - grub-efi-arm64-bin
@@ -35,7 +35,7 @@ bootloaders:
    release: xenial
    os: grub-efi
    files:
-    - /usr/lib/grub/arm64-efi/
+    - usr/lib/grub/arm64-efi/
    grub_format: arm64-efi
    grub_output: grubaa64.efi
    grub_config: |
@@ -56,7 +56,7 @@ bootloaders:
    release: xenial
    os: grub-ieee1275
    files:
-    - /usr/lib/grub/powerpc-ieee1275/
+    - usr/lib/grub/powerpc-ieee1275/
    grub_format: powerpc-ieee1275
    grub_output: bootppc64.bin
    grub_config: |

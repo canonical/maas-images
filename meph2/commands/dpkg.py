@@ -137,11 +137,16 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
             # Last line is just a newline
             if len(file_info) == 0:
                 continue
-            # Remove leading '.' if it exists
-            if file_info[-1].startswith('.'):
-                package['files'].append(file_info[-1][1:])
+            if file_info[-1].startswith('./'):
+                # Remove leading './' if it exists
+                f = file_info[-1][2:]
+            elif file_info[-1].startswith('/'):
+                # Removing leading '/' if it exists
+                f = file_info[-1][1:]
             else:
-                package['files'].append(file_info[-1])
+                f = file_info[-1]
+            if f != '':
+                package['files'].append(f)
     return package
 
 
@@ -252,7 +257,7 @@ def extract_files_from_packages(
                     stream_path = "%s/%s" % (path, basename)
                     shutil.copyfile(f, dest_file)
                     pkg_file = f[len(tmp):]
-                    if pkg_file.startswith('//'):
+                    while pkg_file.startswith('/'):
                         pkg_file = pkg_file[1:]
                     items[basename] = make_item(
                         'bootloader', pkg_file, dest_file, stream_path,
