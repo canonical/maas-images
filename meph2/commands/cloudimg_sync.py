@@ -13,7 +13,6 @@ from meph2.stream import CONTENT_ID, create_version
 import argparse
 import glob
 import copy
-import hashlib
 import os
 import sys
 import yaml
@@ -126,19 +125,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.content_t = my_prods
         return v2_to_cloudimg_products(my_prods, rebuilds=self.rebuilds)
 
-    def _verify_sha256(self, filename, expected_sha256):
-        sha256 = hashlib.sha256()
-        with open(filename, 'rb') as f:
-            while True:
-                data = f.read(2**18)
-                if not data:
-                    break
-                sha256.update(data)
-        if sha256.hexdigest() != expected_sha256:
-            raise ValueError(
-                'Expected SHA256 %s got %s on %s' %
-                (expected_sha256, sha256.hexdigest(), filename))
-
     def insert_item(self, data, src, target, pedigree, contentsource):
         # create the ephemeral root
 
@@ -162,13 +148,12 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             for i in items:
                 filename = os.path.join(self.out_d, items[i]['path'])
                 if i == 'squashfs':
-                    if self.squashfs:
-                        # Verify upstream SHA256 of SquashFS images and add the
-                        # SHA256 and size to our stream.
-                        self._verify_sha256(filename, flat['sha256'])
-                        items[i]['sha256'] = flat['sha256']
-                        items[i]['size'] = int(flat['size'])
-                    else:
+                    # Verify upstream SHA256 of SquashFS image.
+                    if items[i]['sha256'] != flat['sha256']:
+                        raise ValueError(
+                            'Expected SHA256 %s got %s on %s' %
+                            (flat['sha256'], items[i]['sha256'], filename))
+                    if not self.squashfs:
                         # If we're not publishing the SquashFS image but one
                         # was used to generate root-image.gz delete it.
                         if os.path.exists(filename):
