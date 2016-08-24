@@ -6,6 +6,7 @@ import io
 import os
 import re
 import sys
+import tarfile
 import tempfile
 import glob
 
@@ -128,13 +129,98 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
         pkg_path = os.path.join(dest, os.path.basename(package['Filename']))
         with open(pkg_path, 'wb') as stream:
             stream.write(pkg_data)
+        package['files'] = []
+        output = subprocess.check_output(['dpkg', '-c', pkg_path])
+        for line in output.decode('utf-8').split('\n'):
+            # The file is the last column in the list.
+            file_info = line.split()
+            # Last line is just a newline
+            if len(file_info) == 0:
+                continue
+            if file_info[-1].startswith('./'):
+                # Remove leading './' if it exists
+                f = file_info[-1][2:]
+            elif file_info[-1].startswith('/'):
+                # Removing leading '/' if it exists
+                f = file_info[-1][1:]
+            else:
+                f = file_info[-1]
+            if f != '':
+                package['files'].append(f)
     return package
 
 
+def get_file_info(f):
+    size = 0
+    sha256 = hashlib.sha256()
+    with open(f, 'rb') as f:
+        for chunk in iter(lambda: f.read(2**15), b''):
+            sha256.update(chunk)
+            size += len(chunk)
+    return sha256.hexdigest(), size
+
+
+def make_item(ftype, src_file, dest_file, stream_path, src_packages):
+    sha256, size = get_file_info(dest_file)
+    for src_package in src_packages:
+        if src_file in src_package['files']:
+            return {
+                'ftype': ftype,
+                'sha256': sha256,
+                'path': stream_path,
+                'size': size,
+                'src_package': src_package['src_package'],
+                'src_version': src_package['src_version'],
+                'src_release': src_package['src_release'],
+            }
+    raise ValueError("%s not found in src_packages" % src_file)
+
+
+def archive_files(items, target):
+    """Archive multiple files from a src_package into archive.tar.xz."""
+    archive_items = {}
+    new_items = {}
+    # Create a mapping of source packages and the files that came from them.
+    for item in items.values():
+        key = "%(src_package)s-%(src_release)-%(src_version)" % item
+        if archive_items.get(key) is None:
+            archive_items[key] = {
+                'src_package': item['src_package'],
+                'src_release': item['src_release'],
+                'src_version': item['src_version'],
+                'files': [item['path']],
+            }
+        else:
+            archive_items[key]['files'].append(item['path'])
+    for item in archive_items.values():
+        stream_path = os.path.join(
+            os.path.dirname(item['files'][0]),
+            '%s.tar.xz' % item['src_package'])
+        full_path = os.path.join(target, stream_path)
+        tar = tarfile.open(full_path, 'w:xz')
+        for f in item['files']:
+            item_full_path = os.path.join(target, f)
+            tar.add(item_full_path, os.path.basename(item_full_path))
+            os.remove(item_full_path)
+        tar.close()
+        sha256, size = get_file_info(full_path)
+        new_items[item['src_package']] = {
+            'ftype': 'archive.tar.xz',
+            'sha256': sha256,
+            'path': stream_path,
+            'size': size,
+            'src_package': item['src_package'],
+            'src_release': item['src_release'],
+            'src_version': item['src_version'],
+        }
+    return new_items
+
+
 def extract_files_from_packages(
-        archive, packages, architecture, files, release, dest,
-        grub_format=None, grub_config=None):
+        archive, packages, architecture, files, release, target, path,
+        grub_format=None, grub_config=None, grub_output=None):
     tmp = tempfile.mkdtemp(prefix='maas-images-')
+    src_packages = []
     for package in packages:
         package = get_package(archive, package, architecture, release, tmp)
         pkg_path = os.path.join(tmp, os.path.basename(package['Filename']))
@@ -142,7 +228,23 @@ def extract_files_from_packages(
             sys.stderr.write('%s not found in archives!' % package)
             sys.exit(1)
         subprocess.check_output(['dpkg', '-x', pkg_path, tmp])
-
+        new_source_package = True
+        for src_package in src_packages:
+            if src_package['src_package'] == package['Source']:
+                new_source_package = False
+                src_package['files'] += package['files']
+        if new_source_package:
+            # Some source packages include the package version in the source
+            # name. Only take the name, not the version.
+            src_package = package['Source'].split(' ')[0]
+            src_packages.append({
+                'src_package': src_package,
+                'src_version': package['Version'],
+                'src_release': release,
+                'files': package['files'],
+            })
+    dest = os.path.join(target, path)
+    items = {}
     if grub_format is None:
         for i in files:
             if '*' in i or '?' in i:
@@ -150,20 +252,38 @@ def extract_files_from_packages(
                 src = "%s/%s" % (tmp, i)
                 unglobbed_files = glob.glob(src)
                 for f in unglobbed_files:
-                    dest_file = "%s/%s" % (dest, os.path.basename(f))
+                    basename = os.path.basename(f)
+                    dest_file = "%s/%s" % (dest, basename)
+                    stream_path = "%s/%s" % (path, basename)
                     shutil.copyfile(f, dest_file)
+                    pkg_file = f[len(tmp):]
+                    while pkg_file.startswith('/'):
+                        pkg_file = pkg_file[1:]
+                    items[basename] = make_item(
+                        'bootloader', pkg_file, dest_file, stream_path,
+                        src_packages)
             elif ',' in i:
                 # Copy the a file from the package using a new name
                 src_file, dest_file = i.split(',')
-                src_file = "%s/%s" % (tmp, src_file.strip())
-                dest_file = "%s/%s" % (dest, dest_file.strip())
-                shutil.copyfile(src_file, dest_file)
+                dest_file = dest_file.strip()
+                full_src_file_path = "%s/%s" % (tmp, src_file.strip())
+                stream_path = "%s/%s" % (path, dest_file)
+                full_dest_file_path = "%s/%s" % (dest, dest_file)
+                shutil.copyfile(full_src_file_path, full_dest_file_path)
+                items[dest_file] = make_item(
+                    'bootloader', src_file, full_dest_file_path, stream_path,
+                    src_packages)
             else:
                 # Straight copy
+                basename = os.path.basename(i)
                 src_file = "%s/%s" % (tmp,  i)
-                dest_file = "%s/%s" % (dest, os.path.basename(src_file))
+                dest_file = "%s/%s" % (dest, basename)
+                stream_path = "%s/%s" % (path, basename)
                 shutil.copyfile(src_file, dest_file)
+                items[basename] = make_item(
+                    'bootloader', i, dest_file, stream_path, src_packages)
     else:
+        dest = os.path.join(dest, grub_output)
         # You can only tell grub to use modules from one directory
         modules_path = "%s/%s" % (tmp, files[0])
         modules = []
@@ -189,4 +309,9 @@ def extract_files_from_packages(
                  '-O', grub_format,
                  '-d', modules_path,
                  ] + modules)
+        basename = os.path.basename(dest)
+        stream_path = "%s/%s" % (path, basename)
+        items[basename] = make_item(
+            'bootloader', files[0], dest, stream_path, src_packages)
     shutil.rmtree(tmp)
+    return archive_files(items, target)

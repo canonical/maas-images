@@ -1,35 +1,41 @@
-product_id: "com.ubuntu.maas.daily:1:bootloaders-bases:{bootloader}"
-content_id: "com.ubuntu.maas:daily:1:bootloaders-bases-download"
+product_id: "com.ubuntu.maas.daily:1:{os}:{firmware_platform}:{arch}"
+content_id: "com.ubuntu.maas:daily:1:bootloader-download"
 
 bootloaders:
- - bootloader: pxe
+ - firmware-platform: pxe
    packages:
     - pxelinux
     - syslinux-common
-   arch: amd64
+   arch: i386
+   arches: i386,amd64
    archive: http://archive.ubuntu.com/ubuntu
    release: xenial
+   os: pxelinux
    files:
-    - /usr/lib/PXELINUX/pxelinux.0
-    - /usr/lib/syslinux/modules/bios/*.c32
- - bootloader: uefi
+    - usr/lib/PXELINUX/pxelinux.0
+    - usr/lib/syslinux/modules/bios/*.c32
+ - firmware-platform: uefi
    packages:
     - shim-signed
     - grub-efi-amd64-signed
    arch: amd64
+   arches: amd64
    archive: http://archive.ubuntu.com/ubuntu
    release: xenial
+   os: grub-efi-signed
    files:
-    - /usr/lib/shim/shim.efi.signed, bootx64.efi
-    - /usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
- - bootloader: uefi-arm64
+    - usr/lib/shim/shim.efi.signed, bootx64.efi
+    - usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
+ - firmware-platform: uefi
    packages:
     - grub-efi-arm64-bin
    arch: arm64
+   arches: arm64
    archive: http://ports.ubuntu.com
    release: xenial
+   os: grub-efi
    files:
-    - /usr/lib/grub/arm64-efi/
+    - usr/lib/grub/arm64-efi/
    grub_format: arm64-efi
    grub_output: grubaa64.efi
    grub_config: |
@@ -41,14 +47,16 @@ bootloaders:
       # Failed to load based on MAC address.
       # Load arm64 by default, UEFI only supported by 64-bit
       configfile (pxe)/grub/grub.cfg-default-arm64
- - bootloader: powerkvm
+ - firmware-platform: open-firmware
    packages:
     - grub-ieee1275-bin
    arch: ppc64el
+   arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
    release: xenial
+   os: grub-ieee1275
    files:
-    - /usr/lib/grub/powerpc-ieee1275/
+    - usr/lib/grub/powerpc-ieee1275/
    grub_format: powerpc-ieee1275
    grub_output: bootppc64.bin
    grub_config: |
