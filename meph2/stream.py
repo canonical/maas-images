@@ -146,8 +146,16 @@ def create_version(arch, release, version_name, img_url, out_d,
             if i not in kdata:
                 kdata[i] = kdata_defaults[i]
 
+        # The subarch cannot contain the kernel flavor. We add it to the
+        # product name so different kernels can be shown in the stream as
+        # part of the product name.
+        if flavor != 'generic':
+            product_psubarch = "%s-%s" % (psubarch, flavor)
+        else:
+            product_psubarch = psubarch
+
         subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                     'psubarch': psubarch,
+                     'psubarch': product_psubarch,
                      'suffix': kdata["suffix"]})
 
         boot_keys = ['boot-kernel', 'boot-initrd']
