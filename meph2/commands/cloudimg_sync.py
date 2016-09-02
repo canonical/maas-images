@@ -11,7 +11,6 @@ from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
 from meph2.stream import CONTENT_ID, create_version
 
 import argparse
-import glob
 import copy
 import os
 import sys
@@ -146,39 +145,6 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         for prodname, items in cvret.items():
             for i in items:
-                filename = os.path.join(self.out_d, items[i]['path'])
-                if i == 'squashfs':
-                    # Verify upstream SHA256 of SquashFS image.
-                    if items[i]['sha256'] != flat['sha256']:
-                        raise ValueError(
-                            'Expected SHA256 %s got %s on %s' %
-                            (flat['sha256'], items[i]['sha256'], filename))
-                    if not self.squashfs:
-                        # If we're not publishing the SquashFS image but one
-                        # was used to generate root-image.gz delete it.
-                        if os.path.exists(filename):
-                            os.remove(filename)
-                        continue
-                elif i == 'root-image.gz' and self.squashfs:
-                    # If we're publishing the SquashFS image we don't need the
-                    # root-image after its been used to extract the kernels.
-                    # Older Ubuntu releases (<16.04) don't have SquashFS images
-                    # published, so only remove if a SquashFS file exists.
-                    squashfs_image = os.path.join(
-                        os.path.dirname(filename), '*squashfs')
-                    if len(glob.glob(squashfs_image)) > 0:
-                        if os.path.exists(filename):
-                            os.remove(filename)
-                        continue
-                elif i == 'manifest' and self.squashfs:
-                    # If we're publishing the SquashFS image we don't need the
-                    # root-image manifest either.
-                    squashfs_image = os.path.join(
-                        os.path.dirname(filename), '*squashfs')
-                    if len(glob.glob(squashfs_image)) > 0:
-                        if os.path.exists(filename):
-                            os.remove(filename)
-                        continue
                 sutil.products_set(
                     self.content_t, items[i], (prodname, vername, i))
 

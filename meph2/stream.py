@@ -19,8 +19,10 @@ BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
 DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
     'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
-    'manifest': PATH_COMMON + "%(version_name)s/root-image.manifest",
+    'root-image.manifest': (
+        PATH_COMMON + "%(version_name)s/root-image.manifest"),
     'squashfs': PATH_COMMON + "%(version_name)s/squashfs",
+    'squashfs.manifest': PATH_COMMON + "%(version_name)s/squashfs.manifest",
     'boot-dtb': BOOT_COMMON + "/boot-dtb%(suffix)s",
     'boot-kernel': BOOT_COMMON + "/boot-kernel%(suffix)s",
     'boot-initrd': BOOT_COMMON + "/boot-initrd%(suffix)s",
@@ -120,15 +122,23 @@ def create_version(arch, release, version_name, img_url, out_d,
             'version_name': version_name, 'version': version}
 
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
-    manifest_path = PATH_FORMATS['manifest'] % subs
+
+    krd_packs = []
+    squashfs = cfgdata.get('squashfs', False)
+    boot_keys = ['boot-kernel', 'boot-initrd']
+    if squashfs and img_url.endswith('.squashfs'):
+        base_ikeys = boot_keys + ['squashfs', 'squashfs.manifest']
+        manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
+        newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
+    else:
+        base_ikeys = boot_keys + ['root-image.gz', 'root-image.manifest']
+        manifest_path = PATH_FORMATS['root-image.manifest'] % subs
+        newpaths = set((rootimg_path, manifest_path))
 
     gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
                img_url, os.path.join(out_d, rootimg_path)])
-
-    krd_packs = []
-    newpaths = set((rootimg_path, manifest_path,))
 
     kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
 
@@ -158,11 +168,7 @@ def create_version(arch, release, version_name, img_url, out_d,
                      'psubarch': product_psubarch,
                      'suffix': kdata["suffix"]})
 
-        boot_keys = ['boot-kernel', 'boot-initrd']
-        ikeys = boot_keys + ['root-image.gz', 'manifest']
-        if img_url.endswith('.squashfs'):
-            ikeys += ['squashfs']
-            newpaths.add(PATH_FORMATS['squashfs'] % subs)
+        ikeys = base_ikeys
 
         dtb = kdata.get('dtb')
         if dtb:
@@ -204,9 +210,15 @@ def create_version(arch, release, version_name, img_url, out_d,
 
         items = {}
         for i in ikeys:
-            items[i] = {'ftype': i, 'path': PATH_FORMATS[i] % subs,
-                        'size': None, 'sha256': None}
-            items[i].update(common)
+            # Allow root-image.manifest and squashfs.image to have different
+            # filenames but keep the same ftype.
+            if 'manifest' in i:
+                ftype = 'manifest'
+            else:
+                ftype = i
+            items[ftype] = {'ftype': ftype, 'path': PATH_FORMATS[i] % subs,
+                            'size': None, 'sha256': None}
+            items[ftype].update(common)
 
         for key in di_keys:
             items[key]['sha256'] = curdi[key]['sha256']
@@ -248,12 +260,23 @@ def create_version(arch, release, version_name, img_url, out_d,
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
 
-    # If we're downloading a SquashFS file rename it to its filetype
     if img_url.endswith('squashfs'):
         base_dir = os.path.join(out_d, release, arch, version_name)
         src_squash = os.path.join(base_dir, os.path.basename(img_url))
-        dst_squash = os.path.join(base_dir, 'squashfs')
-        os.rename(src_squash, dst_squash)
+        if squashfs:
+            # If we're publishing a SquashFS file rename it to its filetype.
+            dst_squash = os.path.join(base_dir, 'squashfs')
+            os.rename(src_squash, dst_squash)
+            # The root-img is used to generate the kernels and initrds. If
+            # we're publishing the SquashFS image then we don't want to publish
+            # the root-img, we can safely clean it up.
+            src_rootimg_path = os.path.join(
+                base_dir, os.path.basename(rootimg_path))
+            os.remove(src_rootimg_path)
+        else:
+            # If we're not publishing the SquashFS image but used it to
+            # generate the root-img clean it up.
+            os.remove(src_squash)
 
     # get checksum and size of new files created
     file_info = {}
