@@ -105,8 +105,7 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     squashfs = cfgdata.get('squashfs', False)
     if squashfs:
-        # V3 Streams shouldn't include the di kernels
-        include_di = False
+        raise Exception("d-i kernels cannot be included in a V3 stream.")
 
     if include_di:
         di_pockets = POCKETS
