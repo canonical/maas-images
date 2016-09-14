@@ -11,9 +11,6 @@ from simplestreams.log import LOG
 
 ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
 
-CONTENT_ID = "com.ubuntu.maas:daily:v2:download"
-PROD_PRE = "com.ubuntu.maas.daily:v2:boot"
-
 PATH_COMMON = "%(release)s/%(arch)s/"
 BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
 DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
@@ -30,7 +27,6 @@ PATH_FORMATS = {
     'di-initrd': DI_COMMON + "/di-initrd%(suffix)s",
     'di-kernel': DI_COMMON + "/di-kernel%(suffix)s",
 }
-PRODUCT_FORMAT = PROD_PRE + ":%(version)s:%(arch)s:%(psubarch)s"
 IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz',
                  'root-tar', 'squashfs-image']
 
@@ -118,8 +114,8 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     newitems = {}
 
-    subs = {'release': release, 'arch': arch,
-            'version_name': version_name, 'version': version}
+    subs = {'release': release, 'arch': arch, 'version_name': version_name,
+            'version': version, 'product_id_pre': cfgdata['product_id_pre']}
 
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
@@ -192,7 +188,8 @@ def create_version(arch, release, version_name, img_url, out_d,
             curdi = "DI_NOT_ENABLED"
             di_keys = []
 
-        prodname = PRODUCT_FORMAT % subs
+        prodname = (
+            "%(product_id_pre)s:%(version)s:%(arch)s:%(psubarch)s" % subs)
         if prodname in newitems:
             raise ValueError("duplicate prodname %s from %s" %
                              (prodname, subs))
@@ -260,23 +257,24 @@ def create_version(arch, release, version_name, img_url, out_d,
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
 
-    if img_url.endswith('squashfs'):
-        base_dir = os.path.join(out_d, release, arch, version_name)
-        src_squash = os.path.join(base_dir, os.path.basename(img_url))
-        if squashfs:
-            # If we're publishing a SquashFS file rename it to its filetype.
-            dst_squash = os.path.join(base_dir, 'squashfs')
-            os.rename(src_squash, dst_squash)
-            # The root-img is used to generate the kernels and initrds. If
-            # we're publishing the SquashFS image then we don't want to publish
-            # the root-img, we can safely clean it up.
-            src_rootimg_path = os.path.join(
-                base_dir, os.path.basename(rootimg_path))
-            os.remove(src_rootimg_path)
-        else:
-            # If we're not publishing the SquashFS image but used it to
-            # generate the root-img clean it up.
-            os.remove(src_squash)
+        if img_url.endswith('squashfs'):
+            base_dir = os.path.join(out_d, release, arch, version_name)
+            src_squash = os.path.join(base_dir, os.path.basename(img_url))
+            if squashfs:
+                # If we're publishing a SquashFS file rename it to its
+                # filetype.
+                dst_squash = os.path.join(base_dir, 'squashfs')
+                os.rename(src_squash, dst_squash)
+                # The root-img is used to generate the kernels and initrds. If
+                # we're publishing the SquashFS image then we don't want to
+                # publish the root-img, we can safely clean it up.
+                src_rootimg_path = os.path.join(
+                    base_dir, os.path.basename(rootimg_path))
+                os.remove(src_rootimg_path)
+            else:
+                # If we're not publishing the SquashFS image but used it to
+                # generate the root-img clean it up.
+                os.remove(src_squash)
 
     # get checksum and size of new files created
     file_info = {}

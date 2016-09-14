@@ -164,4 +164,7 @@ releases:
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
 
+content_id: com.ubuntu.maas:daily:v2:download
+product_id_pre: com.ubuntu.maas.daily:v2:boot
+
 # vi: syntax=yaml nowrap
