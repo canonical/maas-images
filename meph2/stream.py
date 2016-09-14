@@ -103,6 +103,11 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     mci2e = os.environ.get('MAAS_CLOUDIMG2EPH2', "maas-cloudimg2eph2")
 
+    squashfs = cfgdata.get('squashfs', False)
+    if squashfs:
+        # V3 Streams shouldn't include the di kernels
+        include_di = False
+
     if include_di:
         di_pockets = POCKETS
         if enable_proposed:
@@ -120,7 +125,6 @@ def create_version(arch, release, version_name, img_url, out_d,
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
 
     krd_packs = []
-    squashfs = cfgdata.get('squashfs', False)
     boot_keys = ['boot-kernel', 'boot-initrd']
     if squashfs and img_url.endswith('.squashfs'):
         base_ikeys = boot_keys + ['squashfs', 'squashfs.manifest']

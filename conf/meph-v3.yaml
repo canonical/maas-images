@@ -133,7 +133,7 @@ squashfs: True
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
 
-content_id: io.maas.images:daily:v3:download
-product_id_pre: io.maas.images.daily:v3:boot
+content_id: com.ubuntu.maas:daily:v3:download
+product_id_pre: com.ubuntu.maas.daily:v3:boot
 
 # vi: syntax=yaml nowrap
