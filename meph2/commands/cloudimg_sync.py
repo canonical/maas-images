@@ -8,7 +8,7 @@ from simplestreams import mirrors
 from simplestreams import filters
 
 from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
-from meph2.stream import CONTENT_ID, create_version
+from meph2.stream import create_version
 
 import argparse
 import copy
@@ -18,7 +18,7 @@ import yaml
 
 CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
                       "streams/v1/com.ubuntu.cloud:daily:download.json")
-MAAS_EPHEM2_DAILY = ("http://maas.ubuntu.com/images/ephemeral-v2/daily/"
+MAAS_EPHEM2_DAILY = ("http://images.maas.io/ephemeral-v2/daily/"
                      "streams/v1/com.ubuntu.maas:daily:v2:download.json")
 
 FORCE_URL = "force"  # a fake target url that will have nothing in it
@@ -110,14 +110,14 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
                              content_id)
 
         if self.target == FORCE_URL:
-            my_prods = util.empty_iid_products(CONTENT_ID)
+            my_prods = util.empty_iid_products(self.cfgdata['content_id'])
         else:
             with contentsource.UrlContentSource(self.target) as tcs:
                 my_prods = sutil.load_content(tcs.read())
 
         # need the list syntax to not update the dict in place
         for p in [p for p in my_prods['products']]:
-            if "daily:v2" not in p:
+            if ':'.join(self.cfgdata['content_id'].split(':')[1:3]) not in p:
                 LOG.warn("skipping old product %s" % p)
                 del(my_prods['products'][p])
 
@@ -159,7 +159,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         tree['updated'] = tsnow
         tree['datatype'] = 'image-downloads'
 
-        dpath = "streams/v1/" + CONTENT_ID + ".json"
+        dpath = "streams/v1/" + self.cfgdata['content_id'] + ".json"
         fdpath = os.path.join(self.out_d, dpath)
         sdir = os.path.dirname(fdpath)
         LOG.info("writing data: %s", dpath)

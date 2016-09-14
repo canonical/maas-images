@@ -5,7 +5,7 @@ from simplestreams import util as sutil
 
 from meph2 import DEF_MEPH2_CONFIG, util
 from meph2.stream import (
-    CONTENT_ID, create_version, IMAGE_FORMATS)
+    create_version, IMAGE_FORMATS)
 
 import argparse
 import copy
@@ -101,7 +101,7 @@ def main():
         verbosity=vlevel, img_format=args.image_format)
 
     dump_stream_data(args.output_d, copy.deepcopy(cvret),
-                     CONTENT_ID, args.version_name)
+                     cfgdata['content_id'], args.version_name)
     if args.flat_json:
         dump_json_data(args.flat_json, cvret, args.version_name)
     sys.exit(0)
