@@ -3,6 +3,7 @@ from . netinst import (POCKETS, POCKETS_PROPOSED, get_di_kernelinfo,
                        release_common_tags)
 from .ubuntu_info import REL2VER
 
+import copy
 import os
 import subprocess
 import yaml
@@ -121,13 +122,13 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     krd_packs = []
     squashfs = cfgdata.get('squashfs', False)
-    boot_keys = ['boot-kernel', 'boot-initrd']
+    base_boot_keys = ['boot-kernel', 'boot-initrd']
     if squashfs and img_url.endswith('.squashfs'):
-        base_ikeys = boot_keys + ['squashfs', 'squashfs.manifest']
+        base_ikeys = base_boot_keys + ['squashfs', 'squashfs.manifest']
         manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
         newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
     else:
-        base_ikeys = boot_keys + ['root-image.gz', 'root-image.manifest']
+        base_ikeys = base_boot_keys + ['root-image.gz', 'root-image.manifest']
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
         newpaths = set((rootimg_path, manifest_path))
 
@@ -164,7 +165,8 @@ def create_version(arch, release, version_name, img_url, out_d,
                      'psubarch': product_psubarch,
                      'suffix': kdata["suffix"]})
 
-        ikeys = base_ikeys
+        ikeys = copy.deepcopy(base_ikeys)
+        boot_keys = copy.deepcopy(base_boot_keys)
 
         dtb = kdata.get('dtb')
         if dtb:
