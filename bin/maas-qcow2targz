@@ -99,7 +99,8 @@ if [ "$1" == "maasify" ]; then
     fi
 
     if [ -n "$packages" ]; then
-        # Make sure the mounted image has DNS
+        # We need working DNS to pull packages from the repo
+        mv "${root_d}/etc/resolv.conf" "${root_d}/etc/resolv.conf.orig"
         cp /etc/resolv.conf "${root_d}/etc/resolv.conf"
         for package in $(echo $packages | sed 's/,/ /g'); do
             LANG=C chroot "$root_d" yum -y install $package || {
@@ -112,7 +113,7 @@ if [ "$1" == "maasify" ]; then
                 error "failed to clear yum cache"
                 exit 1
             }
-        rm -f "${root_d}/etc/resolv.conf"
+        mv "${root_d}/etc/resolv.conf.orig" "${root_d}/etc/resolv.conf"
     fi
 
     error "Taring up image contents... into $out"
