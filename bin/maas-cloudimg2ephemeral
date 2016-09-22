@@ -36,6 +36,10 @@ eh9TNspyDMuHVVZ5GiAk+GXgF1m7ps5lCnOCZK/pXUEEUOS8AWnt3sM=
 IMAGES_PPA_FILE="/etc/apt/sources.list.d/maas-ephemeral-images.list"
 IMAGES_PPA_URL="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/ubuntu"
 
+ARCHIVE_MIRROR="http://archive.ubuntu.com/ubuntu/"
+ARCHIVE_MIRROR_PORTS="http://ports.ubuntu.com/ubuntu-ports/"
+PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
+
 VERBOSITY=0
 TOP_D="${0%/*}"
 
@@ -191,6 +195,7 @@ apply_updates_chrooted() {
     local required="" known=""
     local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
     local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
+    local proposed=${proposed:-false}
     required="kpkg pubd"
     known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
 
@@ -226,6 +231,24 @@ apply_updates_chrooted() {
         printf "%s\n" "$IMAGES_PPA_APT_KEY" | apt-key add - ||
             { error "apt-key add failed!"; return 1; }
         debug 1 "addition of PPA turns dist-upgrade on"
+        dist_upgrade=1
+    else
+        log_change false "$change"
+        debug 1 "not adding images ppa to release=$release"
+    fi
+
+    change="enable proposed"
+    if $proposed; then
+        local mirror=""
+        case "$arch" in
+            i?86|x86_64) mirror="$ARCHIVE_MIRROR";;
+            *) mirror="$ARCHIVE_MIRROR_PORTS";;
+        esac
+        log_change true "$change [$mirror]"
+        debug 1 "enabling proposed for $release [$mirror]"
+        echo "deb $mirror ${release}-proposed main universe multiverse" > "$PROPOSED_ARCHIVE_FILE=" ||
+            { error "failed writing to $PROPOSED_ARCHIVE_FILE"; return 1; }
+        debug 1 "addition of proposed turns dist-upgrade on"
         dist_upgrade=1
     else
         log_change false "$change"
@@ -416,12 +439,12 @@ apply_updates() {
     # update directory given, and pull out kernel and initramfs
     # to given locations
     short_opts="a:hv"
-    long_opts="arch:,fix-perms-ref:,help,verbose"
+    long_opts="arch:,fix-perms-ref:,help,proposed,verbose"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; return 1; }
-    local debian_arch="" perms_ref="" qemu_arch=""
+    local debian_arch="" perms_ref="" qemu_arch="" proposed=false
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -429,6 +452,7 @@ apply_updates() {
             -a|--arch) debian_arch="$next"; shift;;
                --fix-perms-ref) perms_ref="$next"; shift;;
             -h|--help) Usage ; exit 0;;
+               --proposed) proposed=true;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
             --) shift; break;;
         esac
@@ -508,6 +532,7 @@ apply_updates() {
     local pubd="/tmp/results" fpubd="$dir/tmp/results"
 
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
+        proposed=$proposed \
         pubd="$pubd" \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
@@ -571,7 +596,7 @@ elif [ "$1" = "apply_updates_chrooted" ]; then
     "$@"
 else
     short_opts="a:hv"
-    long_opts="arch:,help,verbose,zero"
+    long_opts="arch:,help,proposed,verbose,zero"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
@@ -579,12 +604,14 @@ else
     arch=""
     vargs=""
     zero=false
+    proposed=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
         case "$cur" in
             -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
+               --proposed) proposed="--proposed";;
             -v|--verbose) vargs="${vargs}v";;
                --zero) zero=true;;
             --) shift; break;;
@@ -603,7 +630,9 @@ else
 
     sudo \
         mount-image-callback --sys --proc --system-resolvconf "$img" -- \
-        "$0" apply_updates ${vargs:+-$vargs} "--fix-perms-ref=$img" \
+        "$0" apply_updates ${vargs:+-$vargs} \
+            ${proposed} \
+            "--fix-perms-ref=$img" \
             ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||
         fail "failed to apply updates to $img"

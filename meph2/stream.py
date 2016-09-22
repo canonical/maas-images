@@ -132,6 +132,9 @@ def create_version(arch, release, version_name, img_url, out_d,
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
         newpaths = set((rootimg_path, manifest_path))
 
+    if enable_proposed:
+        mci2e_flags += "--proposed"
+
     gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
