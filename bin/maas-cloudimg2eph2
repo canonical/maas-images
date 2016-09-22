@@ -423,7 +423,7 @@ handle_kpack() {
         eval set -- "${getopt_out}" ||
         { bad_Usage; return; }
 
-    local dtbs pt img outd ckpkg tkout tiout proposed_flag=""
+    local dtbs pt img outd ckpkg tkout tiout
     dtbs=( )
     pt=( )
     while [ $# -ne 0 ]; do
