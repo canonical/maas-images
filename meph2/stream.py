@@ -133,7 +133,7 @@ def create_version(arch, release, version_name, img_url, out_d,
         newpaths = set((rootimg_path, manifest_path))
 
     if enable_proposed:
-        mci2e_flags += "--proposed"
+        mci2e_flags.append("--proposed")
 
     gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,
