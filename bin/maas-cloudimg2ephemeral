@@ -241,11 +241,11 @@ apply_updates_chrooted() {
     if $proposed; then
         local mirror=""
         case "$arch" in
-            i?86|x86_64) mirror="$ARCHIVE_MIRROR";;
+            i?86|amd64) mirror="$ARCHIVE_MIRROR";;
             *) mirror="$ARCHIVE_MIRROR_PORTS";;
         esac
-        log_change true "$change [$mirror]"
-        debug 1 "enabling proposed for $release [$mirror]"
+        log_change true "$change [$arch $mirror]"
+        debug 1 "enabling proposed for $release [$arch $mirror]"
         echo "deb $mirror ${release}-proposed main universe multiverse" > "$PROPOSED_ARCHIVE_FILE" ||
             { error "failed writing to $PROPOSED_ARCHIVE_FILE"; return 1; }
         debug 1 "addition of proposed turns dist-upgrade on"
