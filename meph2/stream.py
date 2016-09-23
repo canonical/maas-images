@@ -6,6 +6,7 @@ from .ubuntu_info import REL2VER
 import copy
 import os
 import subprocess
+import sys
 import yaml
 
 from simplestreams.log import LOG
@@ -30,6 +31,27 @@ PATH_FORMATS = {
 }
 IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz',
                  'root-tar', 'squashfs-image']
+
+
+def read_kdata(info, ret=list):
+    # read a kernel data list and return it as a list or a dict.
+
+    # copy it for our modification.
+    info = list(info)
+
+    # 7th field is optional in kernel lines in config data
+    # so fill it with empty dictionary if not present.
+    if len(info) == 6:
+        info.append({})
+
+    names = ("krel", "arch", "subarch", "flavor", "kpkg",
+             "subarches", "kdata")
+    if ret == list:
+        return info
+    elif ret == dict:
+        return dict(zip(names, info))
+    else:
+        raise ValueError("Unexpected input '%s'" % ret)
 
 
 def create_version(arch, release, version_name, img_url, out_d,
@@ -75,6 +97,17 @@ def create_version(arch, release, version_name, img_url, out_d,
                                  release)
             rdata = r
 
+    arches = set([read_kdata(i, dict)['arch'] for i in rdata['kernels']])
+    if arch not in arches:
+        msg = (
+            "arch '%(arch)s' is not supported for release '%(release)s'.\n"
+            "Release has architectures: %(arches)s.\n"
+            "To support, add kernel info to config." %
+            {'arch': arch, 'release': release, 'arches': arches})
+        LOG.warn(msg)
+        sys.stderr.write(msg + "\n")
+        return {}
+        
     version = rdata['version']
     if isinstance(version, float):
         raise ValueError("release '%s' in config had version as a float (%s) "
@@ -140,11 +173,8 @@ def create_version(arch, release, version_name, img_url, out_d,
     kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
 
     for info in rdata['kernels']:
-        # 7th field is optional in kernel lines in config data
-        # so fill it with empty dictionary if not present.
-        if len(info) == 6:
-            info.append({})
-        (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
+        (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = (
+            read_kdata(info))
 
         if karch != arch:
             continue
