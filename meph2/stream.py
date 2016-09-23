@@ -80,7 +80,6 @@ def create_version(arch, release, version_name, img_url, out_d,
         raise ValueError("release '%s' in config had version as a float (%s) "
                          "It must be a string." % (release, version))
 
-    # TODO: enable_proposed does not affect image build, only d-i scraping
     enable_proposed = cfgdata.get('enable_proposed', False)
 
     # default kernel can be:
@@ -131,6 +130,9 @@ def create_version(arch, release, version_name, img_url, out_d,
         base_ikeys = base_boot_keys + ['root-image.gz', 'root-image.manifest']
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
         newpaths = set((rootimg_path, manifest_path))
+
+    if enable_proposed:
+        mci2e_flags.append("--proposed")
 
     gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,

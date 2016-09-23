@@ -416,7 +416,7 @@ allow_resize_failure() {
 
 handle_kpack() {
     local short_opts="v"
-    local long_opts="dtb:,kihelper:"
+    local long_opts="dtb:,kihelper:,proposed"
     local getopt_out=""
     getopt_out=$(getopt --name "handle_kpack" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -429,6 +429,7 @@ handle_kpack() {
     while [ $# -ne 0 ]; do
         cur="$1"; next="$2";
         case "$cur" in
+               --proposed) pt[${#pt[@]}]="--proposed";;
                --dtb) dtbs[${#dtbs[@]}]="$next"; shift;;
                --kihelper) pt[${#pt[@]}]="$cur=$next"; shift;;
             --) shift; break;;
@@ -487,7 +488,7 @@ inargs() {
 
 main() {
     local short_opts="a:fhk:p:v"
-    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,verbose"
+    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,proposed,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -497,7 +498,7 @@ main() {
     local cur="" next="" output="" gzip=true kpkg=""
     local kpacks="" src_in="" src="" arch="" vflags="" fmt="auto"
     local working_space="1024M" zero_img="true" fs_img_size="1400M"
-    local manifest_out=""
+    local manifest_out="" proposed_flag=""
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -510,6 +511,7 @@ main() {
                --manifest) manifest_out="$next";;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
+               --proposed) proposed_flag="--proposed";;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
             --) shift; break;;
         esac
@@ -595,7 +597,7 @@ main() {
     local manif="${TEMP_D}/manifest"
     local mc2ephem=""
     mc2ephem=( maas-cloudimg2ephemeral $vflags ${arch:+"--arch=$arch"}
-               "$imgfile" "$kpkg" "$pkout" "$piout" "$manif" )
+               $proposed_flag "$imgfile" "$kpkg" "$pkout" "$piout" "$manif" )
     ddebug 1 "starting ${mc2ephem[*]}"
     "${mc2ephem[@]}" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }
