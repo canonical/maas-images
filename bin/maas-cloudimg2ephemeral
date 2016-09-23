@@ -468,12 +468,15 @@ apply_updates() {
         arm64) qemu_arch="aarch64";;
         arm*) qemu_arch="arm";;
         ppc64el) qemu_arch="ppc64le";;
+        powerpc) qemu_arch="ppc";;
         *) qemu_arch="$debian_arch";;
     esac
 
     local cross=true
     case "$host_arch:$qemu_arch" in
         $host_arch:$host_arch) cross=false;;
+        ppc:powerpc) cross=false;;
+        ppc64:powerpc) cross=false;;
         i?86:i386) cross=false;;
         x86_64:i386) cross=false;;
         aarm64:arm64) cross=false;;
