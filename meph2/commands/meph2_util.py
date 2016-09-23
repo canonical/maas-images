@@ -461,7 +461,7 @@ def main_insert(args):
     tmirror = InsertBareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
-    gen_index_and_sign(args.target)
+    gen_index_and_sign(args.target, sign=not args.no_sign)
     return 0
 
 
