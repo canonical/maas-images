@@ -76,7 +76,7 @@ maasify() {
 _dl() {
     local url="$1" out="$2" ret=0
     local tmp="$out.$$"
-    wget "$url" --dot-style=mega -O "$tmp" && mv "$tmp" "$out" || {
+    wget "$url" --progress=dot:mega -O "$tmp" && mv "$tmp" "$out" || {
         ret=$?
         error "Failed downloading to $out: $url"
         rm -f "$tmp"
