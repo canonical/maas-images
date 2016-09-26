@@ -15,6 +15,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Simplestreams.  If not, see <http://www.gnu.org/licenses/>.
 
+from simplestreams import contentsource as scontentsource
 from simplestreams import util as sutil
 from simplestreams import mirrors
 
@@ -263,7 +264,7 @@ def load_products(path, product_streams):
     for product_stream in product_streams:
         product_stream_path = os.path.join(path, product_stream)
         if os.path.exists(product_stream_path):
-            with sutil.contentsource.UrlContentSource(
+            with scontentsource.UrlContentSource(
                     product_stream_path) as tcs:
                 product_listing = sutil.load_content(tcs.read())
                 products.update(product_listing['products'])
@@ -274,7 +275,7 @@ def load_product_streams(src):
     index_path = os.path.join(src, STREAMS_D, "index.json")
     if not os.path.exists(index_path):
         return []
-    with sutil.contentsource.UrlContentSource(index_path) as tcs:
+    with scontentsource.UrlContentSource(index_path) as tcs:
         index = sutil.load_content(tcs.read())
     return [product['path'] for product in index['index'].values()]
 
