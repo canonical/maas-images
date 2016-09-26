@@ -15,6 +15,7 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Simplestreams.  If not, see <http://www.gnu.org/licenses/>.
 
+from simplestreams import contentsource as scontentsource
 from simplestreams import util as sutil
 from simplestreams import mirrors
 
@@ -27,6 +28,11 @@ import os
 import re
 import sys
 import tempfile
+
+# for callers convenience
+timestamp = sutil.timestamp
+
+STREAMS_D = "streams/v1/"
 
 
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
@@ -251,6 +257,39 @@ def dump_data(data, end_cr=True):
         bytestr += b'\n'
 
     return bytestr
+
+
+def load_products(path, product_streams):
+    products = {}
+    for product_stream in product_streams:
+        product_stream_path = os.path.join(path, product_stream)
+        if os.path.exists(product_stream_path):
+            with scontentsource.UrlContentSource(
+                    product_stream_path) as tcs:
+                product_listing = sutil.load_content(tcs.read())
+                products.update(product_listing['products'])
+    return products
+
+
+def load_product_streams(src):
+    index_path = os.path.join(src, STREAMS_D, "index.json")
+    if not os.path.exists(index_path):
+        return []
+    with scontentsource.UrlContentSource(index_path) as tcs:
+        index = sutil.load_content(tcs.read())
+    return [product['path'] for product in index['index'].values()]
+
+
+def gen_index_and_sign(data_d, sign=True):
+    md_d = os.path.join(data_d, "streams", "v1")
+    if not os.path.exists(md_d):
+        os.makedirs(md_d)
+    index = create_index(md_d, files=None)
+    with open(os.path.join(md_d, "index.json"), "wb") as fp:
+        fp.write(dump_data(index))
+
+    if sign:
+        sign_streams_d(md_d)
 
 
 # vi: ts=4 expandtab syntax=python
