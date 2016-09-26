@@ -107,7 +107,7 @@ def create_version(arch, release, version_name, img_url, out_d,
         LOG.warn(msg)
         sys.stderr.write(msg + "\n")
         return {}
-        
+
     version = rdata['version']
     if isinstance(version, float):
         raise ValueError("release '%s' in config had version as a float (%s) "
