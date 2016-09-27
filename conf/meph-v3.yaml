@@ -61,7 +61,6 @@ releases:
    kernels:
     - [xenial,     amd64,   ga-16.04,    generic,     linux-generic,                        *sa_hwe_x]
     - [xenial,     amd64,   ga-16.04,    lowlatency,  linux-image-lowlatency-lts-xenial,    *sa_hwe_x]
-    - [xenial,     amd64,   ga-16.04,    generic,     linux-generic-hwe-16.04,              *sa_hwe_x]
     - [xenial,     arm64,   ga-16.04,    generic,     linux-generic,                        *sa_hwe_x]
     - [xenial,     arm64,   *mustang,    generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [xenial,     arm64,   *xguboot,    generic,     linux-generic,                        [*xguboot], *kh-xgene]
