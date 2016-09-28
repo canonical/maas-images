@@ -25,6 +25,7 @@ subarches:
  - &sa_hwe_v [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &sa_hwe_w [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &sa_hwe_x [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04]
+ - &sa_hwe_x_legacy [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &sa_hwe_y [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
@@ -114,13 +115,13 @@ releases:
     - [wily,    armhf,   hwe-w,     generic,    linux-generic-lts-wily,            *sa_hwe_w]
     - [wily,    i386,    hwe-w,     generic,    linux-generic-lts-wily,            *sa_hwe_w]
     - [wily,    ppc64el, hwe-w,     generic,    linux-generic-lts-wily,            *sa_hwe_w]
-    - [xenial,  amd64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x]
-    - [xenial,  amd64,   hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x]
-    - [xenial,  arm64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x]
-    - [xenial,  armhf,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x]
-    - [xenial,  i386,    hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x]
-    - [xenial,  i386,    hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x]
-    - [xenial,  ppc64el, hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x]
+    - [xenial,  amd64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
+    - [xenial,  amd64,   hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x_legacy]
+    - [xenial,  arm64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legcay]
+    - [xenial,  armhf,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
+    - [xenial,  i386,    hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
+    - [xenial,  i386,    hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x_legacy]
+    - [xenial,  ppc64el, hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
  - version: "12.04"
    release: precise
    builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
