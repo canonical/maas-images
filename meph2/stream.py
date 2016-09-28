@@ -14,7 +14,7 @@ from simplestreams.log import LOG
 ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
 
 PATH_COMMON = "%(release)s/%(arch)s/"
-BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
+BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(kname)s/%(flavor)s"
 DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
     'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
@@ -194,8 +194,11 @@ def create_version(arch, release, version_name, img_url, out_d,
             product_psubarch = psubarch
 
         subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                     'psubarch': product_psubarch,
+                     'psubarch': product_psubarch, 'subarch': psubarch,
                      'suffix': kdata["suffix"]})
+
+        kname = cfgdata.get('kname', '%(krel)s') % subs
+        subs.update({'kname': kname})
 
         ikeys = copy.deepcopy(base_ikeys)
         boot_keys = copy.deepcopy(base_boot_keys)
