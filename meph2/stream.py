@@ -197,7 +197,7 @@ def create_version(arch, release, version_name, img_url, out_d,
                      'psubarch': product_psubarch,
                      'suffix': kdata["suffix"]})
 
-        if cfgdata.get('kname') == 'krel':
+        if cfgdata.get('use_krel_in_boot_path', False):
             subs.update({'kname': krel})
         else:
             subs.update({'kname': psubarch})

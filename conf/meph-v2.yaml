@@ -167,9 +167,10 @@ releases:
 content_id: com.ubuntu.maas:daily:v2:download
 product_id_pre: com.ubuntu.maas.daily:v2:boot
 
-# The name to use in the path where the kernel and initrd are stored. By
-# default use the subarch, for backwards compatability in the v2 stream use
-# the krel.
-kname: krel
+# Newer versions of the stream use the subarch(e.g ga-16.04, hwe-16.04) in the
+# boot path to allow multiple subarches from the same kernel flavor. This
+# flag overrides the default to use the krel(e.g trusty, xenial) in the boot
+# path to maintain consistency and compatibility.
+use_krel_in_boot_path: True
 
 # vi: syntax=yaml nowrap
