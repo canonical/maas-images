@@ -117,7 +117,7 @@ releases:
     - [wily,    ppc64el, hwe-w,     generic,    linux-generic-lts-wily,            *sa_hwe_w]
     - [xenial,  amd64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
     - [xenial,  amd64,   hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x_legacy]
-    - [xenial,  arm64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legcay]
+    - [xenial,  arm64,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
     - [xenial,  armhf,   hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
     - [xenial,  i386,    hwe-x,     generic,    linux-generic-lts-xenial,          *sa_hwe_x_legacy]
     - [xenial,  i386,    hwe-x,     lowlatency, linux-image-lowlatency-lts-xenial, *sa_hwe_x_legacy]
