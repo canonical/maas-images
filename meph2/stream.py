@@ -194,13 +194,11 @@ def create_version(arch, release, version_name, img_url, out_d,
             product_psubarch = psubarch
 
         subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                     'psubarch': product_psubarch,
+                     'psubarch': product_psubarch, 'subarch': psubarch,
                      'suffix': kdata["suffix"]})
 
-        if cfgdata.get('kname') == 'krel':
-            subs.update({'kname': krel})
-        else:
-            subs.update({'kname': psubarch})
+        kname = cfgdata.get('kname', '%(krel)s') % subs
+        subs.update({'kname': kname})
 
         ikeys = copy.deepcopy(base_ikeys)
         boot_keys = copy.deepcopy(base_boot_keys)

@@ -152,4 +152,10 @@ squashfs: True
 content_id: com.ubuntu.maas:daily:v3:download
 product_id_pre: com.ubuntu.maas.daily:v3:boot
 
+# By default maas-images uses the krel in the boot path. This worked for the v2
+# stream because there was only one kernel per release/arch/krel/kflavor. The
+# v3 stream has multiple kernels per release/arch/krel/kflavor so use the
+# subarch instead.
+kname: '%(subarch)s'
+
 # vi: syntax=yaml nowrap

@@ -167,9 +167,4 @@ releases:
 content_id: com.ubuntu.maas:daily:v2:download
 product_id_pre: com.ubuntu.maas.daily:v2:boot
 
-# The name to use in the path where the kernel and initrd are stored. By
-# default use the subarch, for backwards compatability in the v2 stream use
-# the krel.
-kname: krel
-
 # vi: syntax=yaml nowrap
