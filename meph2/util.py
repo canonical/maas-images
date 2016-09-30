@@ -292,4 +292,14 @@ def gen_index_and_sign(data_d, sign=True):
         sign_streams_d(md_d)
 
 
+def ensure_product_entry(tree):
+    # products_prune will remove the 'products' entry.  That is fixable
+    # by products_prune(preserve_empty_products=True), but that argument
+    # is not available in trusty.  products_condense and other things
+    # may expect a 'products' entry, so put an empty one there.
+    if not tree['products']:
+        tree['products'] = {}
+    return
+
+
 # vi: ts=4 expandtab syntax=python
