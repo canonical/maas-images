@@ -637,6 +637,30 @@ main() {
         zerofree "$imgfile" || { error "failed zerofree $imgfile"; return 1; }
     fi
 
+    if [ "$fmt" = "squashfs-image" ]; then
+        local squash_out=""
+        squash_out=$(dirname "$output")/$(basename "$src")
+        if [ -n "${proposed_flag}" ]; then
+            debug 1 "creating a new squashfs in $out from $imgfile"
+            sudo mount-image-callback "$imgfile" --read-only -- sh -ec '
+                src="$1"; out="$2"; owner="$3"; tmp="$out.$$"
+                trap "rm -f \"$tmp\"" EXIT
+                mksquashfs -xattrs -comp xz "$src" "$tmp"
+                chown "$owner" "$tmp"
+                mv "$tmp" "$out"
+                ' newsquash-img _MOUNTPOINT_ \
+                    "${squash_out}" "$(id -u):$(id -g)" || {
+                error "Failed mksquashfs from $imgfile"
+                return 1
+            }
+        else
+            cp "$src" "${squash_out}" || {
+                error "copy SquashFS image from $src -> $squash_out failed"
+                return 1;
+            }
+        fi
+    fi
+
     if $gzip; then
         ddebug 1 "gzipping image file"
         local stime=$SECONDS
@@ -647,14 +671,6 @@ main() {
     else
         mv --force "$timg" "$output" ||
             { error "failed move to $output"; return 1; }
-    fi
-
-    if [[ "$src" == *squashfs ]]; then
-        output_dir=$(dirname $output)
-        cp "$src" "$output_dir" || {
-            error "copy SquashFS image from $src -> $output_dir failed"
-            return 1;
-        }
     fi
 
     ddebug 1 "finished"
