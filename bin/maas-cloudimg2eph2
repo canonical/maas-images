@@ -641,7 +641,7 @@ main() {
         local squash_out=""
         squash_out=$(dirname "$output")/$(basename "$src")
         if [ -n "${proposed_flag}" ]; then
-            debug 1 "creating a new squashfs in $out from $imgfile"
+            debug 1 "creating a new squashfs in $squash_out from $imgfile"
             sudo mount-image-callback "$imgfile" --read-only -- sh -ec '
                 src="$1"; out="$2"; owner="$3"; tmp="$out.$$"
                 trap "rm -f \"$tmp\"" EXIT
