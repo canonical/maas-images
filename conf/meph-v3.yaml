@@ -150,6 +150,7 @@ squashfs: True
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
 
+default_target: http://images.maas.io/ephemeral-v3/daily/streams/v1/com.ubuntu.maas:daily:v3:download.json
 content_id: com.ubuntu.maas:daily:v3:download
 product_id_pre: com.ubuntu.maas.daily:v3:boot
 
