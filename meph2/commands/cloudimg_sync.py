@@ -18,8 +18,6 @@ import yaml
 
 CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
                       "streams/v1/com.ubuntu.cloud:daily:download.json")
-MAAS_EPHEM2_DAILY = ("http://images.maas.io/ephemeral-v2/daily/"
-                     "streams/v1/com.ubuntu.maas:daily:v2:download.json")
 
 FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
@@ -65,17 +63,14 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
 
 class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
     def __init__(
-            self, config, out_d, target, v2config, rebuilds=None, verbosity=0):
+            self, config, out_d, target, cfgdata, rebuilds=None, verbosity=0):
         super(CloudImg2Meph2Sync, self).__init__(config=config)
         if rebuilds is None:
             rebuilds = {}
 
         self.out_d = out_d
         self.target = target
-        self.v2config = v2config
         self.filters = self.config.get('filters', [])
-        with open(v2config) as fp:
-            cfgdata = yaml.load(fp)
         self.cfgdata = cfgdata
         if self.cfgdata.get('squashfs'):
             self.squashfs = True
@@ -216,12 +211,12 @@ def main():
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
                         help='cloud images mirror')
-    parser.add_argument('--target', default=MAAS_EPHEM2_DAILY,
+    parser.add_argument('--target', default=None,
                         help="maas ephemeral v2 mirror.  "
                              'Use "%s" to force build [DEV ONLY!]' % FORCE_URL)
     parser.add_argument('--keyring', action='store', default=None,
                         help='keyring to be specified to gpg via --keyring')
-    parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
+    parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='config')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument('--log-file', default=sys.stderr,
                         type=argparse.FileType('w'))
@@ -274,17 +269,24 @@ def main():
 
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
+    with open(args.config) as fp:
+        cfgdata = yaml.load(fp)
+    if args.target is None:
+        target = cfgdata['default_target']
+    else:
+        target = args.target
+
     LOG.info(
         "summary: \n " + '\n '.join([
             "source: %s" % args.source,
-            "target: %s" % args.target,
+            "target: %s" % target,
             "output: %s" % args.output_d,
             "arches: %s" % args.arches,
             "filters: %s" % filter_list,
         ]) + '\n')
 
     tmirror = CloudImg2Meph2Sync(config=mirror_config, out_d=args.output_d,
-                                 target=args.target, v2config=args.config,
+                                 target=target, cfgdata=cfgdata,
                                  rebuilds=rebuilds, verbosity=vlevel)
 
     tmirror.sync(smirror, initial_path)
