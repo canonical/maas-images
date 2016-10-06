@@ -645,7 +645,7 @@ main() {
             sudo mount-image-callback "$imgfile" --read-only -- sh -ec '
                 src="$1"; out="$2"; owner="$3"; tmp="$out.$$"
                 trap "rm -f \"$tmp\"" EXIT
-                mksquashfs -xattrs -comp xz "$src" "$tmp"
+                mksquashfs "$src" "$tmp" -xattrs -comp xz
                 chown "$owner" "$tmp"
                 mv "$tmp" "$out"
                 ' newsquash-img _MOUNTPOINT_ \
