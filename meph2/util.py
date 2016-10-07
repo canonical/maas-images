@@ -297,7 +297,7 @@ def ensure_product_entry(tree):
     # by products_prune(preserve_empty_products=True), but that argument
     # is not available in trusty.  products_condense and other things
     # may expect a 'products' entry, so put an empty one there.
-    if not tree['products']:
+    if 'products' not in tree:
         tree['products'] = {}
     return
 
