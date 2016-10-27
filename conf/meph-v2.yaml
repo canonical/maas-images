@@ -28,6 +28,7 @@ subarches:
  - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &arm_hwe_y [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
+ - &arm_hwe_z [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z]
 
 misc:
  - &glpae generic-lpae
@@ -38,6 +39,18 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "17.04"
+   release: zesty
+   kernels:
+    - [zesty,  amd64,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  arm64,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [zesty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [zesty,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [zesty,  armhf,   hwe-z,    generic,   linux-generic,            *arm_hwe_z]
+    - [zesty,  i386,    hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  ppc64el, hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  s390x,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
  - version: "16.10"
    release: yakkety
    kernels:
