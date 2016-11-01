@@ -48,17 +48,17 @@ releases:
  - version: "17.04"
    release: zesty
    kernels:
-    - [zesty,    amd64,   ga-16.10,    generic,     linux-generic,                        *sa_hwe_z]
-    - [zesty,    amd64,   ga-16.10,    lowlatency,  linux-image-lowlatency,               *sa_hwe_z]
-    - [zesty,    arm64,   ga-16.10,    generic,     linux-generic,                        *sa_hwe_z]
+    - [zesty,    amd64,   ga-17.04,    generic,     linux-generic,                        *sa_hwe_z]
+    - [zesty,    amd64,   ga-17.04,    lowlatency,  linux-image-lowlatency,               *sa_hwe_z]
+    - [zesty,    arm64,   ga-17.04,    generic,     linux-generic,                        *sa_hwe_z]
     - [zesty,    arm64,   *mustang,    generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [zesty,    arm64,   *xguboot,    generic,     linux-generic,                        [*xguboot], *kh-xgene]
     - [zesty,    armhf,   *glpae,      *glpae,      linux-generic-lpae,                   [*glpae]]
-    - [zesty,    armhf,   ga-16.10,    generic,     linux-generic,                        *arm_hwe_z]
-    - [zesty,    i386,    ga-16.10,    generic,     linux-generic,                        *sa_hwe_z]
-    - [zesty,    i386,    ga-16.10,    lowlatency,  linux-image-lowlatency,               *sa_hwe_z]
-    - [zesty,    ppc64el, ga-16.10,    generic,     linux-generic,                        *sa_hwe_z]
-    - [zesty,    s390x,   ga-16.10,    generic,     linux-generic,                        *sa_hwe_z]
+    - [zesty,    armhf,   ga-17.04,    generic,     linux-generic,                        *arm_hwe_z]
+    - [zesty,    i386,    ga-17.04,    generic,     linux-generic,                        *sa_hwe_z]
+    - [zesty,    i386,    ga-17.04,    lowlatency,  linux-image-lowlatency,               *sa_hwe_z]
+    - [zesty,    ppc64el, ga-17.04,    generic,     linux-generic,                        *sa_hwe_z]
+    - [zesty,    s390x,   ga-17.04,    generic,     linux-generic,                        *sa_hwe_z]
  - version: "16.10"
    release: yakkety
    kernels:
