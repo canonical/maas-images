@@ -212,8 +212,9 @@ def main():
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
                         help='cloud images mirror')
     parser.add_argument('--target', default=None,
-                        help="maas ephemeral v2 or v3 mirror, overrides config  "
-                             'Use "%s" to force build [DEV ONLY!]' % FORCE_URL)
+                        help="maas ephemeral v2 or v3 mirror, overrides "
+                             'config. Use "%s" to force build [DEV ONLY!]' %
+                             FORCE_URL)
     parser.add_argument('--keyring', action='store', default=None,
                         help='keyring to be specified to gpg via --keyring')
     parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='config')
