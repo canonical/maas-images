@@ -297,9 +297,17 @@ apply_updates_chrooted() {
             rel_pkgs="${rel_pkgs} maas-enlist";;
     esac
 
-    case "$arch" in
-        arm64|armhf) arch_pkgs="u-boot-tools";;
-    esac
+    change="add u-boot-tools to arch_pkgs for arch '$arch' (LP: #1640519)"
+    if [ "$arch" = "arm64" -o "$arch" = "armhf" ]; then
+        case "$release" in
+            precise|quantal|raring|saucy|trusty|utopic|vivid|wily|\
+            xenial|yakkety)
+                arch_pkgs="${arch_pkgs} u-boot-tools"
+                debug 1 "release '$release' <= yakkety: $change"
+                ;;
+            *) debug 1 "release '$release' > yakkety: do not $change";;
+        esac
+    fi
 
     local removes="^linux-.*" keeps="^linux-base$" pkglist=""
     pkglist=$(dpkg-query --show) || { error "failed dpkg-query"; return 1; }
