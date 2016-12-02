@@ -73,20 +73,29 @@ maasify() {
     }
 }
 
+_dl() {
+    local url="$1" out="$2" ret=0
+    local tmp="$out.$$"
+    wget "$url" --progress=dot:mega -O "$tmp" && mv "$tmp" "$out" || {
+        ret=$?
+        error "Failed downloading to $out: $url"
+        rm -f "$tmp"
+    }
+    return $ret
+}
+
 dl() {
     local url="$1" out="${2:-${1##*/}}"
     if [ -n "${CACHE_D}" ]; then
         local cfile="${CACHE_D}/${url##*/}"
         if [ ! -f "$cfile" ]; then
-            wget "$url" -O "$cfile.tmp" && mv "$cfile.tmp" "$cfile" ||
-                { rm -f "$cfile.tmp" && return 1; }
+            _dl "$url" "$cfile" || return
         fi
         [ "$cfile" -ef "$out" ] && return
         cp "$cfile" "$out"
         return
     fi
-    wget "$url" -O "$out.tmp" && mv "$out.tmp" "$out" ||
-        { rm -f "$out.tmp" && return 1; }
+    _dl "$url" "$out"
 }
 
 cleanup() { [ -d "${TEMP_D}" ] && rm -Rf "${TEMP_D}"; }
