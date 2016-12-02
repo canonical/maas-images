@@ -22,12 +22,14 @@ subarches:
  - &sa_hwe_w  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &sa_hwe_x  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &sa_hwe_y  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
+ - &sa_hwe_z  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
  - &arm_hwe_w [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w]
  - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &arm_hwe_y [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
+ - &arm_hwe_z [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z]
 
 misc:
  - &glpae generic-lpae
@@ -38,6 +40,18 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "17.04"
+   release: zesty
+   kernels:
+    - [zesty,  amd64,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  arm64,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [zesty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [zesty,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [zesty,  armhf,   hwe-z,    generic,   linux-generic,            *arm_hwe_z]
+    - [zesty,  i386,    hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  ppc64el, hwe-z,    generic,   linux-generic,            *sa_hwe_z]
+    - [zesty,  s390x,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
  - version: "16.10"
    release: yakkety
    kernels:
@@ -104,7 +118,6 @@ releases:
    kernels:
     - [trusty,  armhf,   hwe-t,    generic,   linux-generic,            *arm_hwe_t]
     - [trusty,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [trusty,  armhf,   keystone, keystone,  linux-keystone,           [keystone]]
     - [trusty,  i386,    hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  amd64,   hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  ppc64el, hwe-t,    generic,   linux-generic,            *sa_hwe_t]
@@ -164,6 +177,7 @@ releases:
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
 
+default_target: http://images.maas.io/ephemeral-v2/daily/streams/v1/com.ubuntu.maas:daily:v2:download.json
 content_id: com.ubuntu.maas:daily:v2:download
 product_id_pre: com.ubuntu.maas.daily:v2:boot
 
