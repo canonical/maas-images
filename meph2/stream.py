@@ -189,7 +189,13 @@ def create_version(arch, release, version_name, img_url, out_d,
         # product name so different kernels can be shown in the stream as
         # part of the product name.
         if flavor != 'generic':
-            product_psubarch = "%s-%s" % (psubarch, flavor)
+            # If edge is in the subarch make sure it comes after the kflavor
+            split_psubarch = psubarch.split('-')
+            if split_psubarch[-1] == 'edge':
+                split_psubarch.insert(-1, flavor)
+            else:
+                split_psubarch.append(flavor)
+            product_psubarch = '-'.join(split_psubarch)
         else:
             product_psubarch = psubarch
 

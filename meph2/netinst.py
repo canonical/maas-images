@@ -705,6 +705,7 @@ def main_test():
     ret = get_products_data()
     print(json.dumps(ret, indent=1))
 
+
 if __name__ == '__main__':
     # executable as 'python3 -m meph2.netinst'
     main()
