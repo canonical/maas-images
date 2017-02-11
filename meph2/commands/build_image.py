@@ -25,6 +25,7 @@ def dump_stream_data(out_d, cvdata, content_id, version_name):
                                (prodname, version_name, i))
 
     sutil.products_prune(prod_tree)
+    util.ensure_product_entry(prod_tree)
     sutil.products_condense(prod_tree, sticky=['di_version', 'kpackage'])
 
     tsnow = sutil.timestamp()

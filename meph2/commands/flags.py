@@ -1,0 +1,107 @@
+DEF_KEYRING = "/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg"
+
+LABELS = ('alpha1', 'alpha2', 'alpha3',
+          'beta1', 'beta2', 'beta3',
+          'rc', 'release')
+
+COMMON_ARGS = []
+COMMON_FLAGS = {
+    'dry-run': (('-n', '--dry-run'),
+                {'help': 'only report what would be done',
+                 'action': 'store_true', 'default': False}),
+    'no-sign': (('-u', '--no-sign'),
+                {'help': 'do not re-sign files',
+                 'action': 'store_true', 'default': False}),
+    'max': (('--max',),
+            {'help': 'keep at most N versions per product',
+             'default': 2, 'type': int}),
+    'orphan-data': (('orphan_data',), {'help': 'the orphan data file'}),
+    'src': (('src',), {'help': 'the source streams directory'}),
+    'target': (('target',), {'help': 'the target streams directory'}),
+    'data_d': (('data_d',),
+               {'help': ('the base data directory'
+                         '("path"s are relative to this)')}),
+    'keyring': (('--keyring',),
+                {'help': 'gpg keyring to check sjson',
+                 'default': DEF_KEYRING}),
+}
+
+SUBCOMMANDS = {
+    'insert': {
+        'help': 'add new items from one stream into another',
+        'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
+            COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+            ('filters', {'nargs': '*', 'default': []}),
+        ]
+    },
+    'import': {
+        'help': 'import an image from the specified config into a stream',
+        'opts': [
+            COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
+            ('import_cfg', {'help':
+                            'The config file for the image to import.'}),
+            COMMON_FLAGS['target'],
+            ]
+    },
+    'merge': {
+        'help': 'merge two product streams together',
+        'opts': [
+            COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+            ]
+    },
+    'promote': {
+        'help': 'promote a product/version from daily to release',
+        'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
+            (('-l', '--label'),
+             {'default': 'release', 'choices': LABELS,
+              'help': 'the label to use'}),
+            (('--skip-file-copy',),
+             {'help': 'do not copy files, only metadata [TEST_ONLY]',
+              'action': 'store_true', 'default': False}),
+            COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+            ('version', {'help': 'the version_id to promote.'}),
+            ('filters', {'nargs': '+', 'default': []}),
+        ]
+    },
+    'clean-md': {
+        'help': 'clean streams metadata only to keep "max" items',
+        'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'],
+            ('max', {'type': int}), ('target', {}),
+            ('filters', {'nargs': '*', 'default': []}),
+        ]
+    },
+    'find-orphans': {
+        'help': 'find files in data_d not referenced in a "path"',
+        'opts': [
+            COMMON_FLAGS['orphan-data'], COMMON_FLAGS['data_d'],
+            COMMON_FLAGS['keyring'],
+            ('streams_dirs', {'nargs': '*', 'default': []}),
+        ],
+    },
+    'reap-orphans': {
+        'help': 'reap orphans listed in orphan-data from data_d',
+        'opts': [
+            COMMON_FLAGS['orphan-data'], COMMON_FLAGS['dry-run'],
+            COMMON_FLAGS['data_d'],
+            ('--older', {'default': '3d',
+                         'help': ('only remove files orphaned longer than'
+                                  'this. if no unit given, default is days.')
+                         }),
+        ],
+    },
+    'sign': {
+        'help': 'Regenerate index.json and sign the stream',
+        'opts': [
+            COMMON_FLAGS['data_d'], COMMON_FLAGS['no-sign'],
+        ],
+    },
+}
+
+# vi: ts=4 expandtab syntax=python

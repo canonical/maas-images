@@ -62,6 +62,10 @@ FILES_PREFIX = "files/"
 INVALID_KERNEL_FLAVORS = ("xen", "gtk")
 
 GPG_KEYRING = "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
+ALT_GPG_KEYRING = os.path.join(
+    os.path.dirname(__file__), "..", "keyring.gpg")
+if os.path.exists(ALT_GPG_KEYRING):
+    GPG_KEYRING = ALT_GPG_KEYRING
 CONTENT_ID = "com.ubuntu.installer:released:netboot"
 
 # see get_kfile_key for how a file item key is generated.
@@ -700,6 +704,7 @@ def main_test():
     # print(json.dumps(mine_md(sys.argv[1]), indent=1))
     ret = get_products_data()
     print(json.dumps(ret, indent=1))
+
 
 if __name__ == '__main__':
     # executable as 'python3 -m meph2.netinst'

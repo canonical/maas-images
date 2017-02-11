@@ -6,6 +6,7 @@ from .ubuntu_info import REL2VER
 import copy
 import os
 import subprocess
+import sys
 import yaml
 
 from simplestreams.log import LOG
@@ -13,7 +14,7 @@ from simplestreams.log import LOG
 ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
 
 PATH_COMMON = "%(release)s/%(arch)s/"
-BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(krel)s/%(flavor)s"
+BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(kname)s/%(flavor)s"
 DI_COMMON = PATH_COMMON + "di/%(di_version)s/%(krel)s/%(flavor)s"
 PATH_FORMATS = {
     'root-image.gz': PATH_COMMON + "%(version_name)s/root-image.gz",
@@ -30,6 +31,27 @@ PATH_FORMATS = {
 }
 IMAGE_FORMATS = ['auto', 'img-tar', 'root-image', 'root-image-gz',
                  'root-tar', 'squashfs-image']
+
+
+def read_kdata(info, ret=list):
+    # read a kernel data list and return it as a list or a dict.
+
+    # copy it for our modification.
+    info = list(info)
+
+    # 7th field is optional in kernel lines in config data
+    # so fill it with empty dictionary if not present.
+    if len(info) == 6:
+        info.append({})
+
+    names = ("krel", "arch", "subarch", "flavor", "kpkg",
+             "subarches", "kdata")
+    if ret == list:
+        return info
+    elif ret == dict:
+        return dict(zip(names, info))
+    else:
+        raise ValueError("Unexpected input '%s'" % ret)
 
 
 def create_version(arch, release, version_name, img_url, out_d,
@@ -75,12 +97,22 @@ def create_version(arch, release, version_name, img_url, out_d,
                                  release)
             rdata = r
 
+    arches = set([read_kdata(i, dict)['arch'] for i in rdata['kernels']])
+    if arch not in arches:
+        msg = (
+            "arch '%(arch)s' is not supported for release '%(release)s'.\n"
+            "Release has architectures: %(arches)s.\n"
+            "To support, add kernel info to config." %
+            {'arch': arch, 'release': release, 'arches': arches})
+        LOG.warn(msg)
+        sys.stderr.write(msg + "\n")
+        return {}
+
     version = rdata['version']
     if isinstance(version, float):
         raise ValueError("release '%s' in config had version as a float (%s) "
                          "It must be a string." % (release, version))
 
-    # TODO: enable_proposed does not affect image build, only d-i scraping
     enable_proposed = cfgdata.get('enable_proposed', False)
 
     # default kernel can be:
@@ -132,6 +164,9 @@ def create_version(arch, release, version_name, img_url, out_d,
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
         newpaths = set((rootimg_path, manifest_path))
 
+    if enable_proposed:
+        mci2e_flags.append("--proposed")
+
     gencmd = ([mci2e] + mci2e_flags +
               [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
@@ -140,11 +175,8 @@ def create_version(arch, release, version_name, img_url, out_d,
     kdata_defaults = {'suffix': "", 'di-format': "default", 'dtb': ""}
 
     for info in rdata['kernels']:
-        # 7th field is optional in kernel lines in config data
-        # so fill it with empty dictionary if not present.
-        if len(info) == 6:
-            info.append({})
-        (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = info
+        (krel, karch, psubarch, flavor, kpkg, subarches, kdata) = (
+            read_kdata(info))
 
         if karch != arch:
             continue
@@ -157,13 +189,22 @@ def create_version(arch, release, version_name, img_url, out_d,
         # product name so different kernels can be shown in the stream as
         # part of the product name.
         if flavor != 'generic':
-            product_psubarch = "%s-%s" % (psubarch, flavor)
+            # If edge is in the subarch make sure it comes after the kflavor
+            split_psubarch = psubarch.split('-')
+            if split_psubarch[-1] == 'edge':
+                split_psubarch.insert(-1, flavor)
+            else:
+                split_psubarch.append(flavor)
+            product_psubarch = '-'.join(split_psubarch)
         else:
             product_psubarch = psubarch
 
         subs.update({'krel': krel, 'kpkg': kpkg, 'flavor': flavor,
-                     'psubarch': product_psubarch,
+                     'psubarch': product_psubarch, 'subarch': psubarch,
                      'suffix': kdata["suffix"]})
+
+        kname = cfgdata.get('kname', '%(krel)s') % subs
+        subs.update({'kname': kname})
 
         ikeys = copy.deepcopy(base_ikeys)
         boot_keys = copy.deepcopy(base_boot_keys)
