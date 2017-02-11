@@ -66,10 +66,14 @@ def import_sha256(args, product_tree, cfgdata):
             image_path = '/'.join([release, arch, image, 'root-tgz'])
             real_image_path = os.path.join(
                 os.path.realpath(args.target), image_path)
+            if release_info.get('packages') is not None:
+                packages = ','.join(release_info['packages'])
+            else:
+                packages = None
             sha256 = import_qcow2(
                 '/'.join([base_url, image_info['img_name']]),
                 image_info['sha256'], real_image_path,
-                release_info.get('curtin_files'))
+                release_info.get('curtin_files'), packages)
             product_tree['products'][product_id]['versions'][image] = {
                 'items': {
                     'root-image.gz': {
@@ -213,16 +217,22 @@ def get_sha256_meta_images(url):
     return ret
 
 
-def import_qcow2(url, expected_sha256, out, curtin_files=None):
+def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
     """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
         a given URL or local path. Return the SHA256SUM of the outputted file.
     """
     # Assume maas-qcow2targz is in the path
     qcow2targz_cmd = ["maas-qcow2targz", url, expected_sha256, out]
-    if curtin_files:
+    if curtin_files is not None:
         curtin_path = os.path.join(
             os.path.dirname(__file__), "..", "..", "curtin")
+        qcow2targz_cmd.append('--curtin-path')
         qcow2targz_cmd.append(curtin_files.format(curtin_path=curtin_path))
+
+    if packages is not None:
+        qcow2targz_cmd.append('--packages')
+        qcow2targz_cmd.append(packages)
+
     proc = subprocess.Popen(qcow2targz_cmd)
     proc.communicate()
     if proc.wait() != 0:

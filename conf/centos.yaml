@@ -13,6 +13,13 @@ versions:
         path_version: 7
         release_title: "CentOS 7.0"
         curtin_files: "{curtin_path}/centos7"
+        packages:
+         # CentOS 7 removed python-oauth which is required for cloud-init to
+         # authenticate with the MAAS metadata service. Until cloud-init from CentOS
+         # supports python-oauth2 python-oauthlib we need to pull python-oauth from
+         # EPEL7-testing
+         - https://kojipkgs.fedoraproject.org/packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm
+         - linux-firmware
     centos66:
         version: 6.6
         release_title: "CentOS 6.6"
