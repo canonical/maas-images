@@ -36,7 +36,7 @@ def import_sha256(args, product_tree, cfgdata):
         product_id = cfgdata['product_id'].format(
             version=release_info['version'], arch=arch)
         url = cfgdata['sha256_meta_data_path'].format(version=path_version)
-        images = get_sha256_meta_images(url)
+        images = get_sha256_meta_images(url, args.max)
         base_url = os.path.dirname(url)
 
         if product_tree['products'].get(product_id) is None:
@@ -173,7 +173,7 @@ def import_bootloaders(args, product_tree, cfgdata):
         }
 
 
-def get_sha256_meta_images(url):
+def get_sha256_meta_images(url, max_items=0):
     """ Given a URL to a SHA256SUM file return a dictionary of filenames and
         SHA256 checksums keyed off the file version found as a date string in
         the filename. This is used in cases where simplestream data isn't
@@ -214,7 +214,13 @@ def get_sha256_meta_images(url):
             'img_name': img_name,
             'sha256': sha256,
             }
-    return ret
+    if max_items == 0:
+        return ret
+    else:
+        return {
+            key: ret[key]
+            for key in sorted(ret.keys(), reverse=True)[:max_items]
+        }
 
 
 def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
@@ -296,6 +302,11 @@ def main():
     # Top level args
     for (args, kwargs) in COMMON_ARGS:
         parser.add_argument(*args, **kwargs)
+
+    parser.add_argument('--max', type=int, default=1,
+                        help=(
+                            'Import at most MAX CentOS images in the target, '
+                            '0 for no limit, defaults to 1.'))
 
     for (args, kwargs) in subc['opts']:
         if isinstance(args, str):
