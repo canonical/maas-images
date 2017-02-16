@@ -333,14 +333,11 @@ def get_file_item_data(path, release="base"):
         return None
 
     # kernel release.  all kernel release paths start with <release>-
-    releases = REL2VER.keys()
+    kernel_releases = [k for k in REL2VER.keys()] + ["hwe"]
     kernel_release = release
-    for rel in REL2VER.keys():
+    for rel in kernel_releases:
         if path.startswith(rel + "-"):
             kernel_release = rel
-            break
-        if path.startswith("hwe-"):
-            kernel_release = "hwe"
             break
 
     # image format
@@ -366,7 +363,7 @@ def get_file_item_data(path, release="base"):
             kernel_flavor = kflav
             break
         else:
-            for r in releases:
+            for r in kernel_releases:
                 if "%s-%s" % (r, kflav) in ptoks:
                     kernel_flavor = kflav
                     break

@@ -505,6 +505,20 @@
   "kernel-flavor": "generic",
   "kernel-release": "hwe"
  },
+ "hwe-generic-lpae/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic-lpae",
+  "kernel-release": "hwe"
+ },
+ "hwe-generic-lpae/netboot/vmlinuz": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic-lpae",
+  "kernel-release": "hwe"
+ },
  "hwe-netboot/ubuntu-installer/amd64/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
