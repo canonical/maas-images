@@ -133,6 +133,7 @@
   "kernel-flavor": "generic",
   "kernel-release": "BASE"
  },
+ "e500/cdrom/vmlinux": null,
  "e500/netboot/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
@@ -161,7 +162,6 @@
   "kernel-flavor": "e500mc",
   "kernel-release": "BASE"
  },
- "e500/cdrom/vmlinux": null,
  "generic-lpae/netboot/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
@@ -246,11 +246,11 @@
  "generic/netboot/tegra/boot.scr-tegra-dhcp-serial": null,
  "generic/netboot/tegra/boot.scr-tegra-disk-serial": null,
  "generic/netboot/tegra/initrd.gz": {
-   "ftype": "initrd",
-   "image-format": "tegra",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "BASE"
+  "ftype": "initrd",
+  "image-format": "tegra",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "BASE"
  },
  "generic/netboot/tegra/tegra114-dalmore.dtb": {
   "ftype": "dtb",
@@ -407,11 +407,11 @@
   "kernel-release": "BASE"
  },
  "generic/netboot/tegra/vmlinuz": {
-   "ftype": "kernel",
-   "image-format": "tegra",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "BASE"
+  "ftype": "kernel",
+  "image-format": "tegra",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "BASE"
  },
  "generic/netboot/vmlinuz": {
   "ftype": "kernel",
@@ -489,6 +489,95 @@
   "initrd-flavor": "netboot",
   "kernel-flavor": "highbank",
   "kernel-release": "BASE"
+ },
+ "hwe-device-tree/README": null,
+ "hwe-device-tree/apm-merlin.dtb": {
+  "ftype": "dtb",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-device-tree/apm-mustang.dtb": {
+  "ftype": "dtb",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-generic-lpae/netboot/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic-lpae",
+  "kernel-release": "hwe"
+ },
+ "hwe-generic-lpae/netboot/vmlinuz": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic-lpae",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/amd64/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/amd64/linux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/amd64/pxelinux.0": null,
+ "hwe-netboot/ubuntu-installer/arm64/bootnetaa64.efi": null,
+ "hwe-netboot/ubuntu-installer/arm64/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/arm64/linux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/i386/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/i386/linux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/i386/pxelinux.0": null,
+ "hwe-netboot/ubuntu-installer/ppc64el/fonts/unicode.pf2": null,
+ "hwe-netboot/ubuntu-installer/ppc64el/initrd.gz": {
+  "ftype": "initrd",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
+ },
+ "hwe-netboot/ubuntu-installer/ppc64el/vmlinux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "hwe"
  },
  "keystone/netboot/initrd.gz": {
   "ftype": "initrd",
@@ -966,11 +1055,11 @@
   "kernel-release": "utopic"
  },
  "utopic-generic/netboot/tegra/vmlinuz": {
-   "ftype": "kernel",
-   "image-format": "tegra",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "utopic"
+  "ftype": "kernel",
+  "image-format": "tegra",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "utopic"
  },
  "utopic-generic/netboot/vmlinuz": {
   "ftype": "kernel",
@@ -1004,18 +1093,18 @@
   "kernel-release": "utopic"
  },
  "utopic-generic/netboot/xgene/uImage": {
-   "ftype": "kernel",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "utopic"
+  "ftype": "kernel",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "utopic"
  },
  "utopic-generic/netboot/xgene/uInitrd": {
-   "ftype": "initrd",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "utopic"
+  "ftype": "initrd",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "utopic"
  },
  "utopic-netboot/boot.img.gz": null,
  "utopic-netboot/mini.iso": null,
@@ -1164,11 +1253,11 @@
   "kernel-release": "vivid"
  },
  "vivid-generic/netboot/tegra/vmlinuz": {
-   "ftype": "kernel",
-   "image-format": "tegra",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "vivid"
+  "ftype": "kernel",
+  "image-format": "tegra",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "vivid"
  },
  "vivid-generic/netboot/vmlinuz": {
   "ftype": "kernel",
@@ -1202,18 +1291,18 @@
   "kernel-release": "vivid"
  },
  "vivid-generic/netboot/xgene/uImage": {
-   "ftype": "kernel",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "vivid"
+  "ftype": "kernel",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "vivid"
  },
  "vivid-generic/netboot/xgene/uInitrd": {
-   "ftype": "initrd",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "vivid"
+  "ftype": "initrd",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "vivid"
  },
  "vivid-netboot/boot.img.gz": null,
  "vivid-netboot/mini.iso": null,
@@ -1327,11 +1416,11 @@
   "kernel-release": "wily"
  },
  "wily-generic/netboot/tegra/vmlinuz": {
-   "ftype": "kernel",
-   "image-format": "tegra",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "wily"
+  "ftype": "kernel",
+  "image-format": "tegra",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "wily"
  },
  "wily-generic/netboot/vmlinuz": {
   "ftype": "kernel",
@@ -1365,18 +1454,18 @@
   "kernel-release": "wily"
  },
  "wily-generic/netboot/xgene/uImage": {
-   "ftype": "kernel",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "wily"
+  "ftype": "kernel",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "wily"
  },
  "wily-generic/netboot/xgene/uInitrd": {
-   "ftype": "initrd",
-   "image-format": "xgene",
-   "initrd-flavor": "netboot",
-   "kernel-flavor": "generic",
-   "kernel-release": "wily"
+  "ftype": "initrd",
+  "image-format": "xgene",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "wily"
  },
  "wily-netboot/boot.img.gz": null,
  "wily-netboot/mini.iso": null,
@@ -1451,13 +1540,6 @@
   "kernel-flavor": "generic",
   "kernel-release": "xenial"
  },
- "xenial-generic/netboot/vmlinuz": {
-  "ftype": "kernel",
-  "image-format": "default",
-  "initrd-flavor": "netboot",
-  "kernel-flavor": "generic",
-  "kernel-release": "xenial"
- },
  "xenial-generic/netboot/ubuntu-installer/arm64/initrd.gz": {
   "ftype": "initrd",
   "image-format": "default",
@@ -1466,6 +1548,13 @@
   "kernel-release": "xenial"
  },
  "xenial-generic/netboot/ubuntu-installer/arm64/linux": {
+  "ftype": "kernel",
+  "image-format": "default",
+  "initrd-flavor": "netboot",
+  "kernel-flavor": "generic",
+  "kernel-release": "xenial"
+ },
+ "xenial-generic/netboot/vmlinuz": {
   "ftype": "kernel",
   "image-format": "default",
   "initrd-flavor": "netboot",

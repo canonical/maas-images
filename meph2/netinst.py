@@ -297,8 +297,9 @@ def get_file_item_data(path, release="base"):
     #    /installer-ppc64el/current/images/MD5SUMS
     # return either None (not a kernel/initrd/dtb)
     # or a dictionary of:
-    #   release-kernel, kernel-flavor, initrd-flavor, filetype, image_format
-    #   release-kernel is 'wily' if trusty-hwe-w
+    #   kernel-release, kernel-flavor, initrd-flavor, filetype, image_format
+    #   kernel-release is 'wily' if trusty-hwe-w, and
+    #   simply 'hwe' for xenial's hardware enablement "rolling" hwe kernel.
     #   filetype is 'dtb', 'initrd.' or 'kernel'
     # at the moment the only 'initrd-flavor' that we're supporting is netboot
     ftype = None
@@ -332,9 +333,9 @@ def get_file_item_data(path, release="base"):
         return None
 
     # kernel release.  all kernel release paths start with <release>-
-    releases = REL2VER.keys()
+    kernel_releases = [k for k in REL2VER.keys()] + ["hwe"]
     kernel_release = release
-    for rel in REL2VER.keys():
+    for rel in kernel_releases:
         if path.startswith(rel + "-"):
             kernel_release = rel
             break
@@ -362,7 +363,7 @@ def get_file_item_data(path, release="base"):
             kernel_flavor = kflav
             break
         else:
-            for r in releases:
+            for r in kernel_releases:
                 if "%s-%s" % (r, kflav) in ptoks:
                     kernel_flavor = kflav
                     break
