@@ -80,7 +80,7 @@ releases:
    kernels:
     - [xenial,     amd64,    ga-16.04,        generic,     linux-generic,                        *sa_hwe_x]
     - [xenial,     amd64,    ga-16.04,        lowlatency,  linux-lowlatency,                     *sa_hwe_x]
-    - [xenial,     amd64,    hwe-16.04,       generic,     linux-generic-hwe.16.04,              *sa_hwe_x]
+    - [xenial,     amd64,    hwe-16.04,       generic,     linux-generic-hwe-16.04,              *sa_hwe_x]
     - [xenial,     amd64,    hwe-16.04,       lowlatency,  linux-lowlatency-hwe-16.04,           *sa_hwe_x]
     - [xenial,     amd64,    hwe-16.04-edge,  generic,     linux-generic-hwe-16.04-edge,         *sa_hwe_x_edge]
     - [xenial,     amd64,    hwe-16.04-edge,  lowlatency,  linux-lowlatency-hwe-16.04-edge,      *sa_hwe_x_edge]
