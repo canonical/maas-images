@@ -24,7 +24,7 @@ bootloaders:
    release: xenial
    os: grub-efi-signed
    files:
-    - usr/lib/shim/shim.efi.signed, bootx64.efi
+    - usr/lib/shim/shimx64.efi.signed, bootx64.efi
     - usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
  - firmware-platform: uefi
    packages:
