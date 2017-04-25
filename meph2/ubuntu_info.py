@@ -96,6 +96,7 @@ def get_ubuntu_info(date=None):
     try:
         devel = udi.devel(date=date)
     except distro_info.DistroDataOutdated as e:
+        import sys
         sys.stderr.write(
             "WARN: distro_info.UbuntuDistroInfo() raised exception (%s). "
             "Using stable release as devel.\n" % e)
