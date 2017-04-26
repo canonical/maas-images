@@ -9,7 +9,6 @@ from __future__ import (
 import codecs
 import os
 import sys
-import shutil
 
 from curtin import (
     block,
@@ -70,14 +69,6 @@ def get_root_info(target):
     rootdev = os.path.basename(rootpath)
     blocks = block._lsblock()
     return blocks[rootdev]
-
-
-def get_uefi_partition():
-    """Return the UEFI partition."""
-    for _, value in block._lsblock().items():
-        if value['LABEL'] == 'uefi-boot':
-            return value
-    return None
 
 
 def read_file(path):
@@ -152,36 +143,13 @@ def grub2_mkconfig(target):
         in_chroot(['grub2-mkconfig', '-o', '/boot/grub2/grub.cfg'])
 
 
-def install_efi(target, uefi_path):
+def install_uefi(target):
     """Install the EFI data from /boot into efi partition."""
-    # Create temp mount point for uefi partition.
-    tmp_efi = os.path.join(target, 'boot', 'efi_part')
-    os.mkdir(tmp_efi)
-    util.subp(['mount', uefi_path, tmp_efi])
-
-    # Copy the data over.
-    try:
-        efi_path = os.path.join(target, 'boot', 'efi')
-        if os.path.exists(os.path.join(tmp_efi, 'EFI')):
-            shutil.rmtree(os.path.join(tmp_efi, 'EFI'))
-        shutil.copytree(
-            os.path.join(efi_path, 'EFI'),
-            os.path.join(tmp_efi, 'EFI'))
-    finally:
-        # Clean up tmp mount
-        util.subp(['umount', tmp_efi])
-        os.rmdir(tmp_efi)
-
-    # Mount and do grub install
-    util.subp(['mount', uefi_path, efi_path])
-    try:
-        with util.RunInChroot(target) as in_chroot:
-            in_chroot([
-                'grub2-install', '--target=x86_64-efi',
-                '--efi-directory', '/boot/efi',
-                '--recheck'])
-    finally:
-        util.subp(['umount', efi_path])
+    with util.RunInChroot(target) as in_chroot:
+        in_chroot([
+            'grub2-install', '--target=x86_64-efi',
+            '--efi-directory', '/boot/efi',
+            '--recheck'])
 
 
 def set_autorelabel(target):
@@ -315,11 +283,7 @@ def main():
         target, extra=get_extra_kernel_parameters())
     grub2_mkconfig(target)
     if util.is_uefi_bootable():
-        uefi_part = get_uefi_partition()
-        if uefi_part is None:
-            print('Unable to determine UEFI parition.')
-            sys.exit(1)
-        install_efi(target, uefi_part['device_path'])
+        install_uefi(target)
     else:
         for dev in devices:
             grub2_install(target, dev)

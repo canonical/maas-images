@@ -20,6 +20,8 @@ versions:
          # EPEL7-testing
          - https://kojipkgs.fedoraproject.org/packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm
          - linux-firmware
+         - grub2-efi-modules
+         - efibootmgr
     centos66:
         version: 6.6
         release_title: "CentOS 6.6"
