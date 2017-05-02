@@ -190,12 +190,32 @@ ensure_iscsi_initramfs_support() {
     log_change true "$change"
 }
 
+add_repos() {
+    local repos="$1"
+    (
+    # repos can be space or , delimited
+    oifs="$IFS"
+    set -f
+    set -e
+    case "$repos" in
+        *,*) IFS=","; set -- $repos; IFS="$oifs";;
+        *) set -- $repos; IFS="$oifs";
+    esac
+    log_change true "$change: $repos"
+    for i in "$@"; do
+        debug 1 "  $i"
+        add-apt-repository -y "$i" </dev/null
+    done
+    )
+}
+
 apply_updates_chrooted() {
     # FIXME: remove this after no longer necessary
     local required="" known=""
     local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
     local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
     local proposed=${proposed:-false}
+    local repos="${m2e_repos}" add_packages="${m2e_add_packages}"
     required="kpkg pubd"
     known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
 
@@ -220,6 +240,19 @@ apply_updates_chrooted() {
 
     dpkg-query --show > "$pubd/manifest.in"
     
+    change="add additional repos."
+    if [ -n "$repos" ]; then
+        add_repos "$repos" || {
+            error "Failed to add repos: $repos"
+            return 1;
+        }
+        log_change true "$change [$repos]"
+        debug 1 "due to 'M2E_ADD_REPOS', setting dist-upgrade=true"
+        dist_upgrade=true
+    else
+        log_change false "$change"
+    fi
+
     change="images ppa for cloud-init and maas-enlist (LP: #1511482, 1515733)"
     if [ "$release" = "precise" ]; then
         # apt-add-repository failed when trying quantal amd64 with qemu-static.
@@ -290,6 +323,10 @@ apply_updates_chrooted() {
 
     # additional packages that we have to add
     add_pkgs="cloud-initramfs-dyn-netconf open-iscsi overlayroot"
+    if [ -n "${add_packages}" ]; then
+        debug 1 "add_packages=$add_packages (from M2E_ADD_PACKAGES)"
+        add_pkgs="${add_pkgs} ${add_packages}"
+    fi
 
     # rel_pkgs: packages added only in some releases
     case "$release" in
@@ -347,6 +384,12 @@ apply_updates_chrooted() {
             error "failed installing $missing";
             return 1;
         }
+        # FIXME: LP: #1645680 -- DO NOT COMMIT --
+        # yakkety and zesty fail unmount unless we do this.
+        killall ldap-reap
+        killall dirmngr
+        killall gpg-agent
+        sleep 1
     else
         log_change false "$change"
     fi
@@ -639,6 +682,8 @@ else
     manifest="$5"
 
     sudo \
+        m2e_repos="${M2E_ADD_REPOS}" \
+        m2e_add_packages="${M2E_ADD_PACKAGES}" \
         mount-image-callback --sys --proc --system-resolvconf "$img" -- \
         "$0" apply_updates ${vargs:+-$vargs} \
             ${proposed} \
