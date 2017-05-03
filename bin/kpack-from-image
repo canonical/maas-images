@@ -3,6 +3,7 @@
 VERBOSITY=0
 TEMP_D=""
 COPY_TYPES="auto overlay qcow2 cp none"
+command -v unshare-pidns >/dev/null 2>&1 || PATH="${0%/*}:$PATH"
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
