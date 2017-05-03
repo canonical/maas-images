@@ -113,13 +113,13 @@ if [ "$1" == "maasify" ]; then
         mv "${root_d}/etc/resolv.conf" "${root_d}/etc/resolv.conf.orig"
         cp /etc/resolv.conf "${root_d}/etc/resolv.conf"
         for package in $(echo $packages | sed 's/,/ /g'); do
-            LANG=C chroot "$root_d" yum -y install $package || {
+            LANG=C unshare-pidns chroot "$root_d" yum -y install $package || {
                 error "failed to install $package"
                 exit 1
             }
         done
         # Don't ship with yum cache
-        LANG=C chroot "$root_d" yum clean all || {
+        LANG=C unshare-pidns chroot "$root_d" yum clean all || {
                 error "failed to clear yum cache"
                 exit 1
             }

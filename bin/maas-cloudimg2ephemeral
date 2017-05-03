@@ -544,6 +544,7 @@ apply_updates() {
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
         proposed=$proposed \
         pubd="$pubd" \
+        unshare-pidns \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
     [ $? -eq 0 ] || {
