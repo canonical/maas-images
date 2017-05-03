@@ -3,7 +3,7 @@ has_unshare_pid() {
     command -v unshare >/dev/null 2>&1 || return 1
     local helpout=""
     helpout=$(unshare --help) || return 1
-    case "$out" in
+    case "$helpout" in
         *--fork*--pid*|*--pid*--fork*) :;;
         *) return 1;;
     esac
