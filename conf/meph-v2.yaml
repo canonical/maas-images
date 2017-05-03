@@ -23,6 +23,7 @@ subarches:
  - &sa_hwe_x  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &sa_hwe_y  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
  - &sa_hwe_z  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z]
+ - &sa_hwe_a  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -30,6 +31,7 @@ subarches:
  - &arm_hwe_x [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x]
  - &arm_hwe_y [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y]
  - &arm_hwe_z [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z]
+ - &arm_hwe_a [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a]
 
 misc:
  - &glpae generic-lpae
@@ -40,6 +42,18 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "17.10"
+   release: artful
+   kernels:
+    - [artful,  amd64,   hwe-a,    generic,   linux-generic,            *sa_hwe_a]
+    - [artful,  arm64,   hwe-a,    generic,   linux-generic,            *sa_hwe_a]
+    - [artful,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [artful,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [artful,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [artful,  armhf,   hwe-a,    generic,   linux-generic,            *arm_hwe_a]
+    - [artful,  i386,    hwe-a,    generic,   linux-generic,            *sa_hwe_a]
+    - [artful,  ppc64el, hwe-a,    generic,   linux-generic,            *sa_hwe_a]
+    - [artful,  s390x,   hwe-a,    generic,   linux-generic,            *sa_hwe_a]
  - version: "17.04"
    release: zesty
    kernels:
