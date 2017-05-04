@@ -143,13 +143,53 @@ def grub2_mkconfig(target):
         in_chroot(['grub2-mkconfig', '-o', '/boot/grub2/grub.cfg'])
 
 
-def install_uefi(target):
-    """Install the EFI data from /boot into efi partition."""
+def get_efibootmgr_value(output, key):
+    """Parses the `output` from 'efibootmgr' to return value for `key`."""
+    for line in output.splitlines():
+        split = line.split(':')
+        if len(split) == 2:
+            curr_key = split[0].strip()
+            value = split[1].strip()
+            if curr_key == key:
+                return value
+
+
+def get_file_efi_loaders(output):
+    """Parses the `output` from 'efibootmgr' to return all loaders that exist
+    in '\EFI' path."""
+    return re.findall(
+        r"^Boot(?P<hex>[0-9a-fA-F]{4})\*?\s*\S+\s+.*File\(\\EFI.*$",
+        output, re.MULTILINE)
+
+
+def grub2_install_efi(target):
+    """Configure for EFI.
+
+    First capture the currently booted loader (normally a network device),
+    then perform grub installation (adds a new bootloader and adjusts the
+    boot order), finally re-adjust the boot order so that the currently booted
+    loader is set to boot first in the new order.
+    """
     with util.RunInChroot(target) as in_chroot:
+        stdout, _ = in_chroot(['efibootmgr', '-v'], capture=True)
+        currently_booted = get_efibootmgr_value(stdout, 'BootCurrent')
+        loaders = get_file_efi_loaders(stdout)
+        if currently_booted in loaders:
+            loaders.remove(currently_booted)
+        for loader in loaders:
+            in_chroot(['efibootmgr', '-B', '-b', loader], capture=True)
         in_chroot([
             'grub2-install', '--target=x86_64-efi',
             '--efi-directory', '/boot/efi',
             '--recheck'])
+        stdout, _ = in_chroot(['efibootmgr'], capture=True)
+        currently_booted = get_efibootmgr_value(stdout, 'BootCurrent')
+        boot_order = get_efibootmgr_value(stdout, 'BootOrder').split(',')
+        if currently_booted in boot_order:
+            boot_order.remove(currently_booted)
+        boot_order = [currently_booted] + boot_order
+        new_boot_order = ','.join(boot_order)
+        in_chroot(['efibootmgr', '-o', new_boot_order])
 
 
 def set_autorelabel(target):
@@ -283,7 +323,7 @@ def main():
         target, extra=get_extra_kernel_parameters())
     grub2_mkconfig(target)
     if util.is_uefi_bootable():
-        install_uefi(target)
+        grub2_install_efi(target)
     else:
         for dev in devices:
             grub2_install(target, dev)
