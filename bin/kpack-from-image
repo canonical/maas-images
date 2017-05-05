@@ -176,7 +176,7 @@ kernel_from_mp() {
 }
 
 config_addl_modules() {
-    local root="${1:-/}" fname=""
+    local root="${1:-/}" rel="$2" fname=""
     fname="${root%/}/etc/initramfs-tools/hooks/kpack_extra"
     cat > "$fname" <<EOF
 #!/bin/sh
@@ -186,6 +186,9 @@ copy_modules_dir kernel/drivers/char/ipmi # LP: #1333271
 copy_modules_dir kernel/drivers/net/usb   # LP: #1552378
 manual_add_modules bcache # (LP: #1513176)
 EOF
+    if [ "$rel" = "precise" ]; then
+        echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
+    fi
     [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
     chmod 755 "$fname" ||
         { error "failed setting execute on $fname"; return 1; }
@@ -296,7 +299,7 @@ chrooted() {
 
     which eatmydata >/dev/null 2>&1 && emd=eatmydata
 
-    config_addl_modules / ||
+    config_addl_modules / "$rel" ||
         { error "failed configuring additional modules!"; return 1; }
 
     ensure_iscsi_initramfs_support / ||
