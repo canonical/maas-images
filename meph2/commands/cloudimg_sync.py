@@ -207,6 +207,7 @@ def main():
     parser.add_argument('--arches', action='append',
                         default=[], help='which arches to build, "," delim')
     parser.add_argument('--disable-di', action='store_true', default=False)
+    parser.add_argument('--proposed', action='store_true', default=False)
     parser.add_argument('--rebuild', action='append', default=[],
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
@@ -276,6 +277,10 @@ def main():
         target = cfgdata['default_target']
     else:
         target = args.target
+
+    # --proposed only turns proposed on, not off.
+    if not cfgdata.get('enable_proposed', False):
+        cfgdata['enable_proposed'] = args.enable_proposed
 
     LOG.info(
         "summary: \n " + '\n '.join([
