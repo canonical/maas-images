@@ -42,6 +42,7 @@ PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
 
 VERBOSITY=0
 TOP_D="${0%/*}"
+command -v unshare-pidns >/dev/null 2>&1 || PATH="${0%/*}:$PATH"
 
 error() { echo "$@" 1>&2; }
 errorp() { printf "$@" 1>&2; }
@@ -587,6 +588,7 @@ apply_updates() {
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
         proposed=$proposed \
         pubd="$pubd" \
+        unshare-pidns \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
     [ $? -eq 0 ] || {

@@ -68,6 +68,7 @@ def main():
     parser.add_argument('--dry-run', action='store_true', default=False,
                         help='only report what would be done')
     parser.add_argument('--enable-di', action='store_true', default=False)
+    parser.add_argument('--proposed', action='store_true', default=False)
     parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
     parser.add_argument('--image-format', default=None,
                         help='format of img in img_url.',
@@ -94,6 +95,10 @@ def main():
 
     with open(args.config, "r") as fp:
         cfgdata = yaml.load(fp)
+
+    # --proposed only turns proposed on, not off.
+    if not cfgdata.get('enable_proposed', False):
+        cfgdata['enable_proposed'] = args.enable_proposed
 
     cvret = create_version(
         arch=args.arch, release=args.release, version_name=args.version_name,
