@@ -385,12 +385,6 @@ apply_updates_chrooted() {
             error "failed installing $missing";
             return 1;
         }
-        # FIXME: LP: #1645680 -- DO NOT COMMIT --
-        # yakkety and zesty fail unmount unless we do this.
-        killall ldap-reap
-        killall dirmngr
-        killall gpg-agent
-        sleep 1
     else
         log_change false "$change"
     fi
