@@ -1,0 +1,24 @@
+#!/bin/sh
+has_unshare_pid() {
+    command -v unshare >/dev/null 2>&1 || return 1
+    local helpout=""
+    helpout=$(unshare --help) || return 1
+    case "$helpout" in
+        *--fork*--pid*|*--pid*--fork*) :;;
+        *) return 1;;
+    esac
+    return 0
+}
+if has_unshare_pid; then
+    exec unshare --fork --pid -- "$@"
+else
+    rval=${M2E_REQUIRE_UNSHARE:-0}
+    case "$rval" in
+        0) :;;
+        *) echo "unshare pid not available (M2E_REQUIRE_UNSHARE=$rval)." 1>&2;
+           exit 3;;
+    esac
+    exec "$@"
+fi
+
+# vi: ts=4 expandtab

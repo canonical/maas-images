@@ -3,6 +3,7 @@
 VERBOSITY=0
 TEMP_D=""
 COPY_TYPES="auto overlay qcow2 cp none"
+command -v unshare-pidns >/dev/null 2>&1 || PATH="${0%/*}:$PATH"
 
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -151,6 +152,7 @@ kernel_from_mp() {
     local ch_outd="/tmp/output"
     KPACK_SKIP_APT_UPDATE=$skip_update CHROOTED_VERBOSITY=$VERBOSITY \
         PROPOSED=$proposed \
+        unshare-pidns \
         chroot "$mp" /bin/bash -s chrooted "$kpkg" "$ch_outd" < "$me" ||
         { error "failed chroot and kernel install"; return 1; }
 
