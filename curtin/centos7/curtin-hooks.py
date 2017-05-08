@@ -8,6 +8,7 @@ from __future__ import (
 
 import codecs
 import os
+import re
 import sys
 
 from curtin import (
