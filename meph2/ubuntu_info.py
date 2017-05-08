@@ -134,7 +134,8 @@ try:
     info = get_ubuntu_info()
     REL2VER = {}
     for r in info:
-        if r['codename'] < "hardy":
+        # 4.10 is hardy.
+        if float(r['version']) < 4.10:
             continue
         REL2VER[r['codename']] = r.copy()
 
