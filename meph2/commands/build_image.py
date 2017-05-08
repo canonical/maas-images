@@ -98,7 +98,7 @@ def main():
 
     # --proposed only turns proposed on, not off.
     if not cfgdata.get('enable_proposed', False):
-        cfgdata['enable_proposed'] = args.enable_proposed
+        cfgdata['enable_proposed'] = args.proposed
 
     cvret = create_version(
         arch=args.arch, release=args.release, version_name=args.version_name,
