@@ -43,6 +43,7 @@ SUBCOMMANDS = {
             ('import_cfg', {'help':
                             'The config file for the image to import.'}),
             COMMON_FLAGS['target'],
+            COMMON_FLAGS['max'],
             ]
     },
     'merge': {

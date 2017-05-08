@@ -303,11 +303,6 @@ def main():
     for (args, kwargs) in COMMON_ARGS:
         parser.add_argument(*args, **kwargs)
 
-    parser.add_argument('--max', type=int, default=1,
-                        help=(
-                            'Import at most MAX CentOS images in the target, '
-                            '0 for no limit, defaults to 1.'))
-
     for (args, kwargs) in subc['opts']:
         if isinstance(args, str):
             args = [args]
