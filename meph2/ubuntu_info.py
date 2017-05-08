@@ -16,48 +16,13 @@
 #   You should have received a copy of the GNU Affero General Public License
 #   along with Simplestreams.  If not, see <http://www.gnu.org/licenses/>.
 
-# this is patched over the top of distro_info
-# to allow newer data here then available in the pkg installed distro_info
-
 # copied from simplestreams tools/ubuntu_versions.py
-
-# This data is only used if python-distro-info is not available and
-# the user has set environment variable SS_REQUIRE_DISTRO_INFO=0
-__RELEASE_DATA = (
-    # version, full codename, lts
-    ("8.04", "Hardy Heron", True),
-    ("10.04", "Lucid Lynx", True),
-    ("11.10", "Oneiric Ocelot", False),
-    ("12.04", "Precise Pangolin", True),
-    ("12.10", "Quantal Quetzal", False),
-    ("13.04", "Raring Ringtail", False),
-    ("13.10", "Saucy Salamander", False),
-    ("14.04", "Trusty Tahr", True),
-    ("14.10", "Utopic Unicorn", False),
-    ("15.04", "Vivid Vervet", False),
-    ("15.10", "Wily Werewolf", False),
-    ("16.04", "Xenial Xerus", True),
-    ("16.10", "Yakkety Yak", False),
-    ("17.04", "Zesty Zapus", False),
-    ("17.10", "Artful Aardvark", False),
-)
-
-
-def _get_fulldata(version, full_codename, lts):
-    codename = full_codename.split()[0].lower()
-    return {
-        'codename': codename,
-        'lts': lts,
-        'release_title': "%s LTS" % version if lts else version,
-        'release_codename': full_codename,
-        'version': version,
-    }
+import distro_info
 
 
 def get_ubuntu_info(date=None):
     # this returns a sorted list of dicts
     # each dict has information about an ubuntu release.
-    # Notably absent is any date information (release or eol)
     # its harder than you'd like to get at data via the distro_info library
     #
     # The resultant dicts have the following fields:
@@ -112,47 +77,29 @@ def get_ubuntu_info(date=None):
     for i, codename in enumerate(codenames):
         title = "%s LTS" % versions[i] if lts[i] else versions[i]
         eol = hack_all[codename]['eol'].strftime("%Y-%m-%d")
+        release_date = hack_all[codename]['release'].strftime("%Y-%m-%d")
         ret.append({'lts': lts[i], 'version': versions[i],
                     'supported': codename in supported,
                     'codename': codename,
                     'support_eol': eol,
                     'release_codename': full_codenames[i],
+                    'release_date': release_date,
                     'devel': bool(codename == devel),
                     'release_title': title})
 
     return ret
 
 
-__HARDCODED_REL2VER = {}
-for __t in __RELEASE_DATA:
-    __v = _get_fulldata(*__t)
-    __HARDCODED_REL2VER[__v['codename']] = __v
+REL2VER = {k['codename']: k for k in get_ubuntu_info()}
 
-
-try:
-    import distro_info
-    info = get_ubuntu_info()
-    REL2VER = {}
-    for r in info:
-        # 4.10 is hardy.
-        if float(r['version']) < 4.10:
-            continue
-        REL2VER[r['codename']] = r.copy()
-
-    for r in __HARDCODED_REL2VER:
-        if r not in REL2VER:
-            REL2VER[r] = __HARDCODED_REL2VER[r]
-
-except ImportError:
-    import os
-    import sys
-    if os.environ.get("SS_REQUIRE_DISTRO_INFO", "1") not in ("0"):
-        pkg = "python3-distro-info"
-        if sys.version_info.major == 2:
-            pkg = "python-distro-info"
-        raise ValueError("Please install package %s "
-                         "or set SS_REQUIRE_DISTRO_INFO=0" % pkg)
-    REL2VER = __HARDCODED_REL2VER
+# If you needed to add an entry to REL2VER for a newer release
+# then was available in distro_info, then run this program as main, and
+# then follow the output to add an entry like this
+# REL2VER["newcodename"] = {
+#    "lts": False, "supported": True, "release_title": "18.10",
+#    "devel": True, "release_codename": "Crazy Canvas",
+#    "version": "18.10", "codename": "crazy", "support_eol": "2019-07-31",
+#    "release_date": "2018-10-20"}
 
 LTS_RELEASES = [d for d in REL2VER if REL2VER[d]['lts']]
 SUPPORTED = {d: v for d, v in REL2VER.items() if v['supported']}
