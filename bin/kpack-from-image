@@ -289,11 +289,30 @@ chrooted() {
 
     copymods="cloud-initramfs-copymods"
     if [ -f /usr/share/initramfs-tools/hooks/copymods ]; then
-        error "$copymods already installed"
-        copymods=""
+        debug 1 "package '$copymods' already installed."
     else
         apt-cache show $copymods >/dev/null 2>&1 ||
-            { error "copymods not available"; return 1; }
+            { error "package '$copymods' not available."; return 1; }
+        debug 1 "adding package '$copymods'."
+        pkgs=( "$copymods" "${pkgs[@]}" )
+    fi
+
+    local rooturl="cloud-initramfs-rooturl"
+    if [ -f /usr/share/initramfs-tools/hooks/rooturl ]; then
+        debug 1 "package '$rooturl' already installed."
+    else
+        if ! apt-cache show $rooturl >/dev/null 2>&1; then
+            case "$rel" in
+                precise)
+                    debug 1 "package '$rooturl' not available on '$rel'";;
+                *)
+                    error "package '$rooturl' not available.";
+                    return 1;;
+            esac
+        else
+            debug 1 "adding package '$rooturl' (LP: #1688606)."
+            pkgs=( "$rooturl" "${pkgs[@]}" )
+        fi
     fi
 
     zzgrub=/etc/kernel/postinst.d/zz-update-grub
@@ -322,9 +341,9 @@ chrooted() {
     vrun 1 "installing packages" \
         env DEBIAN_FRONTEND=noninteractive FLASH_KERNEL_SKIP=1 \
         $emd apt-get install --assume-yes --quiet \
-            $copymods "${pkgs[@]}" </dev/null
+            "${pkgs[@]}" </dev/null
     [ $? -eq 0 ] ||
-        { error "failed install of $copymods ${pkgs[*]}"; return 1; }
+        { error "failed install of ${pkgs[*]}"; return 1; }
 
     undisable_services / ||
         { error "failed to re-enable services after apt installs"; return 1; }
