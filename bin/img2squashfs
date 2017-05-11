@@ -1,0 +1,289 @@
+#!/bin/bash
+
+VERBOSITY=1
+TEMP_D=""
+VALID_FORMATS=( auto img-tar root-image root-image-gz root-tar squashfs-image
+  dir )
+
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
+Usage() {
+    cat <<EOF
+Usage: ${0##*/} [ options ] source-image output-squash-image
+
+   convert 'source-image' into a squashfs filesystem image.
+
+   source-image is a file in one of:
+     ${VALID_FORMATS[*]}
+
+   output-squash-image will be a squashfs image.
+
+   options:
+    -v | --verbose     increase verbosity
+    -f | --format   F  source-image is of format F. default: auto.
+                       must be one of:
+                         auto: determine based on file and name heuristics
+                         img-tar: tarball of root image (image file named .img)
+                         root-image: filesytem (ext[234] in a file)
+                         root-image-gz: root-image that is compressed with gzip
+                         root-tar: tarball of / (supports .tar.xz .tar.gz)
+                         squashfs-image: a squahsfs image (.squashfs)
+    -O | --owner    O   change ownership of output to O (user:group)
+
+   Example:
+     ${0##*/} --format=my.tar.gz my.squashfs
+EOF
+}
+
+bad_Usage() { Usage 1>&2; [ $# -eq 0 ] || error "$@"; return 1; }
+cleanup() {
+    [ -z "${TEMP_D}" -o ! -d "${TEMP_D}" ] || rm -Rf "${TEMP_D}"
+}
+
+ddebug() {
+    local level="$1"; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "$(date -R):" "$@"
+}
+
+debug() {
+    local level=${1}; shift;
+    [ "${level}" -gt "${VERBOSITY}" ] && return
+    error "${@}"
+}
+
+inargs() {
+    #inargs(needle, [haystack])
+    # return true if needle is in haystack
+    local needle="$1" i=""
+    shift
+    for i in "$@"; do
+        [ "$i" = "$needle" ] && return 0
+    done
+    return 1
+}
+
+get_img_from_tar() {
+    # given 'img' (image.tar.gz), extract it and put the .img file in 'out'
+    local img="$1" out="$2" tempd="$3"
+    local mtmp=$(mktemp -d "${tempd}/img_from_tar.XXXXXX")
+    tar -C "$mtmp" -Sxf "$img" ||
+        { error "failed to extract $img"; return 1; }
+    local f="" found=""
+    for f in "${mtmp}/"*; do
+        [ ! -f "$f" -o "${f%.img}" = "$f" ] && continue
+        [ -z "$found" ] ||
+            { error "multiple .img found in $img"; return 1; }
+        found="$f"
+    done
+    [ -n "$found" ] || { error "no .img in $img"; return 1; }
+    mv "$found" "$out" && rm -Rf "$mtmp"
+}
+
+determine_format() {
+    local input="$1" fmt="$2" fout=""
+    inargs "$fmt" "${VALID_FORMATS[@]}" || {
+        error "provided '--format=$fmt' not a valid format:" \
+            "${VALID_FORMATS[*]}"
+        return 1;
+    }
+    [ "$fmt" != "auto" ] && _RET="$fmt" && return 0
+    if [ -d "$input" ]; then
+        debug 1 "${input} is a directory";
+        _RET="$dir"
+        return
+    fi
+    fout=$(LANG=C file "$input") ||
+        { error "failed: file $input"; return 1; }
+    case "${fout#$input: }" in
+        "gzip compressed"*)
+            fout=$(zcat "$input" | file -)
+            case "${fout#*: }" in
+                POSIX\ tar*) fmt="img-tar";;
+                *) fmt="root-image-gz";;
+            esac
+            ;;
+        "POSIX tar"*) fmt="img-tar";;
+        *ext[234]\ filesystem*) fmt="root-image";;
+        *[Ss]quashfs*) fmt="squashfs-image";;
+        *)
+            # if the above failed (on trusty a .tar.gz file was reported
+            # as a Minux file system) then try filename based heuristics
+            case "$input" in
+                *-root.t??|*-root.tar|*-root.tar.??) fmt="root-tar";;
+                *.tar.gz|*.tgz|*.tar) fmt="img-tar";;
+                *.gz) fmt="root-image-gz";;
+                *.squashfs) fmt="squashfs-image";;
+                *) 
+                    error "WARN: file '$input' did not match name hueristics"
+                    fmt="root-image";;
+            esac
+            debug 1 "guessing $input is $fmt based on name and 'file' [$fout]";;
+    esac
+    debug 1 "determined format is $fmt"
+    _RET="$fmt"
+}
+
+get_usable_input() {
+    # given 'input' in format 'fmt' return:
+    #  _RET_fmt: the format of _RET_PATH. either
+    #     fs-image : a mountable filesystem image.
+    #     dir : a directory
+    #  _RET_path: full path to a file in tempd
+    local input="$1" fmt="$2" tempd="$3" cmd=""
+    case "$fmt" in
+        img-tar)
+            _RET_fmt="fs-image"
+            _RET_path="fs-image"
+            get_img_from_tar "$input" "${tempd}/fs-image" "${tempd}"
+            return;;
+        root-image-gz)
+            _RET_fmt="fs-image"
+            _RET_path="$tempd/fs-image"
+            zcat -c "$input" > "$tempd/fs-image.tmp" &&
+                mv "$tempd/fs-image.tmp" "$tempd/fs-image"
+            return;;
+        root-image)
+            _RET_fmt="fs-image"
+            _RET_path="$tempd/fs-image"
+            ln -s "$(readlink -f "$input")" "${tempd}/fs-image"
+            return;;
+        squashfs-image)
+            _RET_fmt="squashfs-image"
+            _RET_PATH="${tempd}/fs-image"
+            ln -s "$(readlink -f "$input")" "${tempd}/fs-image"
+            return;;
+        root-tar)
+            _RET_fmt="dir"
+            _RET_path="${tempd}/fs-dir"
+            mkdir "${_RET_path}"
+            cmd=( tar -C "${_RET_path}" -xpSf "$input" \
+                --numeric-owner --xattrs "--xattrs-include=*" )
+            debug 1 "extracting $fmt with ${cmd[*]}"
+            "${cmd[@]}" || {
+                error "failed: extracting $fmt with ${cmd[*]}"
+                return 1;
+            }
+            return
+            ;;
+        dir)
+            _RET_fmt="dir"
+            _RET_PATH="${tempd}/fs-dir"
+            ln -s "$(readlink -f "$input")" "${tempd}/fs-dir"
+            return;;
+        *)
+            error "Unknown format '$fmt'";
+            return 1;;
+    esac
+}
+
+
+dir2squashfs() {
+    local src_d="$1" out="$2" owner="${3:-$(id -u):$(id -g)}"
+    local tmpfile ret="" cmd=""
+    tmpfile="${out}.${0##*/}.$$" || return
+    cmd=( mksquashfs "$src_d" "$tmpfile" -xattrs -comp xz )
+    ddebug 1 "starting: ${cmd[*]}"
+    "${cmd[@]}"
+    ret=$?
+    ddebug 1 "finished: returned $ret"
+    if [ $ret -eq 0 ]; then
+        chown "$owner" "$tmpfile" ||
+            { error "failed chown $owner $tmpfile"; return 1; }
+        mv "$tmpfile" "$out" ||
+            { error "failed to move file to $out"; return 1; }
+    else
+        rm -f "$tmpfile"
+        error "mksquashfs failed [$ret]: ${cmd[*]}."
+    fi
+    return $ret
+}
+
+fsimage2squashfs() {
+    local src="$1" out="$2" owner="$3"
+    local sudo="sudo"
+    [ "$(id -u )" = "0" ] && sudo=""
+    local cmd=""
+    cmd=( mount-image-callback "$src" --
+        "$0" dir2squashfs _MOUNTPOINT_ "$out" $owner )
+    debug 1 "calling ${cmd[*]}"
+    "${cmd[@]}"
+}
+
+main() {
+    local short_opts="hf:O:v"
+    local long_opts="help,format:,owner:,verbose"
+    local getopt_out=""
+    getopt_out=$(getopt --name "${0##*/}" \
+        --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+        eval set -- "${getopt_out}" ||
+        { bad_Usage; return; }
+
+    local cur="" next="" input="" output="" owner="" fmt_in="auto" fmt=""
+    while [ $# -ne 0 ]; do
+        cur="$1"; next="$2";
+        case "$cur" in
+            -h|--help) Usage ; exit 0;;
+            -f|--format) fmt_in="$next"; shift;;
+            -O|--owner) owner="$next"; shift;;
+            -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
+            --) shift; break;;
+        esac
+        shift;
+    done
+
+    [ $# -eq 2 ] || { bad_Usage "must provide input and output."; return; }
+    src_in="$1"
+    output="$2"
+
+    TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/${0##*/}.XXXXXX") ||
+        { error "failed to make tempdir"; return 1; }
+    trap cleanup EXIT
+    local tempd="${TEMP_D}"
+
+    determine_format "${src_in}" "${fmt_in}" || return
+    local fmt="${_RET}"
+    debug 1 "format of '${src_in}' is '$fmt'"
+
+    case "$fmt" in
+        dir|squashfs-image|root-tar) :;;
+        *)
+            [ "$(id -u)" = "0" ] || {
+                error "Cannot convert $fmt to squashfs as non-root";
+                return 1;
+            }
+    esac
+    get_usable_input "${src_in}" "$fmt" "$tempd" || return
+    local cfmt="${_RET_fmt}" tpath="${_RET_path}"
+
+    debug 1 "got format '$cfmt' at temp path '$tpath'"
+    if [ "$cfmt" = "squashfs-image" ]; then
+        local tmpf="$output.$$"
+        cp "$src_in" "$tmpf" &&
+            { [ -z "$owner" ] || chown "$owner" "$tmpf" ; } &&
+            mv "$tmpf" "$output"  || {
+                rm -f "$tmpf"
+                error "failed copying $src_in to $output"
+                return 1
+            }
+    elif [ -f "$tpath" ]; then
+        fsimage2squashfs "$tpath" "$output" "$owner" || return
+    elif [ -d "$tpath" ]; then
+        dir2squashfs "$tpath" "$output" || return
+    else
+        error "failed. path='$tpath' cfmt=${cfmt}"
+        return 1
+    fi
+    error "output in $output. took ${SECONDS}s."
+    return 0
+}
+
+if [ "$1" = "dir2squashfs" ]; then
+    shift
+    dir2squashfs "$@"
+else
+    main "$@"
+fi
+
+# vi: ts=4 expandtab
