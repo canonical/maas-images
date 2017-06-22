@@ -155,7 +155,9 @@ def create_version(arch, release, version_name, img_url, out_d,
     krd_packs = []
     squashfs = cfgdata.get('squashfs', False)
     base_boot_keys = ['boot-kernel', 'boot-initrd']
-    if squashfs and img_url.endswith('.squashfs'):
+    if squashfs:
+        # Only publish SquashFS root images when the squashfs option is set. If
+        # the image is a tar.gz it will be converted below.
         base_ikeys = base_boot_keys + ['squashfs', 'squashfs.manifest']
         manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
         newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
@@ -300,8 +302,8 @@ def create_version(arch, release, version_name, img_url, out_d,
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
 
+        base_dir = os.path.join(out_d, release, arch, version_name)
         if img_url.endswith('squashfs'):
-            base_dir = os.path.join(out_d, release, arch, version_name)
             src_squash = os.path.join(base_dir, os.path.basename(img_url))
             if squashfs:
                 # If we're publishing a SquashFS file rename it to its
@@ -318,6 +320,17 @@ def create_version(arch, release, version_name, img_url, out_d,
                 # If we're not publishing the SquashFS image but used it to
                 # generate the root-img clean it up.
                 os.remove(src_squash)
+        elif squashfs and img_url.endswith('tar.gz'):
+            # If the stream is publishing SquashFS images convert any
+            # non-SquashFS image into a SquashFS image.
+            root_image = os.path.join(base_dir, 'root-image.gz')
+            subprocess.check_call([
+                os.environ.get('IMG2SQUASHFS', 'img2squashfs'),
+                '--format', 'root-tar',
+                root_image,
+                os.path.join(base_dir, 'squashfs'),
+                ])
+            os.remove(root_image)
 
     # get checksum and size of new files created
     file_info = {}
