@@ -161,6 +161,11 @@ def create_version(arch, release, version_name, img_url, out_d,
         base_ikeys = base_boot_keys + ['squashfs', 'squashfs.manifest']
         manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
         newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
+        # If upstream is only providing a root-image include it in addition to
+        # the SquashFS image
+        if not img_url.endswith('.squashfs'):
+            base_ikeys += ['root-image.gz']
+            newpaths.update([rootimg_path])
     else:
         base_ikeys = base_boot_keys + ['root-image.gz', 'root-image.manifest']
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
@@ -323,14 +328,12 @@ def create_version(arch, release, version_name, img_url, out_d,
         elif squashfs and img_url.endswith('tar.gz'):
             # If the stream is publishing SquashFS images convert any
             # non-SquashFS image into a SquashFS image.
-            root_image = os.path.join(base_dir, 'root-image.gz')
             subprocess.check_call([
+                'sudo', 'env', 'PATH=%s' % os.environ.get('PATH'),
                 os.environ.get('IMG2SQUASHFS', 'img2squashfs'),
-                '--format', 'root-tar',
-                root_image,
+                os.path.join(base_dir, 'root-image.gz'),
                 os.path.join(base_dir, 'squashfs'),
                 ])
-            os.remove(root_image)
 
     # get checksum and size of new files created
     file_info = {}
