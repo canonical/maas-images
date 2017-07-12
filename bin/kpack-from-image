@@ -187,6 +187,10 @@ config_addl_modules() {
 copy_modules_dir kernel/drivers/char/ipmi # LP: #1333271
 copy_modules_dir kernel/drivers/net/usb   # LP: #1552378
 manual_add_modules bcache # (LP: #1513176)
+# LP: #1702976
+if [ `uname -m` = 'aarch64' ]; then
+    manual_add_modules i2c-thunderx
+fi
 EOF
     if [ "$rel" = "precise" ]; then
         echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
