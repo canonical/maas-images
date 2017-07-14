@@ -155,10 +155,15 @@ def create_version(arch, release, version_name, img_url, out_d,
     krd_packs = []
     squashfs = cfgdata.get('squashfs', False)
     base_boot_keys = ['boot-kernel', 'boot-initrd']
-    if squashfs and img_url.endswith('.squashfs'):
+    if squashfs:
         base_ikeys = base_boot_keys + ['squashfs', 'squashfs.manifest']
         manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
         newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
+        # If upstream is only providing a root-image include it in addition to
+        # the SquashFS image. The root-image.gz will be converted below.
+        if not img_url.endswith('.squashfs'):
+            base_ikeys += ['root-image.gz']
+            newpaths.update([rootimg_path])
     else:
         base_ikeys = base_boot_keys + ['root-image.gz', 'root-image.manifest']
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
@@ -300,8 +305,8 @@ def create_version(arch, release, version_name, img_url, out_d,
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
 
+        base_dir = os.path.join(out_d, release, arch, version_name)
         if img_url.endswith('squashfs'):
-            base_dir = os.path.join(out_d, release, arch, version_name)
             src_squash = os.path.join(base_dir, os.path.basename(img_url))
             if squashfs:
                 # If we're publishing a SquashFS file rename it to its
@@ -318,6 +323,17 @@ def create_version(arch, release, version_name, img_url, out_d,
                 # If we're not publishing the SquashFS image but used it to
                 # generate the root-img clean it up.
                 os.remove(src_squash)
+        elif squashfs and img_url.endswith('tar.gz'):
+            # If the stream is publishing SquashFS images convert any
+            # non-SquashFS image into a SquashFS image. Both the root-image.gz
+            # and SquashFS image will be included but MAAS will only use the
+            # SquashFS image.
+            subprocess.check_call([
+                'sudo', 'env', 'PATH=%s' % os.environ.get('PATH'),
+                os.environ.get('IMG2SQUASHFS', 'img2squashfs'),
+                os.path.join(base_dir, 'root-image.gz'),
+                os.path.join(base_dir, 'squashfs'),
+                ])
 
     # get checksum and size of new files created
     file_info = {}
