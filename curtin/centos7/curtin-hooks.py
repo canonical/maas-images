@@ -13,9 +13,37 @@ import sys
 
 from curtin import (
     block,
+    config,
     util,
     )
 
+try:
+    from curtin import FEATURES as curtin_features
+except ImportError:
+    curtin_features = []
+
+write_files = None
+try:
+    try:
+        from curtin.futil import write_files
+    except ImportError as e:
+        # FIXME: Temporary. Remove no later than 2017-08-15.
+        from curtin.commands.curthooks import write_files
+except ImportError:
+    pass
+
+centos_apply_network_config = None
+try:
+    if 'CENTOS_APPLY_NETWORK_CONFIG' in curtin_features:
+        try:
+            from curtin.commands.curthooks import centos_apply_network_config
+        except ImportError as e:
+            # FIXME: Temporary. Remove no later than 2017-08-15.
+            if 'CENTOS_NETWORK_CURTHOOKS' in curtin_features:
+                from curtin.commands.curthooks import (
+                    centos_network_curthooks as centos_apply_network_config)
+except ImportError as e:
+    pass
 
 """
 CentOS 7
@@ -299,6 +327,29 @@ def write_network_config(target, mac):
         })
 
 
+def apply_networking(cfg, target, bootmac):
+    if 'network' in cfg and centos_apply_network_config:
+        centos_apply_network_config(cfg, target)
+        return
+
+    if 'network' in cfg:
+        sys.stderr.write("WARN: network configuration provided, but "
+                         "no support for applying. Using basic config.")
+    write_network_config(target, bootmac)
+
+
+def handle_cloudconfig(cfg, target):
+    if not cfg.get('cloudconfig'):
+        return
+    if not write_files:
+        sys.stderr.write(
+            "WARN: Unable to handle 'cloudconfig' section in config."
+            "No 'write_files' found from curtin.\n")
+        return
+
+    write_files(cfg['cloudconfig'], target)
+
+
 def main():
     state = util.load_command_environment()
     target = state['target']
@@ -330,7 +381,15 @@ def main():
             grub2_install(target, dev)
 
     set_autorelabel(target)
-    write_network_config(target, bootmac)
+
+    if state.get('config'):
+        cfg = config.load_config(state['config'])
+    else:
+        cfg = {}
+
+    handle_cloudconfig(cfg, target)
+
+    apply_networking(cfg, target, bootmac)
 
 
 if __name__ == "__main__":
