@@ -358,7 +358,8 @@ def handle_cloudconfig(cfg, target):
             "No 'write_files' found from curtin.\n")
         return
 
-    write_files(cfg['cloudconfig'], target)
+    base_dir = os.path.join(target, 'etc/cloud/cloud.cfg.d')
+    write_files(cfg['cloudconfig'], base_dir)
 
 
 def main():
