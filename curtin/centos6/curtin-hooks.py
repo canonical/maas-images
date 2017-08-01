@@ -32,7 +32,7 @@ centos_apply_network_config = None
 try:
     if 'CENTOS_APPLY_NETWORK_CONFIG' in curtin_features:
         from curtin.commands.curthooks import centos_apply_network_config
-except ImportError as e:
+except ImportError:
     pass
 
 """
