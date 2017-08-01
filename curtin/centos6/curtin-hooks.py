@@ -24,24 +24,14 @@ except ImportError:
 
 write_files = None
 try:
-    try:
-        from curtin.futil import write_files
-    except ImportError as e:
-        # FIXME: Temporary. Remove no later than 2017-08-15.
-        from curtin.commands.curthooks import write_files
+    from curtin.futil import write_files
 except ImportError:
     pass
 
 centos_apply_network_config = None
 try:
     if 'CENTOS_APPLY_NETWORK_CONFIG' in curtin_features:
-        try:
-            from curtin.commands.curthooks import centos_apply_network_config
-        except ImportError as e:
-            # FIXME: Temporary. Remove no later than 2017-08-15.
-            if 'CENTOS_NETWORK_CURTHOOKS' in curtin_features:
-                from curtin.commands.curthooks import (
-                    centos_network_curthooks as centos_apply_network_config)
+        from curtin.commands.curthooks import centos_apply_network_config
 except ImportError as e:
     pass
 
