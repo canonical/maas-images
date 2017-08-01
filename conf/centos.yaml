@@ -14,11 +14,19 @@ versions:
         release_title: "CentOS 7.0"
         curtin_files: "{curtin_path}/centos7"
         packages:
-         # CentOS 7 removed python-oauth which is required for cloud-init to
-         # authenticate with the MAAS metadata service. Until cloud-init from CentOS
-         # supports python-oauth2 python-oauthlib we need to pull python-oauth from
-         # EPEL7-testing
-         - https://kojipkgs.fedoraproject.org/packages/python-oauth/1.0.1/10.el7/noarch/python-oauth-1.0.1-10.el7.noarch.rpm
+         # cloud-init depends on packages from EPEL
+         - epel-release
+         # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
+         # package build. Instead it expects you to first add the repo which
+         # is what is included in this package.
+         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-7-x86_64/00581936-cloud-init-el-release/cloud-init-el-release-7-1.noarch.rpm
+         # The image most likely already has cloud-init, this pulls Canonical's
+         # version
+         - cloud-init
+         # bridge-utils is required by cloud-init to configure networking.
+         # Without it cloud-init will try to install it which will not work in
+         # isolated environments.
+         - bridge-utils
          - linux-firmware
          - grub2-efi-modules
          - efibootmgr
@@ -26,5 +34,19 @@ versions:
         version: 6.6
         release_title: "CentOS 6.6"
         curtin_files: "{curtin_path}/centos6"
+        packages:
+         # cloud-init depends on packages from EPEL
+         - epel-release
+         # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
+         # package build. Instead it expects you to first add the repo which
+         # is what is included in this package.
+         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-6-x86_64/00581936-cloud-init-el-release/cloud-init-el-release-7-1.noarch.rpm
+         # The image most likely already has cloud-init, this pulls Canonical's
+         # version
+         - cloud-init
+         # bridge-utils is required by cloud-init to configure networking.
+         # Without it cloud-init will try to install it which will not work in
+         # isolated environments.
+         - bridge-utils
 
 # vi: syntax=yaml nowrap
