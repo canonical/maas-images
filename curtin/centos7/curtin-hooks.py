@@ -319,7 +319,7 @@ def write_network_config(target, mac):
 
 def apply_networking(cfg, target, bootmac):
     if 'network' in cfg and centos_apply_network_config:
-        centos_apply_network_config(cfg, target)
+        centos_apply_network_config(cfg['network'], target)
         return
 
     if 'network' in cfg:
