@@ -73,7 +73,12 @@ def get_ubuntu_info(date=None):
     # hack_all, because we're using '_rows', which is not supported
     # however it is the only real way to get at EOL, and is convenient
     # series there is codename to us
-    hack_all = {i['series']: i for i in udi._rows}
+    try:
+        ubuntu_rows = udi._rows
+    except AttributeError:
+        ubuntu_rows = [row.__dict__ for row in udi._releases]
+
+    hack_all = {i['series']: i for i in ubuntu_rows}
     for i, codename in enumerate(codenames):
         title = "%s LTS" % versions[i] if lts[i] else versions[i]
         eol = hack_all[codename]['eol'].strftime("%Y-%m-%d")
