@@ -67,6 +67,41 @@ To debug and use the fake 'maas-cloudimg2eph2', run like:
 It will produce output that looks much like the final output, but
 runs in seconds rather than minutes.
 
+=== Enabling Proposed ===
+For development and test purposes using Ubuntu proposed or PPA can
+be very useful.
+
+You can enable the proposed archive by simply editing the config
+file /conf/meph-v3.yaml and specifying '--conf=conf/meph-v3.yaml'.
+
+    enable_proposed: True
+
+Alternatively, you can simply pass '--proposed' to 'meph2-build' or
+to meph2-cloudimg-sync.
+
+=== Adding PPAs ===
+You can build images with any number of PPAs added and additional
+packages installed into the image through the environment variables
+M2E_ADD_REPOS and M2E_ADD_PACKAGES which are read by
+maas-cloudimg2ephemeral.
+
+M2E_ADD_REPOS is a space-delimited list of repositories to pass
+to 'add-apt-repository'.  M2E_ADD_PACKAGES is a space-delimited
+list of packages that will be installed into the image, and will
+thus affect both the image and the initramfs produced from it.
+
+For example:
+
+    $ export PATH=$PWD/bin:$PATH
+    $ rel=xenial ; arch=amd64
+    $ burl=http://cloud-images.ubuntu.com/
+    $ file=$rel-server-cloudimg-amd64.squashfs
+    $ wget $burl/$rel/current/$rel-server-cloudimg-amd64.squashfs
+
+    $ export M2E_ADD_REPOS=ppa:smoser/lp1711760
+    $ meph2-build --config=conf/meph-v3.yaml \
+        $arch $rel $(date +"%Y%m%d") $file $rel-output.d/
+
 == streams management ==
 Building as above will create out.d that has *metadata* describing
 everything that is in the source stream and also the things that were
