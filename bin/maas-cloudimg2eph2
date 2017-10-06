@@ -640,7 +640,11 @@ main() {
     if [ "$fmt" = "squashfs-image" ]; then
         local squash_out=""
         squash_out=$(dirname "$output")/$(basename "$src")
-        if [ -n "${proposed_flag}" ]; then
+
+        # This is not perfect, but if these things imply a change
+        # to the image rather than re-using the input.
+        if [ -n "${proposed_flag}" ] ||
+           [ -n "${M2E_ADD_REPOS}" -o -n "${M2E_ADD_PACKAGES}" ]; then
             debug 1 "creating a new squashfs in $squash_out from $imgfile"
             sudo mount-image-callback "$imgfile" --read-only -- sh -ec '
                 src="$1"; out="$2"; owner="$3"; tmp="$out.$$"
