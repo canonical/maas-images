@@ -72,12 +72,12 @@ For development and test purposes using Ubuntu proposed or PPA can
 be very useful.
 
 You can enable the proposed archive by simply editing the config
-file /conf/meph-v3.yaml and specifying '--conf=conf/meph-v3.yaml'.
+file conf/meph-v3.yaml and specifying '--conf=conf/meph-v3.yaml'.
 
     enable_proposed: True
 
 Alternatively, you can simply pass '--proposed' to 'meph2-build' or
-to meph2-cloudimg-sync.
+to 'meph2-cloudimg-sync'.
 
 === Adding PPAs ===
 You can build images with any number of PPAs added and additional
@@ -92,11 +92,10 @@ thus affect both the image and the initramfs produced from it.
 
 For example:
 
-    $ export PATH=$PWD/bin:$PATH
     $ rel=xenial ; arch=amd64
     $ burl=http://cloud-images.ubuntu.com/
     $ file=$rel-server-cloudimg-amd64.squashfs
-    $ wget $burl/$rel/current/$rel-server-cloudimg-amd64.squashfs
+    $ wget $burl/$rel/current/$rel-server-cloudimg-amd64.squashfs -O "$file"
 
     $ export M2E_ADD_REPOS=ppa:smoser/lp1711760
     $ meph2-build --config=conf/meph-v3.yaml \
