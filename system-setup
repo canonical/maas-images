@@ -76,17 +76,7 @@ apt_install() {
 
 
 streams_package=true
-if [[ "$rel" < trusty ]]; then
-    error "# WARN: building not supported prior to trusty" 1>&2
-    error "# WARN:  but meph2-util (index operations) supported" 1>&2
-    [ "${MEPH2_SIMPLESTREAMS}" = "package" ] &&
-        fail "no distro simplestreams < trusty"
-    MEPH2_SIMPLESTREAMS="auto"
-    streams_package=false
-    def_meph2_only=true
-else
-    def_meph2_only=false
-fi
+def_meph2_only=false
 
 case "$MEPH2_UTIL_ONLY" in
     false|0) meph2_only=false;;
