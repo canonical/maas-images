@@ -365,15 +365,9 @@ chrooted() {
     kernel=""
     for f in /boot/vmlin*; do
         [ -f "$f" ] || continue
-        [ -f "$f"*.signed ] && continue
         out=$(dpkg -S "$f")
         pkg=${out%%:*}
-        # LP: #1711203 - Prefer a signed kernel over an unsigned kernel.
-        # The kernel signed kernel is created by combining the key in
-        # /usr/lib/linux and the kernel in /boot. As the kernel will not be
-        # in the dpkg database assume it's what we want.
-        echo $f | grep -q 'signed'
-        [ $? -eq 0 ] || [ "$pkg" = "$kpkg" ] && kernel="$f" && break
+        [ "$pkg" = "$kpkg" ] && kernel="$f" && break
         if apt-get --dry-run remove $pkg | grep -q "Remv $kpkg "; then
             kernel="$f"
             break
@@ -383,7 +377,14 @@ chrooted() {
     verflav=${kernel#/boot/*-}
     initrd="/boot/initrd.img-$verflav"
     debug 2 "verflav is $verflav"
-
+    # LP: #1711203 - Prefer a signed kernel over an unsigned kernel. The signed
+    # kernel is created by combining the key in /usr/lib/linux and the kernel
+    # in /boot. As the kernel will not be in the dpkg database assume if it
+    # exists it's what we want.
+    if [ -f "$(ls $kernel*signed)" ]; then
+        kernel="$(ls $kernel*signed)"
+        debug 1 "Found signed kernel $kernel"
+    fi
     if [ "$initrd" -ot "$stamp" ]; then
         debug 1 "initramfs did not update by package install. regenerating."
         update-initramfs -c -k "$verflav"
@@ -392,7 +393,9 @@ chrooted() {
     [ -f "$initrd" ] || { error "no initrd for $verflav" 1>&2; return 1; }
 
     local name="" t="" outf=""
-    for f in /boot/*-${verflav}; do
+    for f in /boot/*-${verflav}*; do
+        # Skip unsigned kernel if a signed kernel is available.
+        [ -f "$f"*.signed ] && continue
         t=$(basename "$f")
         case "$t" in
             vmlinu?*) name="kernel";;
