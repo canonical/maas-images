@@ -45,7 +45,7 @@ releases:
  - version: "17.10"
    release: artful
    kernels:
-    - [artful,  amd64,   hwe-a,    generic,   linux-signed-generic,            *sa_hwe_a]
+    - [artful,  amd64,   hwe-a,    generic,   linux-signed-generic,     *sa_hwe_a]
     - [artful,  arm64,   hwe-a,    generic,   linux-generic,            *sa_hwe_a]
     - [artful,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
     - [artful,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -57,7 +57,7 @@ releases:
  - version: "17.04"
    release: zesty
    kernels:
-    - [zesty,  amd64,   hwe-z,    generic,   linux-signed-generic,            *sa_hwe_z]
+    - [zesty,  amd64,   hwe-z,    generic,   linux-signed-generic,     *sa_hwe_z]
     - [zesty,  arm64,   hwe-z,    generic,   linux-generic,            *sa_hwe_z]
     - [zesty,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
     - [zesty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -69,7 +69,7 @@ releases:
  - version: "16.10"
    release: yakkety
    kernels:
-    - [yakkety,  amd64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
+    - [yakkety,  amd64,   hwe-y,    generic,   linux-signed-generic,     *sa_hwe_y]
     - [yakkety,  arm64,   hwe-y,    generic,   linux-generic,            *sa_hwe_y]
     - [yakkety,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
     - [yakkety,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -81,7 +81,7 @@ releases:
  - version: "16.04"
    release: xenial
    kernels:
-    - [xenial,  amd64,   hwe-x,    generic,   linux-signed-generic,            *sa_hwe_x]
+    - [xenial,  amd64,   hwe-x,    generic,   linux-signed-generic,     *sa_hwe_x]
     - [xenial,  arm64,   hwe-x,    generic,   linux-generic,            *sa_hwe_x]
     - [xenial,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
     - [xenial,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -97,7 +97,7 @@ releases:
     - [wily,    armhf,   hwe-w,    generic,   linux-generic,            *arm_hwe_w]
     - [wily,    armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [wily,    i386,    hwe-w,    generic,   linux-generic,            *sa_hwe_w]
-    - [wily,    amd64,   hwe-w,    generic,   linux-generic,            *sa_hwe_w]
+    - [wily,    amd64,   hwe-w,    generic,   linux-signed-generic,     *sa_hwe_w]
     - [wily,    ppc64el, hwe-w,    generic,   linux-generic,            *sa_hwe_w]
     - [wily,    arm64,   hwe-w,    generic,   linux-generic,            *sa_hwe_w]
     - [wily,    arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -109,7 +109,7 @@ releases:
     - [vivid,   armhf,   hwe-v,    generic,   linux-generic,            *arm_hwe_v]
     - [vivid,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [vivid,   i386,    hwe-v,    generic,   linux-generic,            *sa_hwe_v]
-    - [vivid,   amd64,   hwe-v,    generic,   linux-generic,            *sa_hwe_v]
+    - [vivid,   amd64,   hwe-v,    generic,   linux-signed-generic,     *sa_hwe_v]
     - [vivid,   ppc64el, hwe-v,    generic,   linux-generic,            *sa_hwe_v]
     - [vivid,   arm64,   hwe-v,    generic,   linux-generic,            *sa_hwe_v]
     - [vivid,   arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -121,7 +121,7 @@ releases:
     - [utopic,  armhf,   hwe-u,    generic,   linux-generic,            *arm_hwe_u]
     - [utopic,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [utopic,  i386,    hwe-u,    generic,   linux-generic,            *sa_hwe_u]
-    - [utopic,  amd64,   hwe-u,    generic,   linux-generic,            *sa_hwe_u]
+    - [utopic,  amd64,   hwe-u,    generic,   linux-signed-generic,     *sa_hwe_u]
     - [utopic,  ppc64el, hwe-u,    generic,   linux-generic,            *sa_hwe_u]
     - [utopic,  arm64,   hwe-u,    generic,   linux-generic,            *sa_hwe_u]
     - [utopic,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -133,7 +133,7 @@ releases:
     - [trusty,  armhf,   hwe-t,    generic,   linux-generic,            *arm_hwe_t]
     - [trusty,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [trusty,  i386,    hwe-t,    generic,   linux-generic,            *sa_hwe_t]
-    - [trusty,  amd64,   hwe-t,    generic,   linux-signed-generic,            *sa_hwe_t]
+    - [trusty,  amd64,   hwe-t,    generic,   linux-signed-generic,     *sa_hwe_t]
     - [trusty,  ppc64el, hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  arm64,   hwe-t,    generic,   linux-generic,            *sa_hwe_t]
     - [trusty,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
@@ -165,22 +165,22 @@ releases:
     - [saucy,   armhf,   hwe-s,    generic,   linux-generic,            *sa_hwe_s]
     - [saucy,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
     - [saucy,   i386,    hwe-s,    generic,   linux-generic,            *sa_hwe_t]
-    - [saucy,   amd64,   hwe-s,    generic,   linux-generic,            *sa_hwe_t]
+    - [saucy,   amd64,   hwe-s,    generic,   linux-signed-generic,     *sa_hwe_t]
  - version: "12.04"
    release: precise
    builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
    kernels:
     - [precise, i386,    hwe-p,    generic,  linux-generic,             *sa_hwe_p]
-    - [precise, amd64,   hwe-p,    generic,  linux-generic,             *sa_hwe_p]
+    - [precise, amd64,   hwe-p,    generic,  linux-signed-generic,      *sa_hwe_p]
     - [precise, armhf,   highbank, highbank, linux-highbank,            [highbank]]
     - [quantal, i386,    hwe-q,    generic,  linux-generic-lts-quantal, *sa_hwe_q]
-    - [quantal, amd64,   hwe-q,    generic,  linux-generic-lts-quantal, *sa_hwe_q]
+    - [quantal, amd64,   hwe-q,    generic,  linux-signed-generic-lts-quantal, *sa_hwe_q]
     - [raring,  i386,    hwe-r,    generic,  linux-generic-lts-raring,  *sa_hwe_r]
-    - [raring,  amd64,   hwe-r,    generic,  linux-generic-lts-raring,  *sa_hwe_r]
+    - [raring,  amd64,   hwe-r,    generic,  linux-signed-generic-lts-raring,  *sa_hwe_r]
     - [saucy,   i386,    hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
-    - [saucy,   amd64,   hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
+    - [saucy,   amd64,   hwe-s,    generic,  linux-signed-generic-lts-saucy,   *sa_hwe_s]
     - [trusty,  i386,    hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
-    - [trusty,  amd64,   hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
+    - [trusty,  amd64,   hwe-t,    generic,  linux-signed-generic-lts-trusty,  *sa_hwe_t]
 
 # enable_proposed: True
 

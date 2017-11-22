@@ -80,8 +80,8 @@ releases:
  - version: "16.10"
    release: yakkety
    kernels:
-    - [yakkety,    amd64,    ga-16.10,        generic,     linux-generic,                        *sa_hwe_y]
-    - [yakkety,    amd64,    ga-16.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_y]
+    - [yakkety,    amd64,    ga-16.10,        generic,     linux-signed-generic,                 *sa_hwe_y]
+    - [yakkety,    amd64,    ga-16.10,        lowlatency,  linux-signed-image-lowlatency,        *sa_hwe_y]
     - [yakkety,    arm64,    ga-16.10,        generic,     linux-generic,                        *sa_hwe_y]
     - [yakkety,    arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [yakkety,    arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
@@ -160,16 +160,16 @@ releases:
    builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
    kernels:
     - [precise, i386,    hwe-p,    generic,  linux-generic,             *sa_hwe_p]
-    - [precise, amd64,   hwe-p,    generic,  linux-generic,             *sa_hwe_p]
+    - [precise, amd64,   hwe-p,    generic,  linux-signed-generic,      *sa_hwe_p]
     - [precise, armhf,   highbank, highbank, linux-highbank,            [highbank]]
     - [quantal, i386,    hwe-q,    generic,  linux-generic-lts-quantal, *sa_hwe_q]
-    - [quantal, amd64,   hwe-q,    generic,  linux-generic-lts-quantal, *sa_hwe_q]
+    - [quantal, amd64,   hwe-q,    generic,  linux-signed-generic-lts-quantal, *sa_hwe_q]
     - [raring,  i386,    hwe-r,    generic,  linux-generic-lts-raring,  *sa_hwe_r]
-    - [raring,  amd64,   hwe-r,    generic,  linux-generic-lts-raring,  *sa_hwe_r]
+    - [raring,  amd64,   hwe-r,    generic,  linux-signed-generic-lts-raring,  *sa_hwe_r]
     - [saucy,   i386,    hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
-    - [saucy,   amd64,   hwe-s,    generic,  linux-generic-lts-saucy,   *sa_hwe_s]
+    - [saucy,   amd64,   hwe-s,    generic,  linux-signed-generic-lts-saucy,   *sa_hwe_s]
     - [trusty,  i386,    hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
-    - [trusty,  amd64,   hwe-t,    generic,  linux-generic-lts-trusty,  *sa_hwe_t]
+    - [trusty,  amd64,   hwe-t,    generic,  linux-signed-generic-lts-trusty,  *sa_hwe_t]
 
 # enable_proposed: True
 

@@ -365,9 +365,15 @@ chrooted() {
     kernel=""
     for f in /boot/vmlin*; do
         [ -f "$f" ] || continue
+        [ -f "$f"*.signed ] && continue
         out=$(dpkg -S "$f")
         pkg=${out%%:*}
-        [ "$pkg" = "$kpkg" ] && kernel="$f" && break
+        # LP: #1711203 - Prefer a signed kernel over an unsigned kernel.
+        # The kernel signed kernel is created by combining the key in
+        # /usr/lib/linux and the kernel in /boot. As the kernel will not be
+        # in the dpkg database assume it's what we want.
+        echo $f | grep -q 'signed'
+        [ $? -eq 0 ] || [ "$pkg" = "$kpkg" ] && kernel="$f" && break
         if apt-get --dry-run remove $pkg | grep -q "Remv $kpkg "; then
             kernel="$f"
             break
