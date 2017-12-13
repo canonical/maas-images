@@ -204,10 +204,11 @@ EOF
 }
 
 config_add_zfs() {
-    # in order for curtin to use zfs when booted in ephemeral we have to have
-    # it included.  This could also be achieved by installing zfs-initramfs
-    # but we do not specifically need use of zfs *in* the initramfs, we just
-    # need the module included (LP: #1737592).
+    # In order for curtin to use zfs when booted in ephemeral we need the
+    # module included. This could also be achieved by zfs-initramfs package.
+    # However, that would bring in /sbin/zfs.  We do not need use the 'zfs'
+    # command or the kernel module *in* the initramfs, we just need the module
+    # present so it can be used in install environment (LP: #1737592).
     local root="${1:-/}" rel="$2" fname=""
     fname="${root%/}/etc/initramfs-tools/hooks/kpack_zfs"
     case "$rel" in
