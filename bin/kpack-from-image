@@ -213,11 +213,17 @@ config_add_zfs() {
     case "$rel" in
         precise|trusty) return 0;;
     esac
-    cat > "$fname" <<EOF
+    debug 1 "Will include zfs modules for release $rel."
+    cat > "$fname" <<"EOF"
 . /usr/share/initramfs-tools/hook-functions
 
 manual_add_modules zfs # (LP: #1737592)
 EOF
+    [ $? -eq 0 ] || { error "failed writing to $fname for zfs"; return 1; }
+    chmod 755 "$fname" || {
+        error "failed adding execute to $fname for zfs";
+        return 1;
+    }
 }
 
 ensure_iscsi_initramfs_support() {
