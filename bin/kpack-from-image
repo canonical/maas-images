@@ -203,6 +203,30 @@ EOF
     return 0
 }
 
+config_add_zfs() {
+    # In order for curtin to use zfs when booted in ephemeral we need the
+    # module included. This could also be achieved by zfs-initramfs package.
+    # However, that would bring in /sbin/zfs.  We do not need use the 'zfs'
+    # command or the kernel module *in* the initramfs, we just need the module
+    # present so it can be used in install environment (LP: #1737592).
+    local root="${1:-/}" rel="$2" fname=""
+    fname="${root%/}/etc/initramfs-tools/hooks/kpack_zfs"
+    case "$rel" in
+        precise|trusty) return 0;;
+    esac
+    debug 1 "Will include zfs modules for release $rel."
+    cat > "$fname" <<"EOF"
+. /usr/share/initramfs-tools/hook-functions
+
+manual_add_modules zfs # (LP: #1737592)
+EOF
+    [ $? -eq 0 ] || { error "failed writing to $fname for zfs"; return 1; }
+    chmod 755 "$fname" || {
+        error "failed adding execute to $fname for zfs";
+        return 1;
+    }
+}
+
 ensure_iscsi_initramfs_support() {
     local root="${1:-/}"
     local mfile="${root%/}/etc/iscsi/iscsi.initramfs"
@@ -327,6 +351,9 @@ chrooted() {
 
     config_addl_modules / "$rel" ||
         { error "failed configuring additional modules!"; return 1; }
+
+    config_add_zfs / "$rel" ||
+        { error "failed adding zfs"; return 1; }
 
     ensure_iscsi_initramfs_support / ||
         { error "failed to enable iscsi initramfs support"; return 1; }
