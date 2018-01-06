@@ -608,9 +608,9 @@ main() {
     ddebug 1 "starting kpacks: ${kpacks[*]}"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
-        # handle_kpack doesn't actually need $proposed_flag, because
-        # $imgfile will have it already enabled.
-        handle_kpack "$imgfile" "$@" ||
+        # handle_kpack doesn't actually need $proposed_flag, because $imgfile
+        # will have it already enabled, but passing it is more obvious.
+        handle_kpack $proposed_flag "$imgfile" "$@" ||
             { error "handle_kpack '$imgfile' $* failed"; return 1; }
     done
     ddebug 1 "kpacks done"
