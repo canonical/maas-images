@@ -265,7 +265,7 @@ apply_updates_chrooted() {
         printf "%s\n" "$IMAGES_PPA_APT_KEY" | apt-key add - ||
             { error "apt-key add failed!"; return 1; }
         debug 1 "addition of PPA turns dist-upgrade on"
-        dist_upgrade=1
+        dist_upgrade=true
     else
         log_change false "$change"
         debug 1 "not adding images ppa to release=$release"
@@ -283,7 +283,7 @@ apply_updates_chrooted() {
         echo "deb $mirror ${release}-proposed main universe multiverse" > "$PROPOSED_ARCHIVE_FILE" ||
             { error "failed writing to $PROPOSED_ARCHIVE_FILE"; return 1; }
         debug 1 "addition of proposed turns dist-upgrade on"
-        dist_upgrade=1
+        dist_upgrade=true
     else
         log_change false "$change"
         debug 1 "not adding images ppa to release=$release"
