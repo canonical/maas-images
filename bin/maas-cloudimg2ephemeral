@@ -286,7 +286,7 @@ apply_updates_chrooted() {
         dist_upgrade=true
     else
         log_change false "$change"
-        debug 1 "not adding images ppa to release=$release"
+        debug 1 "not enabling proposed for $release (proposed=$proposed)."
     fi
 
     change="ensure mellanox mlx4_en gets loaded (LP: #1115710)"
