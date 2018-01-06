@@ -608,7 +608,7 @@ main() {
     ddebug 1 "starting kpacks: ${kpacks[*]}"
     for i in "${kpacks[@]}"; do
         IFS=","; set -- $i; IFS="$oifs"
-        handle_kpack "$imgfile" "$@" ||
+        handle_kpack $proposed_flag "$imgfile" "$@" ||
             { error "handle_kpack '$imgfile' $* failed"; return 1; }
     done
     ddebug 1 "kpacks done"
