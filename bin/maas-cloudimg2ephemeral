@@ -88,11 +88,30 @@ done
 EOF
     [ $? -eq 0 ] && chmod 755 "$dir/usr/sbin/policy-rc.d" ||
         { error "failed to write policy-rc.d"; return 1; }
+
+    ( set -e;
+      cd "$dir"
+       for f in ./etc/kernel/*.d/*-grub; do
+           [ -x "$f" ] || continue
+           abs=${f#.}
+           chroot "$dir" dpkg-divert --local --rename --divert \
+               "${abs}.eph-temp-disabled" "${abs}"
+       done
+    )
 }
 
 undisable_services() {
     local dir="$1"
     rm -f "$dir/usr/sbin/policy-rc.d"
+
+    ( set -e;
+      cd "$dir"
+       for f in ./etc/kernel/*.d/*.eph-temp-disable; do
+           abs=${f#.}
+           chroot "$dir" dpkg-divert --local --remove --rename --divert \
+               "${abs}.eph-temp-disabled" "${abs}"
+       done
+    )
 }
 
 check_required_vars() {
