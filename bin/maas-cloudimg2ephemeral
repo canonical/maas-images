@@ -109,6 +109,7 @@ undisable_services() {
     ( set -e;
       cd "$dir"
       for f in ./etc/kernel/*.d/*${DISABLE_SUFFIX}; do
+           [ -e "$f" ] || continue
            abs=${f#.}
            orig=${abs%${DISABLE_SUFFIX}}
            debug 2 "Re-enabling $orig via dpkg-divert removal."
