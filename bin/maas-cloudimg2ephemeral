@@ -42,6 +42,7 @@ PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
 
 VERBOSITY=0
 TOP_D="${0%/*}"
+DISABLE_SUFFIX=".eph-temp-disabled"
 command -v unshare-pidns >/dev/null 2>&1 || PATH="${0%/*}:$PATH"
 
 error() { echo "$@" 1>&2; }
@@ -88,11 +89,34 @@ done
 EOF
     [ $? -eq 0 ] && chmod 755 "$dir/usr/sbin/policy-rc.d" ||
         { error "failed to write policy-rc.d"; return 1; }
+
+    ( set -e;
+      cd "$dir"
+      for f in ./etc/kernel/*.d/*-grub; do
+           [ -x "$f" ] || continue
+           abs=${f#.}
+           debug 2 "Disabling $abs via dpkg-divert rename"
+           chroot "$dir" dpkg-divert --local --rename --divert \
+               "${abs}${DISABLE_SUFFIX}" "${abs}"
+      done
+    )
 }
 
 undisable_services() {
     local dir="$1"
     rm -f "$dir/usr/sbin/policy-rc.d"
+
+    ( set -e;
+      cd "$dir"
+      for f in ./etc/kernel/*.d/*${DISABLE_SUFFIX}; do
+           [ -e "$f" ] || continue
+           abs=${f#.}
+           orig=${abs%${DISABLE_SUFFIX}}
+           debug 2 "Re-enabling $orig via dpkg-divert removal."
+           chroot "$dir" dpkg-divert --local --remove --rename --divert \
+               "${abs}" "${orig}"
+      done
+    )
 }
 
 check_required_vars() {
