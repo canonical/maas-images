@@ -299,9 +299,10 @@ chrooted() {
         { error "failed to read release"; return 1; }
     if $proposed; then
         local mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
-        proposed_lfile="/etc/apt/sources.list.d/proposed-$rel.list"
+        proposed_lfile="/etc/apt/sources.list.d/proposed.list"
         debug 1 "adding proposed ($mirror) to $proposed_lfile"
-        echo "deb $mirror ${rel}-proposed main" > "$proposed_lfile"
+        echo "deb $mirror ${rel}-proposed main universe multiverse" \
+            > "$proposed_lfile"
         $skip_update && 
             { skip_update=false; debug 1 "enabling update due to proposed"; }
     fi
