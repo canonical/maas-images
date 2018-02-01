@@ -323,7 +323,7 @@ def create_version(arch, release, version_name, img_url, out_d,
                 # If we're not publishing the SquashFS image but used it to
                 # generate the root-img clean it up.
                 os.remove(src_squash)
-        elif squashfs and img_url.endswith('tar.gz'):
+        elif squashfs:
             # If the stream is publishing SquashFS images convert any
             # non-SquashFS image into a SquashFS image. Both the root-image.gz
             # and SquashFS image will be included but MAAS will only use the
