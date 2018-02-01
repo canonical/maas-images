@@ -176,7 +176,7 @@ releases:
    builtin_kernel: {armhf: linux-highbank, default: 'linux-generic'}
    kernels:
     - [precise, i386,    hwe-p,    generic,  linux-generic,             *sa_hwe_p]
-    - [precise, amd64,   hwe-p,    generic,  linux-signed-generic,      *sa_hwe_p]
+    - [precise, amd64,   hwe-p,    generic,  linux-generic,             *sa_hwe_p]
     - [precise, armhf,   highbank, highbank, linux-highbank,            [highbank]]
     - [quantal, i386,    hwe-q,    generic,  linux-generic-lts-quantal, *sa_hwe_q]
     - [quantal, amd64,   hwe-q,    generic,  linux-signed-generic-lts-quantal, *sa_hwe_q]
