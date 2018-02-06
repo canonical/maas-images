@@ -310,6 +310,7 @@ def create_version(arch, release, version_name, img_url, out_d,
         if img_url.endswith('squashfs'):
             src_squash = os.path.join(base_dir, os.path.basename(img_url))
             if squashfs:
+                # If publishing a SquashFS file rename it to its filetype.
                 os.rename(src_squash, dst_squash)
                 # The root-img is used to generate the kernels and initrds. If
                 # we're publishing the SquashFS image then we don't want to
