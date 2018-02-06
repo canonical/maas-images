@@ -306,12 +306,11 @@ def create_version(arch, release, version_name, img_url, out_d,
         LOG.info("finished: %s" % gencmd)
 
         base_dir = os.path.join(out_d, release, arch, version_name)
+        dst_squash = os.path.join(base_dir, 'squashfs')
         if img_url.endswith('squashfs'):
             src_squash = os.path.join(base_dir, os.path.basename(img_url))
             if squashfs:
-                # If we're publishing a SquashFS file rename it to its
-                # filetype.
-                dst_squash = os.path.join(base_dir, 'squashfs')
+                # If publishing a SquashFS file rename it to its filetype.
                 os.rename(src_squash, dst_squash)
                 # The root-img is used to generate the kernels and initrds. If
                 # we're publishing the SquashFS image then we don't want to
@@ -323,7 +322,7 @@ def create_version(arch, release, version_name, img_url, out_d,
                 # If we're not publishing the SquashFS image but used it to
                 # generate the root-img clean it up.
                 os.remove(src_squash)
-        elif squashfs and img_url.endswith('tar.gz'):
+        elif squashfs:
             # If the stream is publishing SquashFS images convert any
             # non-SquashFS image into a SquashFS image. Both the root-image.gz
             # and SquashFS image will be included but MAAS will only use the
@@ -331,9 +330,7 @@ def create_version(arch, release, version_name, img_url, out_d,
             subprocess.check_call([
                 'sudo', 'env', 'PATH=%s' % os.environ.get('PATH'),
                 os.environ.get('IMG2SQUASHFS', 'img2squashfs'),
-                os.path.join(base_dir, 'root-image.gz'),
-                os.path.join(base_dir, 'squashfs'),
-                ])
+                os.path.join(base_dir, 'root-image.gz'), dst_squash])
 
     # get checksum and size of new files created
     file_info = {}
