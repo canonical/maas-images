@@ -347,12 +347,8 @@ apply_updates_chrooted() {
     fi
 
     # additional packages that we have to add
-    add_pkgs="open-iscsi overlayroot"
-    case "$release" in
-        precise|trusty|xenial)
-            add_pkgs="${add_pkgs} cloud-initramfs-dyn-netconf";;
-    esac
-
+    add_pkgs="cloud-initramfs-dyn-netconf"  # LP: #1749019
+    add_pkgs="${add_pkgs} open-iscsi overlayroot"
     if [ -n "${add_packages}" ]; then
         debug 1 "add_packages=$add_packages (from M2E_ADD_PACKAGES)"
         add_pkgs="${add_pkgs} ${add_packages}"
