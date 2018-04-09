@@ -97,8 +97,9 @@ def import_bootloaders(args, product_tree, cfgdata):
         src_packages = {}
         for package in firmware_platform['packages']:
             package_info = get_package(
-                firmware_platform['archive'], package,
-                firmware_platform['arch'], firmware_platform['release'])
+                archive=firmware_platform['archive'], pkg_name=package,
+                architecture=firmware_platform['arch'],
+                release=firmware_platform['release'], proposed=args.proposed)
             # Some source packages include the package version in the source
             # name. Only take the name, not the version.
             src_package_name = package_info['Source'].split(' ')[0]
@@ -167,7 +168,7 @@ def import_bootloaders(args, product_tree, cfgdata):
             firmware_platform['arch'], firmware_platform['files'],
             firmware_platform['release'], args.target, path, grub_format,
             firmware_platform.get('grub_config'),
-            firmware_platform.get('grub_output'))
+            firmware_platform.get('grub_output'), args.proposed)
         product_tree['products'][product_id]['versions'][version] = {
             'items': items
         }
@@ -308,6 +309,9 @@ def main():
             args = [args]
         parser.add_argument(*args, **kwargs)
     parser.set_defaults(action=main_import)
+    parser.add_argument(
+        '--proposed', help='Pull bootloaders from proposed',
+        action='store_true', default=False)
 
     args = parser.parse_args()
     if not getattr(args, 'action', None):

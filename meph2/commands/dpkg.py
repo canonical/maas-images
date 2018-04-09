@@ -102,7 +102,9 @@ def dpkg_a_newer_than_b(ver_a, ver_b):
     return ret == 0
 
 
-def get_package(archive, pkg_name, architecture, release=None, dest=None):
+def get_package(
+        archive, pkg_name, architecture, release=None, dest=None,
+        proposed=False):
     """Look through the archives for package metadata. If a dest is given
     download the package.
 
@@ -112,7 +114,10 @@ def get_package(archive, pkg_name, architecture, release=None, dest=None):
     release = get_distro_release() if release is None else release
     package = None
     # Find the latest version of the package
-    for dist in ('%s-updates' % release, '%s-security' % release, release):
+    dists = ('%s-updates' % release, '%s-security' % release, release)
+    if proposed:
+        dists = ('%s-proposed' % release,) + dists
+    for dist in dists:
         base_url = '%s/dists/%s' % (archive, dist)
         packages = get_packages(base_url, architecture, pkg_name)
         if pkg_name in packages:
@@ -218,11 +223,12 @@ def archive_files(items, target):
 
 def extract_files_from_packages(
         archive, packages, architecture, files, release, target, path,
-        grub_format=None, grub_config=None, grub_output=None):
+        grub_format=None, grub_config=None, grub_output=None, proposed=False):
     tmp = tempfile.mkdtemp(prefix='maas-images-')
     src_packages = []
     for package in packages:
-        package = get_package(archive, package, architecture, release, tmp)
+        package = get_package(
+            archive, package, architecture, release, tmp, proposed=proposed)
         pkg_path = os.path.join(tmp, os.path.basename(package['Filename']))
         if pkg_path is None:
             sys.stderr.write('%s not found in archives!' % package)
