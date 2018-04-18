@@ -40,6 +40,9 @@ SUBCOMMANDS = {
         'help': 'import an image from the specified config into a stream',
         'opts': [
             COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
+            (('--proposed',),
+             {'help': 'Pull bootloaders from proposed', 'action': 'store_true',
+              'default': False}),
             ('import_cfg', {'help':
                             'The config file for the image to import.'}),
             COMMON_FLAGS['target'],
