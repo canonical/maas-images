@@ -309,9 +309,6 @@ def main():
             args = [args]
         parser.add_argument(*args, **kwargs)
     parser.set_defaults(action=main_import)
-    parser.add_argument(
-        '--proposed', help='Pull bootloaders from proposed',
-        action='store_true', default=False)
 
     args = parser.parse_args()
     if not getattr(args, 'action', None):

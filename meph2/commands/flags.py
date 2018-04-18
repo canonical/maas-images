@@ -42,6 +42,8 @@ SUBCOMMANDS = {
             COMMON_FLAGS['no-sign'], COMMON_FLAGS['keyring'],
             ('import_cfg', {'help':
                             'The config file for the image to import.'}),
+            ('proposed', {'help': 'Pull bootloaders from proposed',
+                          'action': 'store_true', 'default': False}),
             COMMON_FLAGS['target'],
             COMMON_FLAGS['max'],
             ]
