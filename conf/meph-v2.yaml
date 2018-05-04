@@ -49,15 +49,15 @@ releases:
  - version: "18.10"
    release: cosmic
    kernels:
-    - [bionic,  amd64,   hwe-cc,    generic,   linux-signed-generic,     *sa_hwe_c]
-    - [bionic,  arm64,   hwe-cc,    generic,   linux-generic,            *sa_hwe_c]
+    - [bionic,  amd64,   hwe-c,    generic,   linux-signed-generic,     *sa_hwe_c]
+    - [bionic,  arm64,   hwe-c,    generic,   linux-generic,            *sa_hwe_c]
     - [bionic,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
     - [bionic,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
     - [bionic,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [bionic,  armhf,   hwe-cc,    generic,   linux-generic,            *arm_hwe_c]
-    - [bionic,  i386,    hwe-cc,    generic,   linux-generic,            *sa_hwe_c]
-    - [bionic,  ppc64el, hwe-cc,    generic,   linux-generic,            *sa_hwe_c]
-    - [bionic,  s390x,   hwe-cc,    generic,   linux-generic,            *sa_hwe_c]
+    - [bionic,  armhf,   hwe-c,    generic,   linux-generic,            *arm_hwe_c]
+    - [bionic,  i386,    hwe-c,    generic,   linux-generic,            *sa_hwe_c]
+    - [bionic,  ppc64el, hwe-c,    generic,   linux-generic,            *sa_hwe_c]
+    - [bionic,  s390x,   hwe-c,    generic,   linux-generic,            *sa_hwe_c]
  - version: "18.04"
    release: bionic
    kernels:
