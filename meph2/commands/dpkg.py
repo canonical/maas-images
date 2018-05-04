@@ -117,7 +117,7 @@ def get_package(
     dists = ('%s-updates' % release, '%s-security' % release, release)
     if proposed:
         dists = ('%s-proposed' % release,) + dists
-    sys.stdout.write('Searching %s for %s\n' % (', '.join(dists), pkg_name))
+    sys.stderr.write('Searching %s for %s\n' % (', '.join(dists), pkg_name))
     for dist in dists:
         base_url = '%s/dists/%s' % (archive, dist)
         packages = get_packages(base_url, architecture, pkg_name)
@@ -125,7 +125,7 @@ def get_package(
             if package is None or dpkg_a_newer_than_b(
                     packages[pkg_name]['Version'], package['Version']):
                 package = packages[pkg_name]
-                sys.stdout.write(
+                sys.stderr.write(
                     'Found %s-%s in %s\n' % (pkg_name, package['Version'], dist))
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
