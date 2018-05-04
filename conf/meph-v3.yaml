@@ -31,6 +31,7 @@ subarches:
  - &sa_hwe_z        [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04]
  - &sa_hwe_a        [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10]
  - &sa_hwe_b        [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04]
+ - &sa_hwe_cc       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -41,6 +42,7 @@ subarches:
  - &arm_hwe_z       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04]
  - &arm_hwe_a       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10]
  - &arm_hwe_b       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04]
+ - &arm_hwe_cc      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
 
 misc:
  - &glpae generic-lpae
@@ -51,6 +53,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "18.10"
+   release: cosmic
+   kernels:
+    - [cosmic,     amd64,    ga-18.10,        generic,     linux-signed-generic,                 *sa_hwe_cc]
+    - [cosmic,     amd64,    ga-18.10,        lowlatency,  linux-signed-image-lowlatency,        *sa_hwe_cc]
+    - [cosmic,     arm64,    ga-18.10,        generic,     linux-generic,                        *sa_hwe_cc]
+    - [cosmic,     arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [cosmic,     arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [cosmic,     armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [cosmic,     armhf,    ga-18.10,        generic,     linux-generic,                        *arm_hwe_cc]
+    - [cosmic,     i386,     ga-18.10,        generic,     linux-generic,                        *sa_hwe_cc]
+    - [cosmic,     i386,     ga-18.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_cc]
+    - [cosmic,     ppc64el,  ga-18.10,        generic,     linux-generic,                        *sa_hwe_cc]
+    - [cosmic,     s390x,    ga-18.10,        generic,     linux-generic,                        *sa_hwe_cc]
  - version: "18.04"
    release: bionic
    kernels:
