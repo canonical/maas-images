@@ -1,5 +1,6 @@
-# The closest thing CentOS provides to a machine readable list of images in a
-# static location is the sha256sum.txt file.
+# Previously CentOS only provided a sha256sum.txt file to list images. This file is
+# still being updated but they now also provide a config file of images.
+# sha256_meta_data_path: http://cloud.centos.org/centos/{version}/images/sha256sum.txt
 image_index: http://cloud.centos.org/centos/{version}/images/image-index
 
 product_id: "com.ubuntu.maas.daily:centos-bases:{version}:{arch}"
