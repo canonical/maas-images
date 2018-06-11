@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+from configparser import ConfigParser
 from datetime import datetime
 import hashlib
 import os
@@ -19,7 +20,7 @@ from meph2.commands.flags import COMMON_ARGS, SUBCOMMANDS
 from meph2.url_helper import geturl_text
 
 
-def import_sha256(args, product_tree, cfgdata):
+def import_remote_config(args, product_tree, cfgdata):
     for (release, release_info) in cfgdata['versions'].items():
         if 'arch' in release_info:
             arch = release_info['arch']
@@ -35,8 +36,14 @@ def import_sha256(args, product_tree, cfgdata):
             path_version = release_info['version']
         product_id = cfgdata['product_id'].format(
             version=release_info['version'], arch=arch)
-        url = cfgdata['sha256_meta_data_path'].format(version=path_version)
-        images = get_sha256_meta_images(url, args.max)
+        if 'sha256_metadata_path' in cfgdata:
+            url = cfgdata['sha256_meta_data_path'].format(version=path_version)
+            images = get_sha256_meta_images(url, args.max)
+        elif 'image_index' in cfgdata:
+            url = cfgdata['image_index'].format(version=path_version)
+            images = get_image_index_images(url, args.max)
+        else:
+            raise ValueError("Undefined remote path")
         base_url = os.path.dirname(url)
 
         if product_tree['products'].get(product_id) is None:
@@ -224,6 +231,45 @@ def get_sha256_meta_images(url, max_items=0):
         }
 
 
+def get_image_index_images(url, max_items=0):
+    """ Given a URL to an image-index config file return a dictionary of
+        filenames and SHA256 checksums keyed off the revision.
+    """
+    ret = dict()
+    content = geturl_text(url)
+    config = ConfigParser()
+    config.read_string(content)
+    for section in config.values():
+        # ConfigParser defines a 'DEFAULT' section with nothing in it...
+        if section.name == 'DEFAULT':
+            continue
+        try:
+            filename = section['file']
+            checksum = section['checksum']
+            revision = section['revision']
+        except KeyError:
+            sys.stderr.write('Invalid config entry %s!\n' % section.name)
+            continue
+
+        if len(revision) != 4:
+            raise ValueError(
+                "%s has an invalid revision" % (section.name, revision))
+
+        ret['20%s01_01' % revision] = {
+            'img_name': filename,
+            # image-index actually provides a SHA512, maas-qcow2targz will
+            # verify the SHA512 and return a SHA256.
+            'sha256': checksum,
+        }
+
+    if max_items == 0:
+        max_items = len(ret)
+    return {
+        key: ret[key]
+        for key in sorted(ret.keys(), reverse=True)[:max_items]
+    }
+    
+
 def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
     """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
         a given URL or local path. Return the SHA256SUM of the outputted file.
@@ -278,12 +324,13 @@ def main_import(args):
     product_tree['updated'] = util.timestamp()
     product_tree['datatype'] = 'image-downloads'
 
-    if cfgdata.get('sha256_meta_data_path', None) is not None:
-        import_sha256(args, product_tree, cfgdata)
-    elif cfgdata.get('bootloaders', None) is not None:
+    if (cfgdata.get('sha256_meta_data_path') is not None or
+            cfgdata.get('image_index') is not None):
+        import_remote_config(args, product_tree, cfgdata)
+    elif cfgdata.get('bootloaders') is not None:
         import_bootloaders(args, product_tree, cfgdata)
     else:
-        sys.stderr.write('Unsupported import yaml!')
+        sys.stderr.write('Unsupported import yaml!\n')
         sys.exit(1)
 
     md_d = os.path.join(args.target, 'streams', 'v1')
