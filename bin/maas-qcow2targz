@@ -4,7 +4,7 @@
 #                  file path and make it sufficient for use as a 
 #                  MAAS installable image
 #
-# Copyright (C) 2015-2016 Canonical
+# Copyright (C) 2015-2018 Canonical
 #
 # Authors:
 #    Lee Trager <lee.trager@canonical.com>
@@ -215,7 +215,7 @@ else
         CACHE_D="${cache_d}" \
         ${http_proxy:+"http_proxy=${http_proxy}"} \
         ${https_proxy:+"https_proxy=${https_proxy}"} \
-        mount-image-callback --proc "$working_img" -- \
+        mount-image-callback --proc --dev "$working_img" -- \
         "$0" $cb_args
 
     error "wrote $out"
