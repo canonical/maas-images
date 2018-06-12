@@ -253,7 +253,7 @@ def get_image_index_images(url, max_items=0):
 
         if len(revision) != 4:
             raise ValueError(
-                "%s has an invalid revision" % (section.name, revision))
+                "%s has an invalid revision(%s)" % (section.name, revision))
 
         ret['20%s01_01' % revision] = {
             'img_name': filename,
