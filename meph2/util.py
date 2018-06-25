@@ -29,6 +29,11 @@ import re
 import sys
 import tempfile
 
+try:
+    JSONDecodeError = json.decoder.JSONDecodeError
+except AttributeError:
+    JSONDecodeError = ValueError
+
 # for callers convenience
 timestamp = sutil.timestamp
 
@@ -159,7 +164,7 @@ def read_orphan_file(filename):
         with open(filename) as orphan_file:
             known_orphans = json.load(orphan_file)
             return known_orphans
-    except:
+    except JSONDecodeError:
         raise Exception(
             '%s exists but is not a valid orphan file' % filename
         )
@@ -181,8 +186,8 @@ def write_orphan_file(filename, orphans_list):
             with open(filename, 'w') as orphan_file:
                 json.dump(orphans, orphan_file, indent=1)
                 orphan_file.write("\n")
-    except:
-        raise Exception('Cannot write orphan file %s' % filename)
+    except Exception as exc:
+        raise Exception('Cannot write orphan file %s: %s' % (filename, exc))
 
 
 def empty_iid_products(content_id):
@@ -232,14 +237,14 @@ def copy_fh(src, path, buflen=1024*8, cksums=None, makedirs=True):
         if summer.check():
             try:
                 os.rename(tf.name, path)
-            except:
+            except OSError:
                 os.unlink(tf.name)
                 raise
         else:
             found = summer.hexdigest()
             try:
                 size = os.path.getsize(tf.name)
-            except:
+            except OSError:
                 size = "unavailable"
             os.unlink(tf.name)
 

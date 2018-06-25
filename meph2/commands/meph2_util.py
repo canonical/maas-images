@@ -390,7 +390,7 @@ def main_reap_orphans(args):
             reaped.add(orphan)
             try:
                 os.removedirs(os.path.dirname(location))
-            except:
+            except OSError:
                 pass
 
     if not args.dry_run:
