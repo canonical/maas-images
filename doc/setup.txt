@@ -1,29 +1,3 @@
-## in order to try this / setup development
-## Trusty system
-
-MEPH_V2_BZR="lp:~smoser/maas/maas-ephemerals-v2"
-
-BD="/mnt"
-PKGS="bzr make"
-SRC_D="$BD/src"
-TENV="$SRC_D/simplestreams/tools/tenv"
-
-CI_DAILY_INDEX="http://cloud-images.ubuntu.com/daily/streams/v1/index.json"
-CI_MIRROR_D="$BD/mirrors/cloud-images-daily"
-
-[ -w "$BD" ] || sudo chown $(id -u):$(id -g) "$BD"
-
-sudo apt-get update --quiet
-sudo apt-get install --quiet --assume-yes $pkgs </dev/null
-
-mkdir -p "$SRC_D" "$CI_MIRROR_D"
-
-bzr branch lp:simplestreams "$SRC_D/simplestreams"
-( cd "$SRC_D/simplestreams" && make gnupg )
-
-bzr branch "$MEPH_V2_BZR" "$SRC_D/meph-v2"
-( cd "$SRC_D/simplestreams" && make gnupg )
-
-$TENV sstream-mirror --progress --max=1 "$CI_DAILY_INDEX" "$CI_MIRROR_D"
-
-# vi: syntax=sh
+To set up system for development, including installation of packages
+execute:
+  ./system-setup
