@@ -2,7 +2,8 @@
 
 _APT_UPDATED=false
 MEPH2_BRANCH="lp:maas-images"
-SSTREAM_BRANCH="lp:simplestreams"
+SSTREAM_REPO="https://git.launchpad.net/simplestreams"
+SSTREAM_BRANCH="master"
 CROSS_DEPS=( qemu-user-static u-boot-tools )
 MEPH2_D=""
 # MEPH2_SIMPLESTREAMS can be:
@@ -128,10 +129,11 @@ if [ -z "$MEPH2_D" ]; then
 fi
 
 if [ "$MEPH2_SIMPLESTREAMS" = "branch" ]; then
-    sstream_d="$MEPH2_D/simplestreams.bzr"
+    sstream_d="$MEPH2_D/simplestreams.git"
     if [ ! -d "$sstream_d" ]; then
-        bzr branch "$SSTREAM_BRANCH" "$sstream_d" &&
-            ln -snf simplestreams.bzr/simplestreams "$MEPH2_D/simplestreams" ||
+        git clone "--branch=${SSTREAM_BRANCH}" \
+                "${SSTREAM_REPO}" "${sstream_d}" &&
+            ln -snf "${sstream_d}/simplestreams" "$MEPH2_D/simplestreams" ||
             fail "failed to get $SSTREAM_BRANCH"
         out=$(cd "$MEPH2_D" && python3 -c 'import simplestreams' 2>&1) ||
             fail "error getting simplestreams: $out"
