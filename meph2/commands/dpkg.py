@@ -125,8 +125,8 @@ def get_package(
             if package is None or dpkg_a_newer_than_b(
                     packages[pkg_name]['Version'], package['Version']):
                 package = packages[pkg_name]
-                sys.stderr.write(
-                    'Found %s-%s in %s\n' % (pkg_name, package['Version'], dist))
+                sys.stderr.write('Found %s-%s in %s\n' %
+                                 (pkg_name, package['Version'], dist))
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
         pkg_data = geturl('%s/%s' % (archive, package['Filename']))
