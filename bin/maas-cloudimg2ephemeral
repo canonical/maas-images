@@ -36,8 +36,8 @@ eh9TNspyDMuHVVZ5GiAk+GXgF1m7ps5lCnOCZK/pXUEEUOS8AWnt3sM=
 IMAGES_PPA_FILE="/etc/apt/sources.list.d/maas-ephemeral-images.list"
 IMAGES_PPA_URL="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/ubuntu"
 
-ARCHIVE_MIRROR="http://archive.ubuntu.com/ubuntu/"
-ARCHIVE_MIRROR_PORTS="http://ports.ubuntu.com/ubuntu-ports/"
+UBUNTU_MIRROR=${UBUNTU_MIRROR:-"http://archive.ubuntu.com/ubuntu/"}
+UBUNTU_MIRROR_PORTS=${UBUNTU_MIRROR_PORTS:-"http://ports.ubuntu.com/ubuntu-ports/"}
 PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
 
 VERBOSITY=0
@@ -299,8 +299,8 @@ apply_updates_chrooted() {
     if $proposed; then
         local mirror=""
         case "$arch" in
-            i?86|amd64) mirror="$ARCHIVE_MIRROR";;
-            *) mirror="$ARCHIVE_MIRROR_PORTS";;
+            i?86|amd64) mirror="${UBUNTU_MIRROR}";;
+            *) mirror="${UBUNTU_MIRROR_PORTS}";;
         esac
         log_change true "$change [$arch $mirror]"
         debug 1 "enabling proposed for $release [$arch $mirror]"
