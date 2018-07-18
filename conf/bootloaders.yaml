@@ -13,6 +13,7 @@ bootloaders:
    os: pxelinux
    files:
     - usr/lib/PXELINUX/pxelinux.0
+    - usr/lib/PXELINUX/lpxelinux.0
     - usr/lib/syslinux/modules/bios/*.c32
  - firmware-platform: uefi
    packages:
