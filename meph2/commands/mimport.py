@@ -112,15 +112,17 @@ def import_bootloaders(args, product_tree, cfgdata):
         # the packages in the archive
         if product_id in product_tree['products']:
             versions = product_tree['products'][product_id]['versions']
-            for data in versions.values():
-                for item in data['items'].values():
-                    src_package = src_packages.get(item['src_package'])
-                    if (
-                            src_package is not None and
-                            src_package['src_version'] == item['src_version']
-                            and
-                            src_package['src_release'] == item['src_release']):
-                        src_packages[item['src_package']]['found'] = True
+            # Only check if the latest version in the stream matches the
+            # latest version from the archive. This allows bootloaders to
+            # be reverted to previous versions.
+            data = versions[max(versions.keys())]
+            for item in data['items'].values():
+                src_package = src_packages.get(item['src_package'])
+                if (
+                        src_package is not None and
+                        src_package['src_version'] == item['src_version'] and
+                        src_package['src_release'] == item['src_release']):
+                    src_packages[item['src_package']]['found'] = True
         bootloader_uptodate = True
         for src_package in src_packages.values():
             if not src_package['found']:
