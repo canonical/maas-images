@@ -54,7 +54,7 @@ bootloaders:
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
-   release: bionic
+   release: xenial
    os: grub-ieee1275
    files:
     - usr/lib/grub/powerpc-ieee1275/
