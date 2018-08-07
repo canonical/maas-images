@@ -14,6 +14,7 @@ versions:
         release_title: "CentOS 7.0"
         curtin_files: "{curtin_path}/centos7"
         packages:
+         - bash-completion
          # cloud-init depends on packages from EPEL
          - epel-release
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
@@ -30,11 +31,17 @@ versions:
          - linux-firmware
          - grub2-efi-modules
          - efibootmgr
+         # Tools needed to allow custom storage to be deployed without
+         # accessing the Internet.
+         - dosfstools
+         - lvm2
+         - mdadm
     centos66:
         version: 6.6
         release_title: "CentOS 6.6"
         curtin_files: "{curtin_path}/centos6"
         packages:
+         - bash-completion
          # cloud-init depends on packages from EPEL
          - epel-release
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
@@ -48,5 +55,12 @@ versions:
          # Without it cloud-init will try to install it which will not work in
          # isolated environments.
          - bridge-utils
+         # Tools needed to allow custom storage to be deployed without
+         # accessing the Internet.
+         - btrfs-progs
+         - dosfstools
+         - lvm2
+         - mdadm
+         - xfsprogs
 
 # vi: syntax=yaml nowrap
