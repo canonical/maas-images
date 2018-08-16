@@ -14,9 +14,9 @@ versions:
         release_title: "CentOS 7.0"
         curtin_files: "{curtin_path}/centos7"
         packages:
-         - bash-completion
          # cloud-init depends on packages from EPEL
          - epel-release
+         - bash-completion
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
          # package build. Instead it expects you to first add the repo which
          # is what is included in this package.
@@ -41,9 +41,9 @@ versions:
         release_title: "CentOS 6.6"
         curtin_files: "{curtin_path}/centos6"
         packages:
-         - bash-completion
          # cloud-init depends on packages from EPEL
          - epel-release
+         - bash-completion
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
          # package build. Instead it expects you to first add the repo which
          # is what is included in this package.
