@@ -29,10 +29,10 @@ versions:
          # isolated environments.
          - bridge-utils
          - linux-firmware
-         - grub2-efi-modules
-         - efibootmgr
          # Tools needed to allow custom storage to be deployed without
          # accessing the Internet.
+         - grub2-efi-x64
+         - efibootmgr
          - dosfstools
          - lvm2
          - mdadm
