@@ -32,6 +32,8 @@ versions:
          # Tools needed to allow custom storage to be deployed without
          # accessing the Internet.
          - grub2-efi-x64
+         # RHBZ #1101352
+         - grub2-efi-modules
          - shim-x64
          - efibootmgr
          - dosfstools
