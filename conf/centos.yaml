@@ -33,7 +33,7 @@ versions:
          # accessing the Internet.
          - grub2-efi-x64
          # RHBZ #1101352
-         - grub2-efi-modules
+         - grub2-efi-x64-modules
          - shim-x64
          - efibootmgr
          - dosfstools
