@@ -17,6 +17,7 @@ versions:
          # cloud-init depends on packages from EPEL
          - epel-release
          - bash-completion
+         - linux-firmware
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
          # package build. Instead it expects you to first add the repo which
          # is what is included in this package.
@@ -28,7 +29,6 @@ versions:
          # Without it cloud-init will try to install it which will not work in
          # isolated environments.
          - bridge-utils
-         - linux-firmware
          # Tools needed to allow custom storage to be deployed without
          # accessing the Internet.
          - grub2-efi-x64
@@ -60,6 +60,7 @@ versions:
          - bridge-utils
          # Tools needed to allow custom storage to be deployed without
          # accessing the Internet.
+         - efibootmgr
          - btrfs-progs
          - dosfstools
          - lvm2
