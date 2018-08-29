@@ -31,10 +31,13 @@ versions:
          - bridge-utils
          # Tools needed to allow custom storage to be deployed without
          # accessing the Internet.
-         - grub2-efi-x64
+         # grub2-efi-x64 contains the signed bootloader which currently does not
+         # chainboot - RHBZ #1623296
+         # - grub2-efi-x64
+         # - shim-x64
          # RHBZ #1101352
          - grub2-efi-x64-modules
-         - shim-x64
+         - grub2-tools
          - efibootmgr
          - dosfstools
          - lvm2
