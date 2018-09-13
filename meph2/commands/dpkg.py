@@ -46,8 +46,13 @@ def gpg_verify_data(signature, data_file):
         stream.write(data_file)
 
     subprocess.check_output(
-        ['gpgv', '--keyring', '/etc/apt/trusted.gpg', sig_out, data_out],
-        stderr=subprocess.STDOUT)
+        [
+            'gpgv',
+            '--keyring', os.path.join(
+                os.path.dirname(__file__), '..', '..', 'keyring.gpg'),
+            '--keyring', '/usr/share/keyrings/ubuntu-archive-keyring.gpg',
+            sig_out, data_out
+        ], stderr=subprocess.STDOUT)
 
     shutil.rmtree(tmp, ignore_errors=True)
 
@@ -310,6 +315,7 @@ def extract_files_from_packages(
                  '-O', grub_format,
                  '-d', modules_path,
                  '-c', grub_config_path,
+                 '-p', '',
                  ] + modules)
         else:
             subprocess.check_output(

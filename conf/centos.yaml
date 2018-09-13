@@ -42,6 +42,8 @@ versions:
          - dosfstools
          - lvm2
          - mdadm
+         - device-mapper-multipath
+         - iscsi-initiator-utils
     centos66:
         version: 6.6
         release_title: "CentOS 6.6"
@@ -69,5 +71,7 @@ versions:
          - lvm2
          - mdadm
          - xfsprogs
+         - device-mapper-multipath
+         - iscsi-initiator-utils
 
 # vi: syntax=yaml nowrap
