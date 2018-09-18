@@ -66,7 +66,7 @@ def import_remote_config(args, product_tree, cfgdata):
             }
 
         for (revision, image_info) in images.items():
-            version = '20%s01_01' % revision
+            version = '20%s01_%02d' % (revision, image_info['release'])
             if (
                     product_id in product_tree['products'] and
                     version in product_tree['products'][product_id][
@@ -214,11 +214,19 @@ def get_image_index_images(url):
             continue
 
         revision = section.get('revision')
-        # Ignore old revision format
+        if '_' in revision:
+            revision, release = revision.split('_')
+        elif '-' in revision:
+            revision, release = revision.split('-')
+        else:
+            release = 1
+
+        # Ignore old unsupported revision format(e.g 20150628_01)
         if len(revision) != 4:
             continue
 
         ret[revision] = dict(section)
+        ret[revision]['release'] = release
 
     return ret
 
