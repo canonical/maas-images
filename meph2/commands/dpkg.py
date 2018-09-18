@@ -46,8 +46,13 @@ def gpg_verify_data(signature, data_file):
         stream.write(data_file)
 
     subprocess.check_output(
-        ['gpgv', '--keyring', '/etc/apt/trusted.gpg', sig_out, data_out],
-        stderr=subprocess.STDOUT)
+        [
+            'gpgv',
+            '--keyring', os.path.join(
+                os.path.dirname(__file__), '..', '..', 'keyring.gpg'),
+            '--keyring', '/usr/share/keyrings/ubuntu-archive-keyring.gpg',
+            sig_out, data_out
+        ], stderr=subprocess.STDOUT)
 
     shutil.rmtree(tmp, ignore_errors=True)
 
@@ -125,8 +130,8 @@ def get_package(
             if package is None or dpkg_a_newer_than_b(
                     packages[pkg_name]['Version'], package['Version']):
                 package = packages[pkg_name]
-                sys.stderr.write(
-                    'Found %s-%s in %s\n' % (pkg_name, package['Version'], dist))
+                sys.stderr.write('Found %s-%s in %s\n' %
+                                 (pkg_name, package['Version'], dist))
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
         pkg_data = geturl('%s/%s' % (archive, package['Filename']))
@@ -310,6 +315,7 @@ def extract_files_from_packages(
                  '-O', grub_format,
                  '-d', modules_path,
                  '-c', grub_config_path,
+                 '-p', '',
                  ] + modules)
         else:
             subprocess.check_output(

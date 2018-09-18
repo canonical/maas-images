@@ -3,6 +3,9 @@
 VERBOSITY=0
 TEMP_D=""
 COPY_TYPES="auto overlay qcow2 cp none"
+UBUNTU_MIRROR=${UBUNTU_MIRROR:-"http://archive.ubuntu.com/ubuntu/"}
+UBUNTU_MIRROR_PORTS=${UBUNTU_MIRROR_PORTS:-"http://ports.ubuntu.com/ubuntu-ports/"}
+PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
 command -v unshare-pidns >/dev/null 2>&1 || PATH="${0%/*}:$PATH"
 
 error() { echo "$@" 1>&2; }
@@ -281,9 +284,9 @@ chrooted() {
     # installs all packages (arguments), writes kernel
     # and initramfs and 'verflav' to /tmp/ 
     VERBOSITY=${CHROOTED_VERBOSITY:-${VERBOSITY}}
-    local pkgs="" kpkg="" copymods zzgrub emd="" out pkg rel
+    local pkgs="" kpkg="" copymods zzgrub emd="" out pkg rel arch
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
-    local proposed=${PROPOSED:-false} proposed_lfile=""
+    local proposed=${PROPOSED:-false} proposed_lfile="${PROPOSED_ARCHIVE_FILE}"
     local verflav initrd kernel
     export LANG=C
     kpkg="$1"
@@ -295,12 +298,18 @@ chrooted() {
     local stamp="$outd/stamp"
     touch "$stamp"
 
-    # add proposed if necessary
     rel=$(lsb_release -sc) ||
         { error "failed to read release"; return 1; }
+    arch=$(dpkg --print-architecture) ||
+        { error "failed to get architecture from dpkg"; return 1; }
+
+    # add proposed if necessary
     if $proposed; then
-        local mirror=${UBUNTU_MIRROR:-http://archive.ubuntu.com/ubuntu/}
-        proposed_lfile="/etc/apt/sources.list.d/proposed.list"
+        local mirror=""
+        case "$arch" in
+            i?86|amd64) mirror="${UBUNTU_MIRROR}";;
+            *) mirror="${UBUNTU_MIRROR_PORTS}";;
+        esac
         debug 1 "adding proposed ($mirror) to $proposed_lfile"
         echo "deb $mirror ${rel}-proposed main universe multiverse" \
             > "$proposed_lfile"
@@ -385,7 +394,7 @@ chrooted() {
     unreplace_newaliases / ||
         { error "failed to un-replace newaliases"; return 1; }
 
-    [ -z "$proposed_lfile" ] || rm -f "$proposed_lfile"
+    $proposed && rm -f "$proposed_lfile"
 
     # here we look at all kernel files in /boot and get the package that
     # owns it.  if the package is the kernel that was supplied, then we
@@ -536,6 +545,8 @@ main() {
     sudo \
         "KPACK_SKIP_APT_UPDATE=${KPACK_SKIP_APT_UPDATE:-false}" \
         "http_proxy=$http_proxy" PACKAGES="$kpkg" \
+        UBUNTU_MIRROR=${UBUNTU_MIRROR} \
+        UBUNTU_MIRROR_PORTS=${UBUNTU_MIRROR_PORTS} \
         "$mic" --sys --proc $overlay_flags \
             --system-resolvconf "$myimg" -- "$0" "kernel_from_mp" $vflags \
             _MOUNTPOINT_ "--chown-to=$chown_to" \

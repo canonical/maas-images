@@ -11,6 +11,10 @@ import os
 import sys
 
 from curtin import util
+try:
+    from curtin import FEATURES as curtin_features
+except ImportError:
+    curtin_features = []
 
 
 DATASOURCE_LIST = """\
@@ -74,6 +78,11 @@ def write_datasource(target, data):
 
 
 def main():
+    # The builtin Curtin hooks handle writing the datasource as
+    # 50-cloudconfig-maas-reporting.cfg. Running this creates duplicated data
+    # at 90_datasource.cfg.
+    if 'CENTOS_CURTHOOK_SUPPORT' in curtin_features:
+        return
     state = util.load_command_environment()
     target = state['target']
     if target is None:

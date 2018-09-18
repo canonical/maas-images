@@ -7,6 +7,7 @@ from __future__ import (
     )
 
 import codecs
+import importlib
 import os
 import re
 import sys
@@ -14,41 +15,37 @@ import sys
 from curtin import (
     block,
     config,
+    log,
     util,
     )
 
-try:
-    from curtin import FEATURES as curtin_features
-except ImportError:
-    curtin_features = []
 
-write_files = None
-try:
-    from curtin.futil import write_files
-except ImportError:
-    pass
+def try_import(path, unavailable=None, condition=True):
+    """Import path (module.submodule.attribute) and return it.
+    return unavailable if
+      - condition is not true
+      - import fails
+      - attribute does not exist in module."""
+    if not condition:
+        return unavailable
+    modname, _, attrname = path.rpartition(".")
+    try:
+        mod = importlib.import_module(modname)
+        imported = getattr(mod, attrname, None)
+    except ImportError:
+        imported = None
+    return imported if imported else unavailable
 
-centos_apply_network_config = None
-try:
-    if 'CENTOS_APPLY_NETWORK_CONFIG' in curtin_features:
-        from curtin.commands.curthooks import centos_apply_network_config
-except ImportError:
-    pass
 
-"""
-CentOS 7
+curtin_features = try_import("curtin.FEATURES", [])
+write_files = try_import("curtin.futil.write_files")
+centos_apply_network_config = try_import(
+    "curtin.commands.curthooks.centos_apply_network_config",
+    condition='CENTOS_APPLY_NETWORK_CONFIG' in curtin_features)
+centos_curthooks = try_import(
+    "curtin.commands.curthooks.builtin_curthooks",
+    condition='CENTOS_CURTHOOK_SUPPORT' in curtin_features)
 
-Currently Support:
-
-- Legacy boot
-- UEFI boot
-- DHCP of BOOTIF
-
-Not Supported:
-
-- Multiple network configration
-- IPv6
-"""
 
 FSTAB_PREPEND = """\
 #
@@ -342,6 +339,10 @@ def handle_cloudconfig(cfg, target):
 
 
 def main():
+    # Enable logging to stdout for curtin functions
+    verbosity = int(os.environ.get("CURTIN_VERBOSITY", 1))
+    log.basicConfig(stream=sys.stdout, verbosity=verbosity)
+
     state = util.load_command_environment()
     target = state['target']
     if target is None:
@@ -360,6 +361,19 @@ def main():
         print("Unable to find block device for: %s" % target)
         sys.exit(1)
 
+    if state.get('config'):
+        cfg = config.load_config(state['config'])
+    else:
+        cfg = {}
+
+    # Run builtin hooks if curtin has the feature and maas sent storage cfg
+    if centos_curthooks and cfg.get('storage'):
+        # centos_curthooks will complete successfully or raise an exception.
+        # Not handling the exception here means we will exit this program with
+        # a non-zero value
+        centos_curthooks(cfg, target, state)
+        return
+
     write_fstab(target, fstab)
 
     update_grub_default(
@@ -372,11 +386,6 @@ def main():
             grub2_install(target, dev)
 
     set_autorelabel(target)
-
-    if state.get('config'):
-        cfg = config.load_config(state['config'])
-    else:
-        cfg = {}
 
     handle_cloudconfig(cfg, target)
 
