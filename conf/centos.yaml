@@ -14,6 +14,12 @@ versions:
         path_version: 7
         release_title: "CentOS 7.0"
         curtin_files: "{curtin_path}/centos7"
+        # The upstream revision to create MAAS images for. All other versions
+        # are ignored if this is defined.
+        revision: 1808
+        # The lp:maas-images release. This defaults to 01. Changing this will
+        # cause a new build of the revision to be imported.
+        release: 02
         packages:
          # cloud-init depends on packages from EPEL
          - epel-release
@@ -49,6 +55,12 @@ versions:
         version: 6.6
         release_title: "CentOS 6.6"
         curtin_files: "{curtin_path}/centos6"
+        # The upstream revision to create MAAS images for. All other versions
+        # are ignored if this is defined.
+        revision: 1808
+        # The lp:maas-images release. This defaults to 01. Changing this will
+        # cause a new build of the revision to be imported.
+        release: 02
         packages:
          # cloud-init depends on packages from EPEL
          - epel-release
