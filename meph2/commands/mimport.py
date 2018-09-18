@@ -42,13 +42,21 @@ def import_remote_config(args, product_tree, cfgdata):
         else:
             raise ValueError("Undefined remote path")
 
-        images = OrderedDict()
-        if args.max == 0:
-            max_items = len(images_unordered)
+        revision = release_info.get('revision')
+        if revision:
+            revision = str(revision)
+            if revision not in images_unordered:
+                raise ValueError('Revision %s does not exist!' % revision)
+            images = {revision: images_unordered[revision]}
         else:
-            max_items = args.max
-        for key in sorted(images_unordered.keys(), reverse=True)[:max_items]:
-            images[key] = images_unordered[key]
+            images = OrderedDict()
+            if args.max == 0:
+                max_items = len(images_unordered)
+            else:
+                max_items = args.max
+            for key in sorted(
+                    images_unordered.keys(), reverse=True)[:max_items]:
+                images[key] = images_unordered[key]
 
         base_url = os.path.dirname(url)
 
@@ -66,7 +74,8 @@ def import_remote_config(args, product_tree, cfgdata):
             }
 
         for (revision, image_info) in images.items():
-            version = '20%s01_%02d' % (revision, image_info['release'])
+            version = '20%s01_%02d' % (
+                revision, release_info.get('release', image_info['release']))
             if (
                     product_id in product_tree['products'] and
                     version in product_tree['products'][product_id][
