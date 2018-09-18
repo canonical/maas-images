@@ -178,12 +178,23 @@ else
             error "using cached '${url##*/}' in ${cache_d}"
         fi
 
-        error "Checking sha256sum for $img_path"
-        sha256_out=$(sha256sum "$img_path") ||
-            fail "failed: sha256sum $img_path"
-        found=${sha256_out%  *}
-        if [ "$found" != "$sha256" ]; then
-            fail "Error: unexpected sha256 of $img_path $found != $sha256"
+        # We were given a SHA512 instead of a SHA256
+        if [ ${#sha256} -eq 128 ]; then
+            error "Checking sha512sum for $img_path"
+            sha512_out=$(sha512sum "$img_path") ||
+                fail "failed: sha512sum $img_path"
+            sha512_out=${sha512_out%  *}
+            if [ "$sha512_out" != "$sha256" ]; then
+                fail "Error: unexpected sha512 of $img_path $sha512_out != $sha256"
+            fi
+        else
+            error "Checking sha256sum for $img_path"
+            sha256_out=$(sha256sum "$img_path") ||
+                fail "failed: sha256sum $img_path"
+            sha256_out=${sha256_out%  *}
+            if [ "$sha256_out" != "$sha256" ]; then
+                fail "Error: unexpected sha256 of $img_path $sha256_out != $sha256"
+            fi
         fi
 
         fout=$(LANG=C file "$img_path") ||
