@@ -54,7 +54,8 @@ def import_remote_config(args, product_tree, cfgdata):
                 max_items = len(images_unordered)
             else:
                 max_items = args.max
-            for key in sorted(images_unordered.keys(), reverse=True)[:max_items]:
+            for key in sorted(
+                    images_unordered.keys(), reverse=True)[:max_items]:
                 images[key] = images_unordered[key]
 
         base_url = os.path.dirname(url)
@@ -293,8 +294,7 @@ def main_import(args):
     product_tree['updated'] = util.timestamp()
     product_tree['datatype'] = 'image-downloads'
 
-    if (cfgdata.get('sha256_meta_data_path') is not None or
-            cfgdata.get('image_index') is not None):
+    if cfgdata.get('image_index') is not None:
         import_remote_config(args, product_tree, cfgdata)
     elif cfgdata.get('bootloaders') is not None:
         import_bootloaders(args, product_tree, cfgdata)
