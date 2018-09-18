@@ -6,7 +6,6 @@ from datetime import datetime
 import argparse
 import hashlib
 import os
-import re
 import subprocess
 import sys
 import yaml
@@ -37,10 +36,7 @@ def import_remote_config(args, product_tree, cfgdata):
             path_version = release_info['version']
         product_id = cfgdata['product_id'].format(
             version=release_info['version'], arch=arch)
-        if 'sha256_meta_data_path' in cfgdata:
-            url = cfgdata['sha256_meta_data_path'].format(version=path_version)
-            images_unordered = get_sha256_meta_images(url)
-        elif 'image_index' in cfgdata:
+        if 'image_index' in cfgdata:
             url = cfgdata['image_index'].format(version=path_version)
             images_unordered = get_image_index_images(url)
         else:
@@ -193,46 +189,6 @@ def import_bootloaders(args, product_tree, cfgdata):
         product_tree['products'][product_id]['versions'][version] = {
             'items': items
         }
-
-
-def get_sha256_meta_images(url):
-    """ Given a URL to a SHA256SUM file return a dictionary of filenames and
-        SHA256 checksums keyed off the file version found as a date string in
-        the filename. This is used in cases where simplestream data isn't
-        avalible.
-    """
-    ret = dict()
-    content = geturl_text(url)
-    # http://cloud.centos.org/centos/ contains images using two version
-    # strings. The first is only used on older images and uses the format
-    # YYYYMMDD_XX. The second is used on images generated monthly using the
-    # format YYMM. We know the second format is referencing the year and month
-    # by looking at the timestamp of each image. Ignore the old format.
-    prog = re.compile('^(?P<name>.*)[-](?P<revision>\d{4})[.]')
-
-    for i in content.split('\n'):
-        try:
-            sha256, img_name = i.split()
-        except ValueError:
-            continue
-        if (not img_name.endswith('qcow2.xz') and
-                not img_name.endswith('qcow2')):
-            continue
-        m = prog.search(img_name)
-        if m is None:
-            continue
-        revision = m.group('revision')
-
-        # Prefer compressed image over uncompressed
-        if (revision in ret and ret[revision]['file'].endswith('qcow2.xz')):
-            continue
-        ret[revision] = {
-            'name': m.group('name'),
-            'file': img_name,
-            'revision': revision,
-            'checksum': sha256,
-            }
-    return ret
 
 
 def get_image_index_images(url):
