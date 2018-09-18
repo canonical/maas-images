@@ -192,7 +192,7 @@ else
             sha256_out=$(sha256sum "$img_path") ||
                 fail "failed: sha256sum $img_path"
             sha256_out=${sha256_out%  *}
-            if [ "$found" != "$sha256" ]; then
+            if [ "$sha256_out" != "$sha256" ]; then
                 fail "Error: unexpected sha256 of $img_path $sha256_out != $sha256"
             fi
         fi

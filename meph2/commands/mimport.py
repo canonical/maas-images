@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
-import argparse
+from collections import OrderedDict
 from configparser import ConfigParser
 from datetime import datetime
+import argparse
 import hashlib
 import os
 import re
@@ -36,14 +37,23 @@ def import_remote_config(args, product_tree, cfgdata):
             path_version = release_info['version']
         product_id = cfgdata['product_id'].format(
             version=release_info['version'], arch=arch)
-        if 'sha256_metadata_path' in cfgdata:
+        if 'sha256_meta_data_path' in cfgdata:
             url = cfgdata['sha256_meta_data_path'].format(version=path_version)
-            images = get_sha256_meta_images(url, args.max)
+            images_unordered = get_sha256_meta_images(url)
         elif 'image_index' in cfgdata:
             url = cfgdata['image_index'].format(version=path_version)
-            images = get_image_index_images(url, args.max)
+            images_unordered = get_image_index_images(url)
         else:
             raise ValueError("Undefined remote path")
+
+        images = OrderedDict()
+        if args.max == 0:
+            max_items = len(images_unordered)
+        else:
+            max_items = args.max
+        for key in sorted(images_unordered.keys(), reverse=True)[:max_items]:
+            images[key] = images_unordered[key]
+
         base_url = os.path.dirname(url)
 
         if product_tree['products'].get(product_id) is None:
@@ -59,18 +69,20 @@ def import_remote_config(args, product_tree, cfgdata):
                 'versions': {},
             }
 
-        for (image, image_info) in images.items():
+        for (revision, image_info) in images.items():
+            version = '20%s01_01' % revision
             if (
                     product_id in product_tree['products'] and
-                    image in product_tree['products'][product_id]['versions']):
+                    version in product_tree['products'][product_id][
+                        'versions']):
                 print(
                     "Product %s at version %s exists, skipping" % (
-                        product_id, image))
+                        product_id, version))
                 continue
             print(
                 "Downloading and creating %s version %s" % (
-                    (product_id, image)))
-            image_path = '/'.join([release, arch, image, 'root-tgz'])
+                    (product_id, version)))
+            image_path = '/'.join([release, arch, version, 'root-tgz'])
             real_image_path = os.path.join(
                 os.path.realpath(args.target), image_path)
             if release_info.get('packages') is not None:
@@ -78,10 +90,10 @@ def import_remote_config(args, product_tree, cfgdata):
             else:
                 packages = None
             sha256 = import_qcow2(
-                '/'.join([base_url, image_info['img_name']]),
-                image_info['sha256'], real_image_path,
+                '/'.join([base_url, image_info['file']]),
+                image_info['checksum'], real_image_path,
                 release_info.get('curtin_files'), packages)
-            product_tree['products'][product_id]['versions'][image] = {
+            product_tree['products'][product_id]['versions'][version] = {
                 'items': {
                     'root-image.gz': {
                         'ftype': 'root-tgz',
@@ -183,7 +195,7 @@ def import_bootloaders(args, product_tree, cfgdata):
         }
 
 
-def get_sha256_meta_images(url, max_items=0):
+def get_sha256_meta_images(url):
     """ Given a URL to a SHA256SUM file return a dictionary of filenames and
         SHA256 checksums keyed off the file version found as a date string in
         the filename. This is used in cases where simplestream data isn't
@@ -195,8 +207,8 @@ def get_sha256_meta_images(url, max_items=0):
     # strings. The first is only used on older images and uses the format
     # YYYYMMDD_XX. The second is used on images generated monthly using the
     # format YYMM. We know the second format is referencing the year and month
-    # by looking at the timestamp of each image.
-    prog = re.compile('([\d]{8}(_[\d]+))|(\d{4})')
+    # by looking at the timestamp of each image. Ignore the old format.
+    prog = re.compile('^(?P<name>.*)[-](?P<revision>\d{4})[.]')
 
     for i in content.split('\n'):
         try:
@@ -209,31 +221,21 @@ def get_sha256_meta_images(url, max_items=0):
         m = prog.search(img_name)
         if m is None:
             continue
-        img_version = m.group(0)
-
-        # Turn the short version string into a long version string so that MAAS
-        # uses the latest version, not the longest
-        if len(img_version) == 4:
-            img_version = "20%s01_01" % img_version
+        revision = m.group('revision')
 
         # Prefer compressed image over uncompressed
-        if (img_version in ret and
-                ret[img_version]['img_name'].endswith('qcow2.xz')):
+        if (revision in ret and ret[revision]['file'].endswith('qcow2.xz')):
             continue
-        ret[img_version] = {
-            'img_name': img_name,
-            'sha256': sha256,
+        ret[revision] = {
+            'name': m.group('name'),
+            'file': img_name,
+            'revision': revision,
+            'checksum': sha256,
             }
-    if max_items == 0:
-        return ret
-    else:
-        return {
-            key: ret[key]
-            for key in sorted(ret.keys(), reverse=True)[:max_items]
-        }
+    return ret
 
 
-def get_image_index_images(url, max_items=0):
+def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
         filenames and SHA256 checksums keyed off the revision.
     """
@@ -245,32 +247,25 @@ def get_image_index_images(url, max_items=0):
         # ConfigParser defines a 'DEFAULT' section with nothing in it...
         if section.name == 'DEFAULT':
             continue
-        try:
-            filename = section['file']
-            checksum = section['checksum']
-            revision = section['revision']
-        except KeyError:
-            sys.stderr.write('Invalid config entry %s!\n' % section.name)
+        skip = False
+        for required_key in ['name', 'file', 'revision', 'checksum']:
+            if required_key not in section:
+                sys.stderr.write(
+                    "'%s' is undefined in section %s, skipping!\n" % (
+                        required_key, section.name))
+                skip = True
+        if skip:
             continue
 
+        revision = section.get('revision')
+        # Ignore old revision format
         if len(revision) != 4:
-            raise ValueError(
-                "%s has an invalid revision(%s)" % (section.name, revision))
+            continue
 
-        ret['20%s01_01' % revision] = {
-            'img_name': filename,
-            # image-index actually provides a SHA512, maas-qcow2targz will
-            # verify the SHA512 and return a SHA256.
-            'sha256': checksum,
-        }
+        ret[revision] = dict(section)
 
-    if max_items == 0:
-        max_items = len(ret)
-    return {
-        key: ret[key]
-        for key in sorted(ret.keys(), reverse=True)[:max_items]
-    }
-    
+    return ret
+
 
 def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
     """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
