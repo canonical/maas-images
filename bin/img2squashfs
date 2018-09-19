@@ -91,7 +91,7 @@ determine_format() {
     [ "$fmt" != "auto" ] && _RET="$fmt" && return 0
     if [ -d "$input" ]; then
         debug 1 "${input} is a directory";
-        _RET="$dir"
+        _RET="dir"
         return
     fi
     fout=$(LANG=C file "$input") ||
@@ -127,7 +127,7 @@ determine_format() {
 
 get_usable_input() {
     # given 'input' in format 'fmt' return:
-    #  _RET_fmt: the format of _RET_PATH. either
+    #  _RET_fmt: the format of _RET_path. either
     #     fs-image : a mountable filesystem image.
     #     dir : a directory
     #  _RET_path: full path to a file in tempd
@@ -151,7 +151,7 @@ get_usable_input() {
             return;;
         squashfs-image)
             _RET_fmt="squashfs-image"
-            _RET_PATH="${tempd}/fs-image"
+            _RET_path="${tempd}/fs-image"
             ln -s "$(readlink -f "$input")" "${tempd}/fs-image"
             return;;
         root-tar)
@@ -169,7 +169,7 @@ get_usable_input() {
             ;;
         dir)
             _RET_fmt="dir"
-            _RET_PATH="${tempd}/fs-dir"
+            _RET_path="${tempd}/fs-dir"
             ln -s "$(readlink -f "$input")" "${tempd}/fs-dir"
             return;;
         *)
@@ -270,7 +270,7 @@ main() {
     elif [ -f "$tpath" ]; then
         fsimage2squashfs "$tpath" "$output" "$owner" || return
     elif [ -d "$tpath" ]; then
-        dir2squashfs "$tpath" "$output" || return
+        dir2squashfs "$tpath/" "$output" || return
     else
         error "failed. path='$tpath' cfmt=${cfmt}"
         return 1
