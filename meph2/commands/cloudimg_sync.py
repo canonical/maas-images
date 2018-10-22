@@ -74,12 +74,10 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.cfgdata = cfgdata
         if self.cfgdata.get('squashfs'):
             self.squashfs = True
-            # As of MAAS 2.0 DI is no longer supported but SquashFS is.
-            # Since the DI won't be used don't generate them.
-            self.enable_di = False
         else:
             self.squashfs = False
-            self.enable_di = self.config.get('enable_di', True)
+
+        self.enable_di = self.config.get('enable_di', False)
 
         self.releases = []
         for r in [k['release'] for k in cfgdata['releases']]:
@@ -262,9 +260,6 @@ def main():
         else:
             return content
 
-    mirror_config = {'max_items': args.max, 'filters': filter_list,
-                     'enable_di': not args.disable_di}
-
     vlevel = min(args.verbose, 2)
     level = (log.ERROR, log.INFO, log.DEBUG)[vlevel]
     log.basicConfig(stream=args.log_file, level=level)
@@ -281,6 +276,14 @@ def main():
     # --proposed only turns proposed on, not off.
     if not cfgdata.get('enable_proposed', False):
         cfgdata['enable_proposed'] = args.proposed
+
+    if args.disable_di:
+        enable_di = False
+    else:
+        enable_di = cfgdata.get('enable_di', True)
+
+    mirror_config = {'max_items': args.max, 'filters': filter_list,
+                     'enable_di': enable_di}
 
     LOG.info(
         "summary: \n " + '\n '.join([

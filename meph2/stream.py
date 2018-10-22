@@ -65,6 +65,8 @@ def create_version(arch, release, version_name, img_url, out_d,
     # include_di: should we scrape di data?
     # cfgdata: the v2 config file loaded as data
     # common_tags: these are applied to all items
+    # verbosity: increase debug output.
+    # img_format: the format of the input image.
     #
     # return value is a dictionary of
     #  {product_name: {'item_name': item, 'item2_name': item},
@@ -151,28 +153,43 @@ def create_version(arch, release, version_name, img_url, out_d,
             'version': version, 'product_id_pre': cfgdata['product_id_pre']}
 
     rootimg_path = PATH_FORMATS['root-image.gz'] % subs
+    squashfs_path = PATH_FORMATS['squashfs'] % subs
 
     krd_packs = []
-    squashfs = cfgdata.get('squashfs', False)
+    need_squashfs = cfgdata.get('squashfs', False)
+    need_rootimg = cfgdata.get('root_image', False)
+    if not need_rootimg and release == 'trusty':
+        # trusty needs root image in v3
+        need_rootimg = True
+
+    if not (need_rootimg or need_squashfs):
+        raise ValueError("Must create either squashfs or root_image.")
+
     base_boot_keys = ['boot-kernel', 'boot-initrd']
-    if squashfs:
-        base_ikeys = base_boot_keys + ['squashfs', 'squashfs.manifest']
-        manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
-        newpaths = set((PATH_FORMATS['squashfs'] % subs, manifest_path))
-        # If upstream is only providing a root-image include it in addition to
-        # the SquashFS image. The root-image.gz will be converted below.
-        if not img_url.endswith('.squashfs'):
-            base_ikeys += ['root-image.gz']
-            newpaths.update([rootimg_path])
-    else:
-        base_ikeys = base_boot_keys + ['root-image.gz', 'root-image.manifest']
+    base_ikeys = list(base_boot_keys)
+    newpaths = set()
+
+    if need_rootimg:
+        base_ikeys.append('root-image.gz')
+        manifest_ikey = 'root-image.manifest'
         manifest_path = PATH_FORMATS['root-image.manifest'] % subs
-        newpaths = set((rootimg_path, manifest_path))
+        newpaths.add(rootimg_path)
+
+    if need_squashfs:
+        base_ikeys.append('squashfs')
+        manifest_ikey = 'squashfs.manifest'
+        manifest_path = PATH_FORMATS['squashfs.manifest'] % subs
+        newpaths.add(squashfs_path)
+
+    newpaths.add(manifest_path)
+    base_ikeys.append(manifest_ikey)
 
     if enable_proposed:
         mci2e_flags.append("--proposed")
 
     gencmd = ([mci2e] + mci2e_flags +
+              ([] if need_rootimg else ['--no-gzip']) +
+              ([] if need_squashfs else ['--no-squashfs']) +
               [bkparm, "--arch=%s" % arch,
                "--manifest=%s" % os.path.join(out_d, manifest_path),
                img_url, os.path.join(out_d, rootimg_path)])
@@ -305,32 +322,8 @@ def create_version(arch, release, version_name, img_url, out_d,
         subprocess.check_call(gencmd)
         LOG.info("finished: %s" % gencmd)
 
-        base_dir = os.path.join(out_d, release, arch, version_name)
-        dst_squash = os.path.join(base_dir, 'squashfs')
-        if img_url.endswith('squashfs'):
-            src_squash = os.path.join(base_dir, os.path.basename(img_url))
-            if squashfs:
-                # If publishing a SquashFS file rename it to its filetype.
-                os.rename(src_squash, dst_squash)
-                # The root-img is used to generate the kernels and initrds. If
-                # we're publishing the SquashFS image then we don't want to
-                # publish the root-img, we can safely clean it up.
-                src_rootimg_path = os.path.join(
-                    base_dir, os.path.basename(rootimg_path))
-                os.remove(src_rootimg_path)
-            else:
-                # If we're not publishing the SquashFS image but used it to
-                # generate the root-img clean it up.
-                os.remove(src_squash)
-        elif squashfs:
-            # If the stream is publishing SquashFS images convert any
-            # non-SquashFS image into a SquashFS image. Both the root-image.gz
-            # and SquashFS image will be included but MAAS will only use the
-            # SquashFS image.
-            subprocess.check_call([
-                'sudo', 'env', 'PATH=%s' % os.environ.get('PATH'),
-                os.environ.get('IMG2SQUASHFS', 'img2squashfs'),
-                os.path.join(base_dir, 'root-image.gz'), dst_squash])
+        if not need_rootimg:
+            os.remove(os.path.join(out_d, rootimg_path))
 
     # get checksum and size of new files created
     file_info = {}

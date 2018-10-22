@@ -23,7 +23,7 @@ You must provide a url or file to use as the source image.
 
 example:
   $ burl=http://cloud-images.ubuntu.com/daily/server/
-  $ meph2-build amd64 xenial 20160101 \
+  $ meph2-build --config=conf/meph-v3.yaml amd64 xenial 20160101 \
      $burl/xenial/current/xenial-server-cloudimg-amd64-root.tar.xz \
      xenial-output.d/
 
@@ -32,7 +32,9 @@ The 'version' provided is a serial (YYYYMMDD such as 20160101).
 source-image can be either a url or a local file of type 
   '.tar.gz', '-root.tar.gz', or '-root.tar.xz' or '.img'
 
-In order to collect debian installer data you will need '--enable-di'.
+Note, using conf/meph-v2.yaml will build the v2 format stream
+and will include d-i kernels and initramfs.  To disable that, use
+--disable-di.
 
 === syncing against cloud-images.ubuntu.com ===
 This will pull the latest images down from cloud-images.ubuntu.com
@@ -222,3 +224,25 @@ its usage is fairly simple.
    s: seconds
 
 The default is '3d'.
+
+=== Known callers ===
+This is just a list of known callers to reference when changing things.
+
+ - MAAS c-i uses meph2-cloudimg-sync
+   meph2-cloudimg-sync --config=conf/meph-v3.yaml \
+      --target=force [--proposed] --arches=arch1,arch2 \
+      --max=1 out.d/ 'release~(xenial|bionic)'
+ - cloud image build process maas v2
+    meph2-build --image-format squashfs-image -vv --enable-di \
+       amd64 bionic 20181018 livecd.ubuntu-cpc.squashfs binary/maas/
+ - cloud image build  process maas v3
+    meph2-build --config conf/meph-v3.yaml \
+       --image-format squashfs-image -vv \
+       amd64 bionic 20181018 livecd.ubuntu-cpc.squashfs binary/maas_v3/
+
+Trusty images are built like this:
+ - v2 (jenkins_kvm/templates/img-maasv2.tmpl):
+    meph2-cloudimg-sync -vvv out.d arch=amd64 release=trusty
+ - v3:
+    meph2-cloudimg-sync --config=conf/meph-v3.yaml -vvv out.d \
+       arch=$arch release=trusty

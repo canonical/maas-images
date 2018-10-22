@@ -1,0 +1,47 @@
+#!/bin/bash
+# test building image as cloud image build process does v2 (xenial, bionic...).
+OUT_D="${1:-out.d}"
+cmd_out_d="${OUT_D}/output"
+
+mydir=$(dirname "$0")
+
+. "${mydir}/_functions"
+
+checkenv || fail
+
+if [ "${ARCHES#* }" != "${ARCHES}" ]; then
+    fail "multiple arches not supported"
+fi
+
+archmatch="arch=${ARCHES}"
+arch=${ARCHES}
+
+work_d="${OUT_D}/work"
+mkdir -p "$work_d" || fail
+
+base_url="http://cloud-images.ubuntu.com/"
+for rel in ${RELEASES}; do
+    url="${base_url}/$rel/current/$rel-server-cloudimg-$arch.squashfs"
+    squashfs="${work_d}/$rel-$arch.squashfs"
+    download "$url" "$squashfs" || fail "failed download $url"
+done
+
+yyyymmdd=$(date "+%Y%m%d")
+for rel in ${RELEASES}; do
+    # NOTE: image build does not build with '--target=force', but this ensures
+    # that whenever the test runs it will create new data.  Without force,
+    # if conf[default_target:] is up to date with respect to
+    # cloud-images.ubuntu.com, then no images will be built.
+    cmd=(
+        meph2-build --image-format squashfs-image -vv --enable-di
+           --target=force
+           $arch $rel $yyyymmdd "${work_d}/$rel-$arch.squashfs"
+           "${OUT_D}/$rel-$arch"
+    )
+    runlog "${OUT_D}/build.log" "build v2 $rel/$arch" "${cmd[@]}" ||
+        fail "Failed build."
+done
+
+
+## Now test it.
+

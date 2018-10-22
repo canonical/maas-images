@@ -223,6 +223,8 @@ releases:
 
 # If available pull and publish SquashFS images from upstream
 squashfs: True
+root_image: False
+enable_di: False
 
 ## Notes:
 ##  * there are no hwe installer kernels for armhf

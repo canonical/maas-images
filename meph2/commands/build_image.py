@@ -65,9 +65,14 @@ def dump_json_data(fname, cvdata, version_name):
 def main():
     parser = argparse.ArgumentParser()
 
+    di_msg = "d-i scraping, overriding the 'enable_di' key in the config."
     parser.add_argument('--dry-run', action='store_true', default=False,
                         help='only report what would be done')
-    parser.add_argument('--enable-di', action='store_true', default=False)
+    parser.add_argument('--enable-di', action='store_true', default=None,
+                        help='enable' + di_msg)
+    parser.add_argument('--disable-di', action='store_false',
+                        dest='enable_di', default=None,
+                        help='disable ' + di_msg)
     parser.add_argument('--proposed', action='store_true', default=False)
     parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
     parser.add_argument('--image-format', default=None,
@@ -100,10 +105,15 @@ def main():
     if not cfgdata.get('enable_proposed', False):
         cfgdata['enable_proposed'] = args.proposed
 
+    # if provided '--enable-di' or '--disable-di', override config setting.
+    if args.enable_di is not None:
+        cfgdata['enable_di'] = args.enable_di
+    enable_di = cfgdata.get('enable_di')
+
     cvret = create_version(
         arch=args.arch, release=args.release, version_name=args.version_name,
         img_url=args.img_url, out_d=args.output_d,
-        include_di=args.enable_di, cfgdata=cfgdata,
+        include_di=enable_di, cfgdata=cfgdata,
         verbosity=vlevel, img_format=args.image_format)
 
     dump_stream_data(args.output_d, copy.deepcopy(cvret),

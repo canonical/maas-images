@@ -1,0 +1,33 @@
+#!/bin/bash
+# test building trusty image as cloud image build process does v2.
+# from jenkins_kvm/templates/img-maasv2.tmpl (job MAAS_v2-14.04-LTS)
+RELEASES=${RELEASES:-trusty}
+OUT_D="${1:-out.d}"
+cmd_out_d="${OUT_D}/output"
+
+mydir=$(dirname "$0")
+
+. "${mydir}/_functions"
+
+checkenv || fail
+
+if [ "${ARCHES#* }" != "${ARCHES}" ]; then
+    fail "multiple arches not supported"
+fi
+
+archmatch="arch=${ARCHES}"
+
+# NOTE: image build does not build with '--target=force', but this ensures
+# that whenever the test runs it will create new data.  Without force,
+# if conf[default_target:] is up to date with respect to
+# cloud-images.ubuntu.com, then no images will be built.
+cmd=(
+    meph2-cloudimg-sync
+    --target=force
+    -vvv "${cmd_out_d}" "$archmatch" release=trusty
+)
+
+runlog "${OUT_D}/build.log" "build v2 trusty" "${cmd[@]}" ||
+    fail "Failed build."
+
+## Now test it.

@@ -1,0 +1,22 @@
+#!/bin/bash
+# test building image as maas does in its c-i for test.
+RELEASES=${RELEASES:-xenial bionic}
+OUT_D="${1:-out.d}"
+cmd_out_d="${OUT_D}/output"
+
+mydir=$(dirname "$0")
+
+. "${mydir}/_functions"
+
+archarg="--arches=$(join , ${ARCHES})"
+relmatch="release~($(join '|' ${RELEASES}))"
+
+cmd=(
+    meph2-cloudimg-sync "--config=conf/meph-v3.yaml" "--target=force"
+    "--max=1" "$archarg" "${cmd_out_d}" "$relmatch"
+)
+
+runlog "${OUT_D}/build.log" "build maas-ci" "${cmd[@]}" ||
+    fail "Failed build."
+
+## Now test it.

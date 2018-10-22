@@ -225,6 +225,9 @@ releases:
     - [trusty,  amd64,   hwe-t,    generic,  linux-signed-generic-lts-trusty,  *sa_hwe_t]
 
 # enable_proposed: True
+squashfs: False
+root_image: True
+enable_di: True
 
 ## Notes:
 ##  * there are no hwe installer kernels for armhf

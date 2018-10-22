@@ -1,0 +1,28 @@
+#!/bin/bash
+# test building trusty image as cloud image build process does v3.
+# from jenkins_kvm/templates/img-maasv3.tmpl (job MAAS_v3-14.04-LTS)
+RELEASES=${RELEASES:-trusty}
+OUT_D="${1:-out.d}"
+cmd_out_d="${OUT_D}/output"
+
+mydir=$(dirname "$0")
+
+. "${mydir}/_functions"
+
+checkenv || fail
+
+if [ "${ARCHES#* }" != "${ARCHES}" ]; then
+    fail "multiple arches not supported"
+fi
+
+archmatch="arch=${ARCHES}"
+
+cmd=(
+    meph2-cloudimg-sync "--config=conf/meph-v3.yaml"
+    -vvv "${cmd_out_d}" "$archmatch" release=trusty
+)
+
+runlog "${OUT_D}/build.log" "build v3 trusty" "${cmd[@]}" ||
+    fail "Failed build."
+
+## Now test it.

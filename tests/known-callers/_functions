@@ -1,0 +1,116 @@
+#!/bin/bash
+# helper functions for tests.
+
+fail() { echo "FAIL:" "$@" 1>&2; exit 1; }
+join() {
+    # join(delim, args)
+    local delim="$1" i="" ret=""
+    shift;
+    for i in "$@"; do
+        ret="${ret}${delim}$i"
+    done
+    echo "${ret#${delim}}"
+}
+msg() {
+    echo "[$(date -R)]" "$@"
+}
+error() { echo "$@" 1>&2; }
+
+runlog() {
+    local log="$1" desc="$2" ret="" stime="$SECONDS"
+    shift 2
+    local log_d=$(dirname "$log")
+    [ -d "$log_d" ] || mkdir -p "$log_d" ||
+        { error "failed log to $log_d"; return 1; }
+    msg "Starting $desc: $*"
+    msg "Starting $desc: $*" >> "$log"
+    "$@" >> "$log" 2>&1
+    ret="$?"
+    msg "Finished $desc: $ret [$((SECONDS-stime))s]" >> "$log"
+    msg "Finished $desc: $ret [$((SECONDS-stime))s]"
+    return $ret
+}
+
+download() {
+    local url="$1" out="$2"
+    local tmp="$out.$$"
+    [ -f "$out" ] && return 0
+    wget --dot-style=mega "$url" -O "$tmp" && mv "$tmp" "$out" && return
+    rm -f "$out"
+    return 1
+}
+
+get_img_from_tar() {
+    local img="$1" out="$2" tempd="$3"
+    local mtmp=$(mktemp -d "${tempd}/img_from_tar.XXXXXX")
+    tar -C "$mtmp" -Sxf "$img" ||
+        { error "failed to extract $img"; return 1; }
+    local f="" found=""
+    for f in "${mtmp}/"*; do
+        [ ! -f "$f" -o "${f%.img}" = "$f" ] && continue
+        [ -z "$found" ] ||
+            { error "multiple .img found in $img"; return 1; }
+        found="$f"
+    done
+    [ -n "$found" ] || { error "no .img in $img"; return 1; }
+    mv "$found" "$out" && rm -Rf "$mtmp"
+}
+
+checkenv() {
+    local missing="" cmd=""
+    local needed=( meph2-cloudimg-sync maas-cloudimg2ephemeral
+        maas-cloudimg2eph2 )
+    for cmd in "${needed[@]}"; do
+        command -v "$cmd" >/dev/null 2>&1 || missing="${missing} $cmd"
+    done
+    [ -z "${missing}" ] && return 0
+    error "missing commands: ${missing# }"
+    return 1
+}
+
+rt() {
+    # run_test testfunc arguments
+    local ERROR_MSG="" ret=""
+    "$@"
+    ret=$?
+    if [ $ret -eq 0 ]; then
+        error "PASS" "$*"
+        return 0
+    else
+        error "FAIL" "$*" "$ERROR_MSG"
+        return 1
+    fi
+}
+
+test_error() {
+    ERROR_MSG="${FUNCNAME[1]} $*"
+    return 1
+}
+
+assert_manifest() {
+    local mfpath="$1" pkg=${2:-cloud-init} out=""
+    [ -f "$mfpath" ] || {
+        test_error "$mfpath manifest not a file."
+        return
+    }
+    out=$(awk '-F\t' '$1 == pkg { print $2; ret=0; }; END { exit(ret); }' \
+             ret=1 "pkg=$pkg" "$mfpath") || {
+        test_error "$mfpath: did not have cloud-init<tab>"
+        return
+    }
+    return 0
+}
+
+if [ -z "$RELEASES" ]; then
+    # if RELEASES is not set, set it to all things > trusty.
+    _x=$(ubuntu-distro-info --supported) || fail "No ubuntu-distro-info?"
+    _x=$(echo "$_x" | grep -v trusty)
+    RELEASES=$(join " " $_x)
+fi
+
+if [ -z "$ARCHES" ]; then
+    _x=$(dpkg --print-architecture) || fail "dpkg --print-architecture failed."
+    ARCHES="$_x"
+fi
+
+# vi: ts=4 expandtab

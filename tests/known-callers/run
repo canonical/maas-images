@@ -1,0 +1,28 @@
+#!/bin/bash
+base_out_d="${1:-test-results}"
+
+mydir=$(dirname "$0")
+
+. "${mydir}/_functions"
+
+checkenv || fail
+
+for test in ${mydir}/v?-*; do
+    [ -x "$test" ] || continue;
+    name=${test##*/}
+    outdir="${base_out_d}/out-${name}"
+    [ -d "$base_out_d" ] || mkdir -p "$base_out_d"
+    log="${outdir}.log"
+    echo "=== $(date -R) $name $outdir [$log]"
+    ssec=${SECONDS}
+    time "$test" "$outdir" > "$log" 2>&1
+    ret=$?;
+    echo === "$test returned $ret [$((SECONDS-$ssec))s] ===";
+    [ $ret -eq 0 ] || fails="${fails} $name"
+done
+if [ -n "$fails" ]; then
+    echo "FAIL: ${fails# }"
+    exit 1
+fi
+echo PASS
+exit 0

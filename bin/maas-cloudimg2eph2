@@ -20,6 +20,7 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
 
    options:
          --no-gzip     do not gzip output image
+         --no-squashfs do not create squashfs image
     -k | --kernel K    keep/install the kernel package 'k' inside image
                        use 'none' to remove any existing kernels
     -p | --krd-pack P  create a kernel / ramdisk pack
@@ -488,7 +489,7 @@ inargs() {
 
 main() {
     local short_opts="a:fhk:p:v"
-    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,proposed,verbose"
+    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,no-squashfs,proposed,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -498,7 +499,7 @@ main() {
     local cur="" next="" output="" gzip=true kpkg=""
     local kpacks="" src_in="" src="" arch="" vflags="" fmt="auto"
     local working_space="1024M" zero_img="true" fs_img_size="1400M"
-    local manifest_out="" proposed_flag=""
+    local manifest_out="" proposed_flag="" need_squashfs=true
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -511,6 +512,7 @@ main() {
                --manifest) manifest_out="$next";;
             -p|--krd-pack) kpacks[${#kpacks[@]}]="$next"; shift;;
                --no-gzip) gzip=false;;
+               --no-squashfs) need_squashfs=false;;
                --proposed) proposed_flag="--proposed";;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
             --) shift; break;;
@@ -526,6 +528,10 @@ main() {
     PATH="$(dirname "$0"):$PATH"
     command -v "maas-cloudimg2ephemeral" >/dev/null 2>&1 ||
         { error "do not have maas-cloudimg2ephemeral in path"; return 1; }
+
+    local img2squashfs=""
+    img2squashfs=$(which img2squashfs) ||
+        { error "do not have img2squashfs in PATH"; return 1; }
 
     inargs "$fmt" "${VALID_FORMATS[@]}" || {
         error "provided '--format=$fmt' not a valid format:" \
@@ -639,30 +645,28 @@ main() {
         zerofree "$imgfile" || { error "failed zerofree $imgfile"; return 1; }
     fi
 
-    if [ "$fmt" = "squashfs-image" ]; then
-        local squash_out=""
-        squash_out=$(dirname "$output")/$(basename "$src")
 
-        # This is not perfect, but if these things imply a change
-        # to the image rather than re-using the input.
-        if [ -n "${proposed_flag}" ] ||
-           [ -n "${M2E_ADD_REPOS}" -o -n "${M2E_ADD_PACKAGES}" ]; then
-            debug 1 "creating a new squashfs in $squash_out from $imgfile"
-            sudo mount-image-callback "$imgfile" --read-only -- sh -ec '
-                src="$1"; out="$2"; owner="$3"; tmp="$out.$$"
-                trap "rm -f \"$tmp\"" EXIT
-                mksquashfs "$src" "$tmp" -xattrs -comp xz
-                chown "$owner" "$tmp"
-                mv "$tmp" "$out"
-                ' newsquash-img _MOUNTPOINT_ \
-                    "${squash_out}" "$(id -u):$(id -g)" || {
-                error "Failed mksquashfs from $imgfile"
-                return 1
-            }
-        else
+    local need_update=false squash_out="$(dirname "$output")/squashfs"
+
+    # This is not perfect, but these things imply a change to the image
+    # rather than re-using the input.
+    { [ -n "${proposed_flag}" ] ||
+       [ -n "${M2E_ADD_REPOS}" -o -n "${M2E_ADD_PACKAGES}" ]; } &&
+        need_update=true
+
+    if $need_squashfs; then
+        if ! $need_update && [ "$fmt" = "squashfs-image" ]; then
             cp "$src" "${squash_out}" || {
                 error "copy SquashFS image from $src -> $squash_out failed"
                 return 1;
+            }
+        else
+            debug 1 "creating a new squash image in $squash_out with" \
+                "$img2squashfs from $imgfile"
+            sudo "$img2squashfs" --format="root-image" \
+                    "$imgfile" "$squash_out" || {
+                error "Failed img2squashfs from $imgfile"
+                return 1
             }
         fi
     fi
