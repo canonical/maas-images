@@ -26,6 +26,7 @@ subarches:
  - &sa_hwe_a  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a]
  - &sa_hwe_b  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b]
  - &sa_hwe_c  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c]
+ - &sa_hwe_d  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -36,6 +37,7 @@ subarches:
  - &arm_hwe_a [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a]
  - &arm_hwe_b [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b]
  - &arm_hwe_c [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c]
+ - &arm_hwe_d [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d]
 
 misc:
  - &glpae generic-lpae
@@ -46,6 +48,18 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "19.04"
+   release: disco
+   kernels:
+    - [disco,   amd64,   hwe-d,    generic,   linux-signed-generic,     *sa_hwe_d]
+    - [disco,   arm64,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
+    - [disco,   arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
+    - [disco,   arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
+    - [disco,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
+    - [disco,   armhf,   hwe-d,    generic,   linux-generic,            *arm_hwe_d]
+    - [disco,   i386,    hwe-d,    generic,   linux-generic,            *sa_hwe_d]
+    - [disco,   ppc64el, hwe-d,    generic,   linux-generic,            *sa_hwe_d]
+    - [disco,   s390x,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
  - version: "18.10"
    release: cosmic
    kernels:

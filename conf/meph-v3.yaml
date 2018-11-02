@@ -32,6 +32,7 @@ subarches:
  - &sa_hwe_a        [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10]
  - &sa_hwe_b        [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04]
  - &sa_hwe_cc       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
+ - &sa_hwe_dd       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -43,6 +44,7 @@ subarches:
  - &arm_hwe_a       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10]
  - &arm_hwe_b       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04]
  - &arm_hwe_cc      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
+ - &arm_hwe_dd      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
 
 misc:
  - &glpae generic-lpae
@@ -53,6 +55,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "19.04"
+   release: disco
+   kernels:
+    - [disco,      amd64,    ga-19.04,        generic,     linux-signed-generic,                 *sa_hwe_dd]
+    - [disco,      amd64,    ga-19.04,        lowlatency,  linux-signed-image-lowlatency,        *sa_hwe_dd]
+    - [disco,      arm64,    ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
+    - [disco,      arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [disco,      arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [disco,      armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [disco,      armhf,    ga-19.04,        generic,     linux-generic,                        *arm_hwe_dd]
+    - [disco,      i386,     ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
+    - [disco,      i386,     ga-19.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_dd]
+    - [disco,      ppc64el,  ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
+    - [disco,      s390x,    ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
  - version: "18.10"
    release: cosmic
    kernels:
