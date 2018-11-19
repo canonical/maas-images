@@ -272,6 +272,26 @@ EOF
     fi
 }
 
+match_one_file() {
+    # return 0 and write the file to stdout if the provided shell glob matches
+    # only one file. return 1 if no files, 2 if more than one.
+    local glob="$1"
+    (set +f
+        matched="" f=""
+        n=0
+        for f in $glob; do
+            [ -f "$f" ] || continue
+            matched="${matched} $f"
+            n=$(($n+1))
+        done
+        matched="${matched# }"
+        [ $n -eq 1 ] && echo "${matched}" && exit 0
+        echo "$glob matched $n files: $matched"
+        [ $n -eq 0 ] && exit 1
+        exit 2
+    )
+}
+
 vrun() {
     local vlvl="$1" msg="$2" 
     shift 2
@@ -403,7 +423,7 @@ chrooted() {
     kernel=""
     for f in /boot/vmlin*; do
         [ -f "$f" ] || continue
-        out=$(dpkg -S "$f")
+        out=$(dpkg -S "$f" 2>/dev/null)
         pkg=${out%%:*}
         [ "$pkg" = "$kpkg" ] && kernel="$f" && break
         if apt-get --dry-run remove $pkg | grep -q "Remv $kpkg "; then
@@ -419,9 +439,18 @@ chrooted() {
     # kernel is created by combining the key in /usr/lib/linux and the kernel
     # in /boot. As the kernel will not be in the dpkg database assume if it
     # exists it's what we want.
-    if [ -f "$(ls $kernel*signed)" ]; then
-        kernel="$(ls $kernel*signed)"
-        debug 1 "Found signed kernel $kernel"
+    local ret=0
+    if out=$(match_one_file "$kernel*signed"); then
+        debug 1 "Found and using signed kernel '$out' instead of $kernel."
+        kernel="$out"
+    else
+        ret=$?
+        if [ $ret -eq 1 ]; then
+            debug 1 "No signed kernel, using un-signed kernel $kernel"
+        else
+            error "unexpected match. ret=$?: $out."
+            return 1
+        fi
     fi
     if [ "$initrd" -ot "$stamp" ]; then
         debug 1 "initramfs did not update by package install. regenerating."
