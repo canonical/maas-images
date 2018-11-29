@@ -334,8 +334,23 @@ def handle_cloudconfig(cfg, target):
             "No 'write_files' found from curtin.\n")
         return
 
-    base_dir = os.path.join(target, 'etc/cloud/cloud.cfg.d')
-    write_files(cfg['cloudconfig'], base_dir)
+    cloudconfig = cfg['cloudconfig']
+    base_dir = os.path.join(target, 'etc', 'cloud', 'cloud.cfg.d')
+    # Modern Curtin uses handle_cloudconfig which does this. This code path
+    # is only used on old versions Curtin/MAAS which may not include
+    # handle_cloudconfig.
+    # for each item in the dict
+    #   generate a path based on item key
+    #   if path is already in the item, LOG warning, and use generated path
+    for cfgname, cfgvalue in cloudconfig.items():
+        cfgpath = "50-cloudconfig-%s.cfg" % cfgname
+        if 'path' in cfgvalue:
+            sys.stderr.write(
+                "cloudconfig ignoring 'path' key in config '%s', using path=%s"
+                % (cfgname, os.path.join(base_dir, cfgpath)))
+        cfgvalue['path'] = cfgpath
+
+    write_files(cloudconfig, base_dir)
 
 
 def main():
