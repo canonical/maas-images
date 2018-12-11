@@ -109,6 +109,17 @@ if [ "$1" == "maasify" ]; then
             { error "failed chmod +x $root_d/curtin/*"; return 1; }
     fi
 
+    # mirrorlist finds the fastest mirror by returning a list of URLs which
+    # yum then uses to find the fastest connection. Our build system only has
+    # white listed Internet access. Use baseurl instead as the domain is
+    # static.
+    cp "${root_d}/etc/yum.repos.d/CentOS-Base.repo" \
+       "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig"
+    sed -i 's|^mirrorlist=|#mirrorlist=|g' \
+        "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+    sed -i 's|#baseurl=|baseurl=|g' \
+        "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+
     if [ -n "$packages" ]; then
         # We need working DNS to pull packages from the repo
         cp /etc/resolv.conf "${root_d}/etc/resolv.conf"
@@ -117,18 +128,36 @@ if [ "$1" == "maasify" ]; then
                 error "failed to install $package"
                 exit 1
             }
+            # epel-release installs an additional repository. Use the baseurl
+            # instead of the mirrorlist to prevent issues with our build
+            # system.
+            if [ "$package" == "epel-release" ]; then
+                cp "${root_d}/etc/yum.repos.d/epel.repo" \
+                   "${root_d}/etc/yum.repos.d/epel.repo.orig"
+                sed -i 's|^metalink=|#metalink=|g' \
+                    "${root_d}/etc/yum.repos.d/epel.repo"
+                sed -i 's|^#baseurl=|baseurl=|g' \
+                    "${root_d}/etc/yum.repos.d/epel.repo"
+            fi
         done
+
+        # Restore the original repo configuation files.
+        mv -f "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig" \
+           "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+        mv -f "${root_d}/etc/yum.repos.d/epel.repo.orig" \
+           "${root_d}/etc/yum.repos.d/epel.repo"
+
         # Don't ship with yum cache
         LANG=C unshare-pidns chroot "$root_d" yum clean all || {
                 error "failed to clear yum cache"
                 exit 1
             }
-	# Upstream ships with DNS information in /etc/resolv.conf, ship a
-	# clean version.
-	rm "${root_d}/etc/resolv.conf"
-	touch "${root_d}/etc/resolv.conf"
-	chown root:root "${root_d}/etc/resolv.conf"
-	chmod 644 "${root_d}/etc/resolv.conf"
+        # Upstream ships with DNS information in /etc/resolv.conf, ship a
+        # clean version.
+        rm "${root_d}/etc/resolv.conf"
+        touch "${root_d}/etc/resolv.conf"
+        chown root:root "${root_d}/etc/resolv.conf"
+        chmod 644 "${root_d}/etc/resolv.conf"
     fi
 
     error "Taring up image contents... into $out"
