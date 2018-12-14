@@ -183,7 +183,7 @@ kernel_from_mp() {
 config_addl_modules() {
     local root="${1:-/}" rel="$2" fname=""
     fname="${root%/}/etc/initramfs-tools/hooks/kpack_extra"
-    cat > "$fname" <<EOF
+    cat > "$fname" <<"EOF"
 #!/bin/sh
 . /usr/share/initramfs-tools/hook-functions
 
