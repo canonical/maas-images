@@ -59,12 +59,14 @@ function usage() {
     echo "Usage $0 [options] <URL> <SHA256> <out file>"
     echo "Options:"
     echo "  --curtin-path   Path to any curtin files to include in the image."
-    echo "  --packages       Any extra packages to install into the image."
+    echo "  --packages      Any extra packages to install into the image."
+    echo "  --base-mirror   Mirror to get base packages from."
+    echo "  --epel-mirror   Mirror to get epel packages from."
 
 }
 
-short_opts="c:p:h"
-long_opts="curtin-path:,packages:,help"
+short_opts="c:p:b:e:h"
+long_opts="curtin-path:,packages:,base-mirror:,epel-mirror:,help"
 
 getopt_out=$(getopt --name "${##*/}" --options "${short_opts}" --long "${long_opts}" -- "$@")
 if [ $? -ne 0 ]; then
@@ -81,6 +83,14 @@ while true; do
             ;;
         -p|--packages)
             packages=$2
+            shift 2
+            ;;
+        -b|--base-mirror)
+            base_mirror=$2
+            shift 2
+            ;;
+        -e|--epel-mirror)
+            epel_mirror=$2
             shift 2
             ;;
         -h|--help)
@@ -113,12 +123,14 @@ if [ "$1" == "maasify" ]; then
     # yum then uses to find the fastest connection. Our build system only has
     # white listed Internet access. Use baseurl instead as the domain is
     # static.
-    cp "${root_d}/etc/yum.repos.d/CentOS-Base.repo" \
-       "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig"
-    sed -i 's|^mirrorlist=|#mirrorlist=|g' \
-        "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
-    sed -i 's|#baseurl=|baseurl=|g' \
-        "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+    if [ -n "$base_mirror" ]; then
+        cp "${root_d}/etc/yum.repos.d/CentOS-Base.repo" \
+           "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig"
+        sed -i 's|^mirrorlist=|#mirrorlist=|g' \
+            "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+        sed -Ei "s|#baseurl=https?://[a-zA-Z\.\]+|baseurl=$base_mirror|g" \
+            "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
+    fi
 
     if [ -n "$packages" ]; then
         # We need working DNS to pull packages from the repo
@@ -131,21 +143,23 @@ if [ "$1" == "maasify" ]; then
             # epel-release installs an additional repository. Use the baseurl
             # instead of the mirrorlist to prevent issues with our build
             # system.
-            if [ "$package" == "epel-release" ]; then
+            if [ "$package" == "epel-release" ] && [ -n "$epel_mirror" ]; then
                 cp "${root_d}/etc/yum.repos.d/epel.repo" \
                    "${root_d}/etc/yum.repos.d/epel.repo.orig"
                 sed -i 's|^metalink=|#metalink=|g' \
                     "${root_d}/etc/yum.repos.d/epel.repo"
-                sed -i 's|^#baseurl=|baseurl=|g' \
+                sed -Ei "s|#baseurl=https?://[a-zA-Z\.\]+/pub/epel|baseurl=$epel_mirror|g" \
                     "${root_d}/etc/yum.repos.d/epel.repo"
             fi
         done
 
         # Restore the original repo configuation files.
-        mv -f "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig" \
-           "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
-        mv -f "${root_d}/etc/yum.repos.d/epel.repo.orig" \
-           "${root_d}/etc/yum.repos.d/epel.repo"
+        for repo in CentOS-Base.repo epel.repo; do
+            if [ -f "${root_d}/etc/yum.repos.d/${repo}.orig" ]; then
+                mv -f "${root_d}/etc/yum.repos.d/${repo}.orig" \
+                   "${root_d}/etc/yum.repos.d/${repo}"
+            fi
+        done
 
         # Don't ship with yum cache
         LANG=C unshare-pidns chroot "$root_d" yum clean all || {
@@ -251,6 +265,9 @@ else
     cb_args="maasify _MOUNTPOINT_ $out"
     [ -n "$curtin_path" ] && cb_args="$cb_args --curtin-path $curtin_path"
     [ -n "$packages" ] && cb_args="$cb_args --packages $packages"
+    [ -n "$base_mirror" ] && cb_args="$cb_args --base-mirror $base_mirror"
+    [ -n "$epel_mirror" ] && cb_args="$cb_args --epel-mirror $epel_mirror"
+
     sudo \
         CACHE_D="${cache_d}" \
         ${http_proxy:+"http_proxy=${http_proxy}"} \

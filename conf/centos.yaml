@@ -4,6 +4,8 @@ product_id: "com.ubuntu.maas.daily:centos-bases:{version}:{arch}"
 content_id: "com.ubuntu.maas:daily:centos-bases-download"
 os: centos
 arch: amd64
+base_mirror: http://mirrors.edge.kernel.org
+epel_mirror: http://mirrors.kernel.org/fedora-epel
 
 versions:
     centos70:

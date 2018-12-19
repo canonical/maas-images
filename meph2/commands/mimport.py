@@ -97,7 +97,8 @@ def import_remote_config(args, product_tree, cfgdata):
             sha256 = import_qcow2(
                 '/'.join([base_url, image_info['file']]),
                 image_info['checksum'], real_image_path,
-                release_info.get('curtin_files'), packages)
+                release_info.get('curtin_files'), packages,
+                cfgdata.get('base_mirror'), cfgdata.get('epel_mirror'))
             product_tree['products'][product_id]['versions'][version] = {
                 'items': {
                     'root-image.gz': {
@@ -240,7 +241,9 @@ def get_image_index_images(url):
     return ret
 
 
-def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
+def import_qcow2(
+        url, expected_sha256, out, curtin_files=None, packages=None,
+        base_mirror=None, epel_mirror=None):
     """ Call the maas-qcow2targz script to convert a qcow2 or qcow2.xz file at
         a given URL or local path. Return the SHA256SUM of the outputted file.
     """
@@ -255,6 +258,14 @@ def import_qcow2(url, expected_sha256, out, curtin_files=None, packages=None):
     if packages is not None:
         qcow2targz_cmd.append('--packages')
         qcow2targz_cmd.append(packages)
+
+    if base_mirror is not None:
+        qcow2targz_cmd.append('--base-mirror')
+        qcow2targz_cmd.append(base_mirror)
+
+    if epel_mirror is not None:
+        qcow2targz_cmd.append('--epel-mirror')
+        qcow2targz_cmd.append(epel_mirror)
 
     proc = subprocess.Popen(qcow2targz_cmd)
     proc.communicate()
