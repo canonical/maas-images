@@ -126,9 +126,9 @@ if [ "$1" == "maasify" ]; then
     if [ -n "$base_mirror" ]; then
         cp "${root_d}/etc/yum.repos.d/CentOS-Base.repo" \
            "${root_d}/etc/yum.repos.d/CentOS-Base.repo.orig"
-        sed -i 's|^mirrorlist=|#mirrorlist=|g' \
+        sed -Ei "s/^(mirrorlist|metalink)=/#\1=/g" \
             "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
-        sed -Ei "s|#baseurl=https?://[a-zA-Z\.\]+|baseurl=$base_mirror|g" \
+        sed -Ei "s|#baseurl=https?://[a-zA-Z\.]+|baseurl=$base_mirror|g" \
             "${root_d}/etc/yum.repos.d/CentOS-Base.repo"
     fi
 
@@ -146,9 +146,9 @@ if [ "$1" == "maasify" ]; then
             if [ "$package" == "epel-release" ] && [ -n "$epel_mirror" ]; then
                 cp "${root_d}/etc/yum.repos.d/epel.repo" \
                    "${root_d}/etc/yum.repos.d/epel.repo.orig"
-                sed -i 's|^metalink=|#metalink=|g' \
+                sed -Ei "s/^(mirrorlist|metalink)=/#\1=/g" \
                     "${root_d}/etc/yum.repos.d/epel.repo"
-                sed -Ei "s|#baseurl=https?://[a-zA-Z\.\]+/pub/epel|baseurl=$epel_mirror|g" \
+                sed -Ei "s|#baseurl=https?://[a-zA-Z\.]+/pub/epel|baseurl=$epel_mirror|g" \
                     "${root_d}/etc/yum.repos.d/epel.repo"
             fi
         done
