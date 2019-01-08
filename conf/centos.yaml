@@ -18,7 +18,7 @@ versions:
         revision: 1809
         # The lp:maas-images release. This defaults to 01. Changing this will
         # cause a new build of the revision to be imported.
-        # release: 02
+        release: 02
         packages:
          # cloud-init depends on packages from EPEL
          - epel-release
@@ -31,6 +31,9 @@ versions:
          # The image most likely already has cloud-init, this pulls Canonical's
          # version
          - cloud-init
+         # cloud-init only requires python-oauthlib with MAAS. As such upstream
+         # has removed python-oauthlib from cloud-init's deps.
+         - python-oauthlib
          # bridge-utils is required by cloud-init to configure networking.
          # Without it cloud-init will try to install it which will not work in
          # isolated environments.
@@ -71,6 +74,9 @@ versions:
          # The image most likely already has cloud-init, this pulls Canonical's
          # version
          - cloud-init
+         # cloud-init only requires python-oauthlib with MAAS. As such upstream
+         # has removed python-oauthlib from cloud-init's deps.
+         - python-oauthlib
          # bridge-utils is required by cloud-init to configure networking.
          # Without it cloud-init will try to install it which will not work in
          # isolated environments.
