@@ -359,6 +359,14 @@ apply_updates_chrooted() {
         precise|quantal|raring|saucy|trusty|utopic|vivid)
             rel_pkgs="${rel_pkgs} maas-enlist";;
     esac
+    # rel_pkgs: include cryptsetup-initramfs on cosmic and up LP: #1818876
+    case "$release" in
+	precise|trusty|xenial|bionic)
+	;;
+	*)
+	    rel_pkgs="${rel_pkgs} cryptsetup-initramfs";;
+	;;
+    esac
 
     change="add u-boot-tools to arch_pkgs for arch '$arch' (LP: #1640519)"
     if [ "$arch" = "arm64" -o "$arch" = "armhf" ]; then
