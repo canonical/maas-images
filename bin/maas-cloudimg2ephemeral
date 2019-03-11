@@ -364,7 +364,7 @@ apply_updates_chrooted() {
 	precise|trusty|xenial|bionic)
 	;;
 	*)
-	    rel_pkgs="${rel_pkgs} cryptsetup-initramfs";;
+	    rel_pkgs="${rel_pkgs} cryptsetup-initramfs"
 	;;
     esac
 
