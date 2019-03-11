@@ -197,10 +197,20 @@ case $(dpkg --print-architecture) in
         ;;
 esac
 EOF
-    if [ "$rel" = "precise" ]; then
-        echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
-    fi
     [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
+
+    case "$rel" in
+        precise)
+            echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
+        ;;
+        trusty|xenial)
+        ;;
+        *)
+            echo "manual_add_modules dm-multipath # (LP: #1813228)" >> "$fname"
+            echo "manual_add_modules multipath    # (LP: #1813228)" >> "$fname"
+        ;;
+    esac
+
     chmod 755 "$fname" ||
         { error "failed setting execute on $fname"; return 1; }
 
