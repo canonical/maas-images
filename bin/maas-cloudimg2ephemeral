@@ -487,6 +487,15 @@ apply_updates_chrooted() {
         log_change false "$change"
     fi
 
+    change="set CRYPTSETUP=y in /etc/cryptsetup-initramfs/conf-hook (LP: #1818876)"
+    if [ -e "/etc/cryptsetup-initramfs/conf-hook" ]; then
+        log_change true "$change"
+        sed -i 's/#CRYPTSETUP=.*/CRYPTSETUP=y/' /etc/cryptsetup-initramfs/conf-hook ||
+            { error "failed to $change"; return 1; }
+    else
+        log_change false "$change"
+    fi
+
     change="update-initramfs"
     if [ "$kpkg" != "none" ]; then
         local k="" i=""
