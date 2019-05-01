@@ -34,6 +34,7 @@ subarches:
  - &sa_hwe_b_edge   [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &sa_hwe_cc       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
  - &sa_hwe_dd       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
+ - &sa_hwe_ee       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -47,6 +48,7 @@ subarches:
  - &arm_hwe_b_edge  [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &arm_hwe_cc      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
  - &arm_hwe_dd      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
+ - &arm_hwe_ee      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
 
 misc:
  - &glpae generic-lpae
@@ -57,6 +59,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "19.10"
+   release: eoan
+   kernels:
+    - [eoan,       amd64,    ga-19.10,        generic,     linux-signed-generic,                 *sa_hwe_ee]
+    - [eoan,       amd64,    ga-19.10,        lowlatency,  linux-signed-image-lowlatency,        *sa_hwe_ee]
+    - [eoan,       arm64,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
+    - [eoan,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [eoan,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [eoan,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [eoan,       armhf,    ga-19.10,        generic,     linux-generic,                        *arm_hwe_ee]
+    - [eoan,       i386,     ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
+    - [eoan,       i386,     ga-19.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ee]
+    - [eoan,       ppc64el,  ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
+    - [eoan,       s390x,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
  - version: "19.04"
    release: disco
    kernels:
