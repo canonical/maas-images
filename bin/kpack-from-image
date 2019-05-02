@@ -206,8 +206,7 @@ EOF
         trusty|xenial)
         ;;
         *)
-            echo "manual_add_modules dm-multipath # (LP: #1813228)" >> "$fname"
-            echo "manual_add_modules multipath    # (LP: #1813228)" >> "$fname"
+	    echo "copy_modules_dir kernel/drivers/md # (LP: #1813228)" >> "$fname"
         ;;
     esac
 
