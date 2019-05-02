@@ -60,6 +60,7 @@ def get_ubuntu_info(date=None):
                 getall(result="release", date=date)]
     full_codenames = [x.split('"')[1] for x in fullnames]
     supported = udi.supported(date=date)
+    supported_esm = udi.supported_esm(date=date)
     try:
         devel = udi.devel(date=date)
     except distro_info.DistroDataOutdated as e:
@@ -82,11 +83,20 @@ def get_ubuntu_info(date=None):
     for i, codename in enumerate(codenames):
         title = "%s LTS" % versions[i] if lts[i] else versions[i]
         eol = hack_all[codename]['eol'].strftime("%Y-%m-%d")
+
+        if hack_all[codename]['eol_esm']:
+            eol_esm = hack_all[codename]['eol_esm'].strftime("%Y-%m-%d")
+        else:
+            # If eol_esm is None then this release does not receive ESM support
+            # As such we should set the esm_eol to the same as eol
+            eol_esm = eol
         release_date = hack_all[codename]['release'].strftime("%Y-%m-%d")
         ret.append({'lts': lts[i], 'version': versions[i],
                     'supported': codename in supported,
+                    'supported_esm': codename in supported_esm,
                     'codename': codename,
                     'support_eol': eol,
+                    'support_esm_eol': eol_esm,
                     'release_codename': full_codenames[i],
                     'release_date': release_date,
                     'devel': bool(codename == devel),
@@ -108,6 +118,7 @@ REL2VER = {k['codename']: k for k in get_ubuntu_info()}
 
 LTS_RELEASES = [d for d in REL2VER if REL2VER[d]['lts']]
 SUPPORTED = {d: v for d, v in REL2VER.items() if v['supported']}
+SUPPORTED_ESM = {d: v for d, v in REL2VER.items() if v['supported_esm']}
 
 if __name__ == '__main__':
     import json

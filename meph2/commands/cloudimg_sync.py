@@ -81,7 +81,8 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
 
         self.releases = []
         for r in [k['release'] for k in cfgdata['releases']]:
-            if r not in ubuntu_info.SUPPORTED:
+            if (r not in ubuntu_info.SUPPORTED and
+                    r not in ubuntu_info.SUPPORTED_ESM):
                 LOG.info("ignoring unsupported release: %s", r)
             else:
                 self.releases.append(r)
