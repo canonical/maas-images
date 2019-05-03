@@ -74,18 +74,24 @@ def get_ubuntu_info(date=None):
     # hack_all, because we're using '_rows', which is not supported
     # however it is the only real way to get at EOL, and is convenient
     # series there is codename to us
+    eol_esm_key = "eol-esm"
     try:
         ubuntu_rows = udi._rows
     except AttributeError:
         ubuntu_rows = [row.__dict__ for row in udi._releases]
+        # if we are using _rows directly then the dict
+        # key for ESM eol is different to when we use a
+        # dict representation of DistroRelease objects
+        eol_esm_key = "eol_esm"
 
     hack_all = {i['series']: i for i in ubuntu_rows}
     for i, codename in enumerate(codenames):
         title = "%s LTS" % versions[i] if lts[i] else versions[i]
         eol = hack_all[codename]['eol'].strftime("%Y-%m-%d")
 
-        if hack_all[codename]['eol_esm']:
-            eol_esm = hack_all[codename]['eol_esm'].strftime("%Y-%m-%d")
+        if eol_esm_key in hack_all[codename] and \
+                hack_all[codename][eol_esm_key]:
+            eol_esm = hack_all[codename][eol_esm_key].strftime("%Y-%m-%d")
         else:
             # If eol_esm is None then this release does not receive ESM support
             # As such we should set the esm_eol to the same as eol
