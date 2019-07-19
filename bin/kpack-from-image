@@ -187,10 +187,12 @@ config_addl_modules() {
 #!/bin/sh
 . /usr/share/initramfs-tools/hook-functions
 
-copy_modules_dir kernel/drivers/char/ipmi # LP: #1333271
-copy_modules_dir kernel/drivers/net/usb   # LP: #1552378
-manual_add_modules bcache # LP: #1513176
-manual_add_modules hpilo  # LP: #1761639
+copy_modules_dir kernel/drivers/char/ipmi   # LP: #1333271
+copy_modules_dir kernel/drivers/net/usb     # LP: #1552378
+copy_modules_dir kernel/drivers/net/bonding # LP: #1835275
+copy_modules_dir kernel/drivers/infiniband  # LP: #1835275
+manual_add_modules bcache                   # LP: #1513176
+manual_add_modules hpilo                    # LP: #1761639
 case $(dpkg --print-architecture) in
     arm64)
         manual_add_modules i2c-thunderx # LP: #1702976
