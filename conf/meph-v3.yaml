@@ -35,6 +35,7 @@ subarches:
  - &sa_hwe_cc       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
  - &sa_hwe_dd       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
  - &sa_hwe_ee       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
+ - &sa_hwe_ff       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -49,6 +50,7 @@ subarches:
  - &arm_hwe_cc      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10]
  - &arm_hwe_dd      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04]
  - &arm_hwe_ee      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
+ - &arm_hwe_ff      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
 
 misc:
  - &glpae generic-lpae
@@ -59,6 +61,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "20.04"
+   release: focal
+   kernels:
+    - [focal,       amd64,    ga-20.04,        generic,     linux-signed-generic,                 *sa_hwe_ff]
+    - [focal,       amd64,    ga-20.04,        lowlatency,  linux-signed-image-lowlatency,        *sa_hwe_ff]
+    - [focal,       arm64,    ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
+    - [focal,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [focal,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [focal,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [focal,       armhf,    ga-20.04,        generic,     linux-generic,                        *arm_hwe_ff]
+    - [focal,       i386,     ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
+    - [focal,       i386,     ga-20.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ff]
+    - [focal,       ppc64el,  ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
+    - [focal,       s390x,    ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
  - version: "19.10"
    release: eoan
    kernels:
