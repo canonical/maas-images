@@ -403,6 +403,71 @@ def main_sign(args):
     return 0
 
 
+def main_remove_version(args):
+    filter_list = filters.get_filters(args.filters)
+    product_streams = util.load_product_streams(args.data_d)
+    resign = False
+
+    for product_stream in product_streams:
+        product_stream_path = os.path.join(args.data_d, product_stream)
+        content = util.load_content(product_stream_path)
+        products = content['products']
+        write_stream = False
+        for product, data in products.items():
+            if (
+                    filters.filter_dict(filter_list, data) and
+                    args.version in data['versions']):
+                print('Removing %s from %s' % (args.version, product))
+                if not args.dry_run:
+                    del data['versions'][args.version]
+                    resign = write_stream = True
+        if write_stream:
+            with open(product_stream_path, 'wb') as f:
+                f.write(util.dump_data(content).strip())
+    if resign:
+        util.gen_index_and_sign(args.data_d, not args.no_sign)
+    return 0
+
+
+def main_copy_version(args):
+    filter_list = filters.get_filters(args.filters)
+    product_streams = util.load_product_streams(args.data_d)
+    resign = False
+
+    for product_stream in product_streams:
+        product_stream_path = os.path.join(args.data_d, product_stream)
+        content = util.load_content(product_stream_path)
+        products = content['products']
+        write_stream = False
+        for product, data in products.items():
+            if (
+                    filters.filter_dict(filter_list, data) and
+                    args.from_version in data['versions']):
+                print('Copying %s to %s in %s' % (
+                    args.from_version, args.to_version, product))
+                if not args.dry_run:
+                    new_version = copy.deepcopy(
+                        data['versions'][args.from_version])
+                    for item in new_version['items'].values():
+                        old_path = os.path.join(args.data_d, item['path'])
+                        item['path'] = item['path'].replace(
+                            args.from_version, args.to_version)
+                        new_path = os.path.join(args.data_d, item['path'])
+                        if not os.path.exists(new_path):
+                            os.makedirs(
+                                os.path.dirname(new_path), exist_ok=True)
+                            shutil.copy(
+                                old_path, new_path, follow_symlinks=False)
+                    data['versions'][args.to_version] = new_version
+                    resign = write_stream = True
+        if write_stream:
+            with open(product_stream_path, 'wb') as f:
+                f.write(util.dump_data(content).strip())
+    if resign:
+        util.gen_index_and_sign(args.data_d, not args.no_sign)
+    return 0
+
+
 def main_import(args):
     """meph2-util import wraps the preferred command 'meph2-import'.
 

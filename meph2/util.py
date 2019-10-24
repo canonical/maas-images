@@ -264,15 +264,19 @@ def dump_data(data, end_cr=True):
     return bytestr
 
 
+def load_content(path):
+    if not os.path.exists(path):
+        return {}
+    with scontentsource.UrlContentSource(path) as tcs:
+        return sutil.load_content(tcs.read())
+
+
 def load_products(path, product_streams):
     products = {}
     for product_stream in product_streams:
         product_stream_path = os.path.join(path, product_stream)
-        if os.path.exists(product_stream_path):
-            with scontentsource.UrlContentSource(
-                    product_stream_path) as tcs:
-                product_listing = sutil.load_content(tcs.read())
-                products.update(product_listing['products'])
+        product_listing = load_content(product_stream_path)
+        products.update(product_listing['products'])
     return products
 
 

@@ -24,6 +24,8 @@ COMMON_FLAGS = {
     'keyring': (('--keyring',),
                 {'help': 'gpg keyring to check sjson',
                  'default': DEF_KEYRING}),
+    'filters': ('filters', {'nargs': '*', 'default': []}),
+    'version': ('version', {'help': 'the version_id to promote.'}),
 }
 
 SUBCOMMANDS = {
@@ -33,7 +35,7 @@ SUBCOMMANDS = {
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
             COMMON_FLAGS['keyring'],
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
-            ('filters', {'nargs': '*', 'default': []}),
+            COMMON_FLAGS['filters'],
         ]
     },
     'import': {
@@ -68,8 +70,7 @@ SUBCOMMANDS = {
              {'help': 'do not copy files, only metadata [TEST_ONLY]',
               'action': 'store_true', 'default': False}),
             COMMON_FLAGS['src'], COMMON_FLAGS['target'],
-            ('version', {'help': 'the version_id to promote.'}),
-            ('filters', {'nargs': '+', 'default': []}),
+            COMMON_FLAGS['version'], COMMON_FLAGS['filters'],
         ]
     },
     'clean-md': {
@@ -78,7 +79,7 @@ SUBCOMMANDS = {
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
             COMMON_FLAGS['keyring'],
             ('max', {'type': int}), ('target', {}),
-            ('filters', {'nargs': '*', 'default': []}),
+            COMMON_FLAGS['filters'],
         ]
     },
     'find-orphans': {
@@ -104,6 +105,24 @@ SUBCOMMANDS = {
         'help': 'Regenerate index.json and sign the stream',
         'opts': [
             COMMON_FLAGS['data_d'], COMMON_FLAGS['no-sign'],
+        ],
+    },
+    'remove-version': {
+        'help': 'Remove a version from a product',
+        'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'], COMMON_FLAGS['data_d'],
+            COMMON_FLAGS['version'], COMMON_FLAGS['filters'],
+        ],
+    },
+    'copy-version': {
+        'help': 'Copy a version of a product to a new version',
+        'opts': [
+            COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            COMMON_FLAGS['keyring'], COMMON_FLAGS['data_d'],
+            ('from_version', {'help': 'the version_id to copy from.'}),
+            ('to_version', {'help': 'the version_id to copy to.'}),
+            COMMON_FLAGS['filters']
         ],
     },
 }
