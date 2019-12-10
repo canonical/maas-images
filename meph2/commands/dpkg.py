@@ -195,7 +195,7 @@ def archive_files(items, target):
     new_items = {}
     # Create a mapping of source packages and the files that came from them.
     for item in items.values():
-        key = "%(src_package)s-%(src_release)-%(src_version)" % item
+        key = "%(src_package)s-%(src_release)s-%(src_version)s" % item
         if archive_items.get(key) is None:
             archive_items[key] = {
                 'src_package': item['src_package'],

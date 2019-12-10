@@ -276,7 +276,7 @@ def load_products(path, product_streams):
     for product_stream in product_streams:
         product_stream_path = os.path.join(path, product_stream)
         product_listing = load_content(product_stream_path)
-        products.update(product_listing['products'])
+        products.update(product_listing.get('products', {}))
     return products
 
 
