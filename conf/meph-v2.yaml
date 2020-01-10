@@ -88,18 +88,6 @@ releases:
     - [disco,   i386,    hwe-d,    generic,   linux-generic,            *sa_hwe_d]
     - [disco,   ppc64el, hwe-d,    generic,   linux-generic,            *sa_hwe_d]
     - [disco,   s390x,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
- - version: "18.10"
-   release: cosmic
-   kernels:
-    - [cosmic,  amd64,   hwe-c,    generic,   linux-signed-generic,     *sa_hwe_c]
-    - [cosmic,  arm64,   hwe-c,    generic,   linux-generic,            *sa_hwe_c]
-    - [cosmic,  arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
-    - [cosmic,  arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
-    - [cosmic,  armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [cosmic,  armhf,   hwe-c,    generic,   linux-generic,            *arm_hwe_c]
-    - [cosmic,  i386,    hwe-c,    generic,   linux-generic,            *sa_hwe_c]
-    - [cosmic,  ppc64el, hwe-c,    generic,   linux-generic,            *sa_hwe_c]
-    - [cosmic,  s390x,   hwe-c,    generic,   linux-generic,            *sa_hwe_c]
  - version: "18.04"
    release: bionic
    kernels:
