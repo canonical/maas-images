@@ -305,7 +305,7 @@ def import_packer_maas(args, cfgdata):
         product_tree['updated'] = util.timestamp()
         product_tree['datatype'] = 'image-ids'
         if product_tree['products'].get(product_id) is None:
-            print(f"Creating new product {product_id}")
+            print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
                 'subarches': 'generic',
                 'label': 'candidate',
@@ -321,18 +321,18 @@ def import_packer_maas(args, cfgdata):
         packer_dir = os.path.abspath(os.path.join(
             os.path.dirname(__file__), '..', '..', 'packer-maas', name))
         if not os.path.exists(packer_dir):
-            sys.exit(f"Error: Unable to find packer directory {name}")
+            sys.exit("Error: Unable to find packer directory %s" % name)
 
         # Packer refuses to run if build artifacts are still around.
         for build_artifact in [
-                'output-qemu', f"{name}.tar.gz", f"{name}.dd.gz"]:
+                'output-qemu', "%s.tar.gz" % name, "%s.dd.gz" % name]:
             build_artifact_path = os.path.join(packer_dir, build_artifact)
             if os.path.isdir(build_artifact_path):
                 shutil.rmtree(build_artifact_path)
             elif os.path.exists(build_artifact_path):
                 os.remove(build_artifact_path)
 
-        packer_template = data.get('template', f"{name}.json")
+        packer_template = data.get('template', "%s.json" % name)
 
         if 'yum_mirror' in data:
             # A yum mirrorlist allows yum to pick the fastest mirror from
@@ -341,9 +341,9 @@ def import_packer_maas(args, cfgdata):
             # mirrorlists used in the kickstart file with baseurls. This
             # is needed for the builder as it whitelists hosts.
             orig_kickstart_path = os.path.join(
-                packer_dir, 'http', f"{name}.ks")
+                packer_dir, 'http', "%s.ks" % name)
             kickstart_path = os.path.join(
-                packer_dir, 'http', f"{name}-maas-images.ks")
+                packer_dir, 'http', "%s-maas-images.ks" % name)
             if os.path.exists(kickstart_path):
                 os.remove(kickstart_path)
             mirrorlist_re = re.compile(
@@ -396,7 +396,7 @@ def import_packer_maas(args, cfgdata):
                     for i, cmd in enumerate(builder['boot_command']):
                         if cmd.startswith("inst.ks"):
                             builder['boot_command'][i] = cmd.replace(
-                                f"{name}.ks", f"{name}-maas-images.ks")
+                                "%s.ks" % name, "%s-maas-images.ks" % name)
             # Add the given Curtin hooks when creating the tar from the
             # disk image.
             if 'curtin_hooks' in data:
@@ -413,41 +413,36 @@ def import_packer_maas(args, cfgdata):
                         if line == "mount /dev/nbd4p1 $TMP_DIR":
                             new_inline.append("mkdir -p $TMP_DIR/curtin")
                             new_inline.append(
-                                f"cp -r {curtin_hooks}/* $TMP_DIR/curtin")
+                                "cp -r %s/* $TMP_DIR/curtin" % curtin_hooks)
                             new_inline.append("sync $TMP_DIR/curtin")
                     post_processor['inline'] = new_inline
-            packer_template = f"{name}-mass-images.json"
+            packer_template = "%s-mass-images.json" % name
             template_path = os.path.join(packer_dir, packer_template)
             if os.path.exists(template_path):
                 os.remove(template_path)
             with open(template_path, 'w') as f:
                 json.dump(template, f, indent=4)
 
-        # Set packer variables which are used to define the path to an ISO
-        # if required to build the image.
-        packer_vars = ' '.join([
-            f"-var '{key}={value}'"
-            for key,value in data.get('packer_vars', {}).items()
-        ])
-
         # Packer must be run in the same directory as the template so the post
         # processor can convert image into something usable by MAAS.
         packer_path = os.environ.get('PACKER_PATH', 'packer')
         packer_cmd = [packer_path, 'build']
+        # Set packer variables which are used to define the path to an ISO
+        # if required to build the image.
         if 'packer_vars' in data:
             for key, value in data['packer_vars'].items():
-                packer_cmd += ['-var', f"{key}={value}"]
+                packer_cmd += ['-var', "%s=%s" % (key, value)]
         packer_cmd += [packer_template]
         proc = subprocess.run(packer_cmd, cwd=packer_dir)
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 cmd=' '.join(packer_cmd), returncode=proc.returncode)
 
-        packer_image = os.path.join(packer_dir, f"{name}.tar.gz")
+        packer_image = os.path.join(packer_dir, "%s.tar.gz" % name)
         if os.path.exists(packer_image):
             ftype = 'root-tgz'
         else:
-            packer_image = os.path.join(packer_dir, f"{name}.dd.gz")
+            packer_image = os.path.join(packer_dir, "%s.dd.gz" % name)
             if not os.path.exists(packer_image):
                 sys.exit("Error: Unable to find image from Packer!")
             ftype = 'root-dd.gz'
@@ -468,13 +463,12 @@ def import_packer_maas(args, cfgdata):
             os.makedirs(real_image_dir)
         shutil.move(packer_image, real_image_path)
 
+        ftype_data = util.get_file_info(real_image_path)
+        ftype_data['ftype'] = ftype
+        ftype_data['path'] = image_path
         product_tree['products'][product_id]['versions'][version] = {
             'items': {
-                ftype: {
-                    'ftype': ftype,
-                    'path': image_path,
-                    **util.get_file_info(real_image_path)
-                    },
+                ftype: ftype_data,
                 }
             }
 
