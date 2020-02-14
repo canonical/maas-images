@@ -1,4 +1,3 @@
-from platform import linux_distribution
 import shutil
 import subprocess
 import hashlib
@@ -23,8 +22,24 @@ _packages = {}
 
 def get_distro_release():
     """Returns the release name for the running distro."""
-    disname, version, codename = linux_distribution()
-    return codename
+    try:
+        # linux_distribution has been removed from Python-3.8
+        # https://bugs.python.org/issue28167
+        from platform import linux_distribution
+        _, _, codename = linux_distribution()
+        return codename
+    except ImportError:
+        # /etc/os-release is available in Xenial+
+        os_release = {}
+        with open("/etc/os-release") as f:
+            for line in f:
+                key, value = line.split("=")
+                os_release[key.strip().strip("'\"")] = (
+                    value.strip().strip("'\""))
+        if 'VERSION_CODENAME' in os_release:
+            return os_release['VERSION_CODENAME']
+        else:
+            return os_release['UBUNTU_CODENAME']
 
 
 def get_sha256(data):
