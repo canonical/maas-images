@@ -27,7 +27,7 @@ versions:
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
          # package build. Instead it expects you to first add the repo which
          # is what is included in this package.
-         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-7-x86_64/00581936-cloud-init-el-release/cloud-init-el-release-7-1.noarch.rpm
+         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-7-x86_64/01081276-cloud-init-el-release/cloud-init-el-release-7-1.noarch.rpm
          # The image most likely already has cloud-init, this pulls Canonical's
          # version
          - cloud-init
@@ -70,7 +70,7 @@ versions:
          # XXX ltrager 2017-07-28 - COPR doesn't provide a URL to the latest
          # package build. Instead it expects you to first add the repo which
          # is what is included in this package.
-         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-6-x86_64/00581936-cloud-init-el-release/cloud-init-el-release-7-1.noarch.rpm
+         - https://copr-be.cloud.fedoraproject.org/results/%40cloud-init/el-stable/epel-6-x86_64/01081281-cloud-init-el-release/cloud-init-el-release-6-1.noarch.rpm
          # The image most likely already has cloud-init, this pulls Canonical's
          # version
          - cloud-init
