@@ -28,7 +28,6 @@ subarches:
  - &sa_hwe_c  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c]
  - &sa_hwe_d  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d]
  - &sa_hwe_e  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d, hwe-e]
- - &sa_hwe_f  [generic, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d, hwe-e, hwe-f]
  - &arm_hwe_t [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -41,7 +40,6 @@ subarches:
  - &arm_hwe_c [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c]
  - &arm_hwe_d [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d]
  - &arm_hwe_e [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d, hwe-e]
- - &arm_hwe_f [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, hwe-x, hwe-y, hwe-z, hwe-a, hwe-b, hwe-c, hwe-d, hwe-e, hwe-f]
 
 misc:
  - &glpae generic-lpae
@@ -52,18 +50,6 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
- - version: "20.04"
-   release: focal
-   kernels:
-    - [focal,    amd64,   hwe-f,    generic,   linux-generic,           *sa_hwe_f]
-    - [focal,    arm64,   hwe-f,    generic,   linux-generic,           *sa_hwe_f]
-    - [focal,    arm64,   *mustang, generic,   linux-generic,           [*mustang], *kh-mustang]
-    - [focal,    arm64,   *xguboot, generic,   linux-generic,           [*xguboot], *kh-xgene]
-    - [focal,    armhf,   *glpae,   *glpae,    linux-generic-lpae,      [*glpae]]
-    - [focal,    armhf,   hwe-f,    generic,   linux-generic,           *arm_hwe_f]
-    - [focal,    i386,    hwe-f,    generic,   linux-generic,           *sa_hwe_f]
-    - [focal,    ppc64el, hwe-f,    generic,   linux-generic,           *sa_hwe_f]
-    - [focal,    s390x,   hwe-f,    generic,   linux-generic,           *sa_hwe_f]
  - version: "19.10"
    release: eoan
    kernels:
