@@ -62,18 +62,6 @@ releases:
     - [eoan,    i386,    hwe-e,    generic,   linux-generic,            *sa_hwe_e]
     - [eoan,    ppc64el, hwe-e,    generic,   linux-generic,            *sa_hwe_e]
     - [eoan,    s390x,   hwe-e,    generic,   linux-generic,            *sa_hwe_e]
- - version: "19.04"
-   release: disco
-   kernels:
-    - [disco,   amd64,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
-    - [disco,   arm64,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
-    - [disco,   arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
-    - [disco,   arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
-    - [disco,   armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [disco,   armhf,   hwe-d,    generic,   linux-generic,            *arm_hwe_d]
-    - [disco,   i386,    hwe-d,    generic,   linux-generic,            *sa_hwe_d]
-    - [disco,   ppc64el, hwe-d,    generic,   linux-generic,            *sa_hwe_d]
-    - [disco,   s390x,   hwe-d,    generic,   linux-generic,            *sa_hwe_d]
  - version: "18.04"
    release: bionic
    kernels:

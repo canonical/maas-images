@@ -89,20 +89,6 @@ releases:
     - [eoan,       i386,     ga-19.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ee]
     - [eoan,       ppc64el,  ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
     - [eoan,       s390x,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
- - version: "19.04"
-   release: disco
-   kernels:
-    - [disco,      amd64,    ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
-    - [disco,      amd64,    ga-19.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_dd]
-    - [disco,      arm64,    ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
-    - [disco,      arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
-    - [disco,      arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
-    - [disco,      armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
-    - [disco,      armhf,    ga-19.04,        generic,     linux-generic,                        *arm_hwe_dd]
-    - [disco,      i386,     ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
-    - [disco,      i386,     ga-19.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_dd]
-    - [disco,      ppc64el,  ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
-    - [disco,      s390x,    ga-19.04,        generic,     linux-generic,                        *sa_hwe_dd]
  - version: "18.04"
    release: bionic
    kernels:
