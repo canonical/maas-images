@@ -32,6 +32,7 @@ subarches:
  - &sa_hwe_b_edge   [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &sa_hwe_ee       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
  - &sa_hwe_ff       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
+ - &sa_hwe_gg       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -43,6 +44,7 @@ subarches:
  - &arm_hwe_b_edge  [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &arm_hwe_ee      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
  - &arm_hwe_ff      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
+ - &arm_hwe_gg      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
 
 misc:
  - &glpae generic-lpae
@@ -53,6 +55,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "20.10"
+   release: groovy
+   kernels:
+    - [groovy,       amd64,    ga-20.10,        generic,     linux-generic,                        *sa_hwe_gg]
+    - [groovy,       amd64,    ga-20.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_gg]
+    - [groovy,       arm64,    ga-20.10,        generic,     linux-generic,                        *sa_hwe_gg]
+    - [groovy,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [groovy,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [groovy,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [groovy,       armhf,    ga-20.10,        generic,     linux-generic,                        *arm_hwe_gg]
+    - [groovy,       i386,     ga-20.10,        generic,     linux-generic,                        *sa_hwe_gg]
+    - [groovy,       i386,     ga-20.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_gg]
+    - [groovy,       ppc64el,  ga-20.10,        generic,     linux-generic,                        *sa_hwe_gg]
+    - [groovy,       s390x,    ga-20.10,        generic,     linux-generic,                        *sa_hwe_gg]
  - version: "20.04"
    release: focal
    kernels:
@@ -67,20 +83,6 @@ releases:
     - [focal,       i386,     ga-20.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ff]
     - [focal,       ppc64el,  ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
     - [focal,       s390x,    ga-20.04,        generic,     linux-generic,                        *sa_hwe_ff]
- - version: "19.10"
-   release: eoan
-   kernels:
-    - [eoan,       amd64,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
-    - [eoan,       amd64,    ga-19.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ee]
-    - [eoan,       arm64,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
-    - [eoan,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
-    - [eoan,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
-    - [eoan,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
-    - [eoan,       armhf,    ga-19.10,        generic,     linux-generic,                        *arm_hwe_ee]
-    - [eoan,       i386,     ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
-    - [eoan,       i386,     ga-19.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ee]
-    - [eoan,       ppc64el,  ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
-    - [eoan,       s390x,    ga-19.10,        generic,     linux-generic,                        *sa_hwe_ee]
  - version: "18.04"
    release: bionic
    kernels:

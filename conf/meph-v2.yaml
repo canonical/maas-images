@@ -50,18 +50,6 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
- - version: "19.10"
-   release: eoan
-   kernels:
-    - [eoan,    amd64,   hwe-e,    generic,   linux-generic,            *sa_hwe_e]
-    - [eoan,    arm64,   hwe-e,    generic,   linux-generic,            *sa_hwe_e]
-    - [eoan,    arm64,   *mustang, generic,   linux-generic,            [*mustang], *kh-mustang]
-    - [eoan,    arm64,   *xguboot, generic,   linux-generic,            [*xguboot], *kh-xgene]
-    - [eoan,    armhf,   *glpae,   *glpae,    linux-generic-lpae,       [*glpae]]
-    - [eoan,    armhf,   hwe-e,    generic,   linux-generic,            *arm_hwe_e]
-    - [eoan,    i386,    hwe-e,    generic,   linux-generic,            *sa_hwe_e]
-    - [eoan,    ppc64el, hwe-e,    generic,   linux-generic,            *sa_hwe_e]
-    - [eoan,    s390x,   hwe-e,    generic,   linux-generic,            *sa_hwe_e]
  - version: "18.04"
    release: bionic
    kernels:
