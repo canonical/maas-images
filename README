@@ -1,6 +1,6 @@
 This builds maas ephemeral images from daily builds of cloud images.
 Ie, it creates stuff that goes on
-  http://maas.ubuntu.com/images/ephemeral-v2/daily
+  http://images.maas.io/ephemeral-v2/daily/
 from stuff on
   http://cloud-images.ubuntu.com/daily
 
