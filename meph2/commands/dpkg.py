@@ -2,6 +2,7 @@ import shutil
 import subprocess
 import hashlib
 import io
+import lzma
 import os
 import re
 import sys
@@ -10,11 +11,6 @@ import tempfile
 import glob
 
 from meph2.url_helper import geturl
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 
 # Cache packages
 _packages = {}
