@@ -204,6 +204,9 @@ def import_bootloaders(args, product_tree, cfgdata):
             'items': items
         }
 
+def import_release_notifications(args, product_tree, cfgdata):
+    for release in cfgdata['release-notifications']:
+        product_tree['products'][cfgdata["content_id"]] = cfgdata["release-notifications"]
 
 def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
@@ -479,7 +482,7 @@ def import_packer_maas(args, cfgdata):
         with open(os.path.join(args.target, target_product_stream), 'wb') as fp:
             fp.write(util.dump_data(product_tree))
 
-            
+
 def main_import(args):
     cfg_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
@@ -508,6 +511,8 @@ def main_import(args):
             import_remote_config(args, product_tree, cfgdata)
         elif cfgdata.get('bootloaders') is not None:
             import_bootloaders(args, product_tree, cfgdata)
+        elif cfgdata.get('release-notifications') is not None:
+            import_release_notifications(args, product_tree, cfgdata)
         else:
             sys.exit('Unsupported import yaml!\n')
 
