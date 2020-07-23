@@ -27,13 +27,14 @@ DEPS_UTIL_ONLY=(
 DEPS_FULL=(
     bzr
     cloud-image-utils      # for mount-image-callback
+    dpkg                   # To compare bootloader package versions
     gpgv
+    grub-common            # Used by the bootloaders
     python3-distro-info
     python3-requests
     python3-yaml
     squashfs-tools
     zerofree
-    dpkg                   # To compare bootloader package versions
 )
 
 apt_get() {
