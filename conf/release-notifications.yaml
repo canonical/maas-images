@@ -1,4 +1,4 @@
-content_id: "com.ubuntu.maas:daily:1:release-notifications"
+content_id: "com.ubuntu.maas:candidate:1:maas-notification"
 
 release-notifications:
  - version: 1.0

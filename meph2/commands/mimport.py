@@ -206,7 +206,11 @@ def import_bootloaders(args, product_tree, cfgdata):
 
 def import_release_notifications(args, product_tree, cfgdata):
     for release in cfgdata['release-notifications']:
-        product_tree['products'][cfgdata["content_id"]] = cfgdata["release-notifications"]
+        product = {}
+        product["name"] = "release-notifications"
+        product["label"] = "candidate"
+        product["notifications"]  = cfgdata["release-notifications"]
+        product_tree['products'][cfgdata["content_id"]] = product
 
 def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
