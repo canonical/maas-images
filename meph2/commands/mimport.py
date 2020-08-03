@@ -210,6 +210,8 @@ def import_release_notifications(args, product_tree, cfgdata):
         product["name"] = "release-notifications"
         product["label"] = "candidate"
         product["notifications"]  = cfgdata["release-notifications"]
+        # The versions key is required to merge the streams
+        product["versions"] = {}
         product_tree['products'][cfgdata["content_id"]] = product
 
 def get_image_index_images(url):
