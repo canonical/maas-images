@@ -205,14 +205,45 @@ def import_bootloaders(args, product_tree, cfgdata):
         }
 
 def import_release_notifications(args, product_tree, cfgdata):
-    for release in cfgdata['release-notifications']:
-        product = {}
-        product["name"] = "release-notifications"
-        product["label"] = "candidate"
-        product["notifications"]  = cfgdata["release-notifications"]
-        # The versions key is required to merge the streams
-        product["versions"] = {}
-        product_tree['products'][cfgdata["content_id"]] = product
+    product_id = cfgdata["product_id"]
+    release_notification = cfgdata['release-notification']
+    if product_id in product_tree["products"]:
+        versions = product_tree['products'][product_id]['versions']
+        if release_notification == versions[max(versions.keys())]:
+            return
+    else:
+        versions = {}
+        product_tree["products"][product_id] = {
+            "name": "release-notifications",
+            "label": "candidate",
+            "versions": versions,
+        }
+
+    today = datetime.utcnow().strftime('%Y%m%d')
+    point = 0
+    while True:
+        version = "%s.%d" % (today, point)
+        if version not in versions:
+            break
+        else:
+            point += 1
+
+    path = release_notification["message"]
+    notification_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '..', '..', 'release-notifications'))
+    os.makedirs("release-notifications.d/release-notifications", exist_ok=True)
+    shutil.copy(os.path.join(notification_dir, "message.html"), f"release-notifications.d/release-notifications/{version}.html")
+    with open(path,"rb") as f:
+        hash = hashlib.sha256(f.read()).hexdigest();
+    item = {
+        "release_notification": release_notification,
+        "path": f"release-notifications/{version}.html",
+        "sha256": hash
+    }
+
+    product_tree['products'][product_id]["versions"][version] = {"items": {
+        "release_notification": item
+    }}
 
 def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
@@ -517,7 +548,7 @@ def main_import(args):
             import_remote_config(args, product_tree, cfgdata)
         elif cfgdata.get('bootloaders') is not None:
             import_bootloaders(args, product_tree, cfgdata)
-        elif cfgdata.get('release-notifications') is not None:
+        elif cfgdata.get('release-notification') is not None:
             import_release_notifications(args, product_tree, cfgdata)
         else:
             sys.exit('Unsupported import yaml!\n')
