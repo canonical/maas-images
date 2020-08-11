@@ -228,16 +228,21 @@ def import_release_notifications(args, product_tree, cfgdata):
         else:
             point += 1
 
-    path = release_notification["message"]
     notification_dir = os.path.abspath(os.path.join(
         os.path.dirname(__file__), '..', '..', 'release-notifications'))
-    os.makedirs("release-notifications.d/release-notifications", exist_ok=True)
-    shutil.copy(os.path.join(notification_dir, "message.html"), f"release-notifications.d/release-notifications/{version}.html")
-    with open(path,"rb") as f:
+
+    version_dir = f"release-notifications.d/release-notifications/{version}/"
+    versioned_notificaiton = os.path.join(version_dir, "release-notificaiton.yaml")
+    os.makedirs(version_dir, exist_ok=True)
+
+    with open(versioned_notificaiton, "w") as f:
+        yaml.dump(release_notification, f)
+    with open(versioned_notificaiton,"rb") as f:
         hash = hashlib.sha256(f.read()).hexdigest();
+
     item = {
-        "release_notification": release_notification,
-        "path": f"release-notifications/{version}.html",
+        "ftype": "notifications",
+        "path": f"release-notifications/{version}.yaml",
         "sha256": hash
     }
 
@@ -549,6 +554,7 @@ def main_import(args):
         elif cfgdata.get('bootloaders') is not None:
             import_bootloaders(args, product_tree, cfgdata)
         elif cfgdata.get('release-notification') is not None:
+            product_tree["datatype"] = "release-notifications"
             import_release_notifications(args, product_tree, cfgdata)
         else:
             sys.exit('Unsupported import yaml!\n')
