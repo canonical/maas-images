@@ -232,17 +232,17 @@ def import_release_notifications(args, product_tree, cfgdata):
         os.path.dirname(__file__), '..', '..', 'release-notifications'))
 
     version_dir = f"release-notifications.d/release-notifications/{version}/"
-    versioned_notificaiton = os.path.join(version_dir, "release-notificaiton.yaml")
+    versioned_notification = os.path.join(version_dir, "release-notification.yaml")
     os.makedirs(version_dir, exist_ok=True)
 
-    with open(versioned_notificaiton, "w") as f:
+    with open(versioned_notification, "w") as f:
         yaml.dump(release_notification, f)
-    with open(versioned_notificaiton,"rb") as f:
+    with open(versioned_notification,"rb") as f:
         hash = hashlib.sha256(f.read()).hexdigest();
 
     item = {
         "ftype": "notifications",
-        "path": f"release-notifications/{version}.yaml",
+        "path": f"release-notifications/{version}/release-notification.yaml",
         "sha256": hash
     }
 
