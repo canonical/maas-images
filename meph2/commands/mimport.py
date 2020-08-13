@@ -236,7 +236,7 @@ def import_release_notifications(args, product_tree, cfgdata):
     os.makedirs(version_dir, exist_ok=True)
 
     with open(versioned_notification, "w") as f:
-        yaml.dump(release_notification, f)
+        yaml.dump(release_notification, f, default_flow_style=False)
     with open(versioned_notification,"rb") as f:
         hash = hashlib.sha256(f.read()).hexdigest();
 
