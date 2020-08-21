@@ -217,6 +217,8 @@ def import_release_notifications(args, product_tree, cfgdata):
             "name": "release-notifications",
             "label": "candidate",
             "versions": versions,
+            "arch": "notifications",
+            "release": "notifications",
         }
 
     today = datetime.utcnow().strftime('%Y%m%d')
@@ -240,10 +242,13 @@ def import_release_notifications(args, product_tree, cfgdata):
     with open(versioned_notification,"rb") as f:
         hash = hashlib.sha256(f.read()).hexdigest();
 
+    path = f"release-notifications/{version}/release-notification.yaml"
     item = {
         "ftype": "notifications",
-        "path": f"release-notifications/{version}/release-notification.yaml",
-        "sha256": hash
+        "path": path,
+        "sha256": hash,
+        "size": os.stat(versioned_notification).st_size,
+        "release_notification": release_notification,
     }
 
     product_tree['products'][product_id]["versions"][version] = {"items": {
