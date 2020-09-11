@@ -347,7 +347,7 @@ def import_packer_maas(args, cfgdata):
             if os.path.exists(kickstart_path):
                 os.remove(kickstart_path)
             mirrorlist_re = re.compile(
-                r'^.*(?P<mirrorlist>--mirrorlist=[\'"]?\S+[\'"]?$)')
+                r'^.*(?P<mirrorlist>--mirrorlist=[\'"]?\S+[\'"]?)')
             # For CentOS 6
             url_re = re.compile(
                 r'^\w*url\s+--url=[\'"]?(?P<url>.+/centos)\S+')
