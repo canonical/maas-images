@@ -19,14 +19,3 @@ packer-maas:
         # released with MAAS 2.3. Since the stream may be used by older
         # versions of MAAS add the hooks back in.
         curtin_hooks: "{curtin_path}/centos7"
-    centos6:
-        os: centos
-        release: 6
-        version: 6
-        release_title: "CentOS 6"
-        # The build system lp:maas-images runs on only has limited access
-        # to the Internet. Use this specific mirror during build.
-        yum_mirror: http://mirrors.edge.kernel.org/centos
-        # The build system lp:maas-images runs on only has limited access
-        # to the Internet. Use this specific mirror during build.
-        yum_mirror: http://mirrors.edge.kernel.org/centos
