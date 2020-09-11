@@ -11,7 +11,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tarfile
 import yaml
 
 from meph2 import util
@@ -339,7 +338,8 @@ def import_packer_maas(args, cfgdata):
             # a set of servers given by a remote host. A yum baseurl is a
             # specific mirror. If 'yum_mirror' is given replace any
             # mirrorlists used in the kickstart file with baseurls. This
-            # is needed for the builder as it whitelists hosts.
+            # is needed for the builder as it only allows external access
+            # to specific domains.
             orig_kickstart_path = os.path.join(
                 packer_dir, 'http', "%s.ks" % name)
             kickstart_path = os.path.join(
@@ -359,7 +359,8 @@ def import_packer_maas(args, cfgdata):
                         mirrorlist = mirrorlist_m.group('mirrorlist')
                         mirrorlist_query = mirrorlist.split('/')[-1]
                         if '?' in mirrorlist_query:
-                            mirrorlist_query = mirrorlist_query.split('?', 1)[1]
+                            mirrorlist_query = mirrorlist_query.split(
+                                '?', 1)[1]
                         if mirrorlist_query.endswith(("'", '"')):
                             mirrorlist_query = mirrorlist_query[:-1]
                         repo = {'yum_mirror': data['yum_mirror']}
@@ -380,48 +381,35 @@ def import_packer_maas(args, cfgdata):
                         baseurl += '"'
                         line = line.replace(mirrorlist, baseurl)
                     elif url_m is not None:
-                        line = line.replace(url_m.group('url'), data['yum_mirror'])
+                        line = line.replace(
+                            url_m.group('url'), data['yum_mirror'])
                     kickstart.write(line)
-        else:
-            kickstart_path = None
 
-        if 'curtin_hooks' in data or kickstart_path:
-            # Modify the given template.
+            # Modify the given template to use the modified kickstart file.
             template_path = os.path.join(packer_dir, packer_template)
             with open(template_path, 'r') as f:
                 template = json.load(f)
-            # Use the kickstart file edited above.
-            if kickstart_path:
-                for builder in template['builders']:
-                    for i, cmd in enumerate(builder['boot_command']):
-                        if cmd.startswith("inst.ks"):
-                            builder['boot_command'][i] = cmd.replace(
-                                "%s.ks" % name, "%s-maas-images.ks" % name)
-            # Add the given Curtin hooks when creating the tar from the
-            # disk image.
-            if 'curtin_hooks' in data:
-                curtin_path = os.path.join(
-                    os.path.dirname(__file__), "..", "..", "curtin")
-                curtin_hooks = os.path.realpath(
-                    data['curtin_hooks'].format(curtin_path=curtin_path))
-                for post_processor in template['post-processors']:
-                    if post_processor['type'] != 'shell-local':
-                        continue
-                    new_inline = []
-                    for line in post_processor['inline']:
-                        new_inline.append(line)
-                        if line == "mount /dev/nbd4p1 $TMP_DIR":
-                            new_inline.append("mkdir -p $TMP_DIR/curtin")
-                            new_inline.append(
-                                "cp -r %s/* $TMP_DIR/curtin" % curtin_hooks)
-                            new_inline.append("sync $TMP_DIR/curtin")
-                    post_processor['inline'] = new_inline
+            for builder in template['builders']:
+                for i, cmd in enumerate(builder['boot_command']):
+                    if cmd.startswith("inst.ks"):
+                        builder['boot_command'][i] = cmd.replace(
+                            "%s.ks" % name, "%s-maas-images.ks" % name)
             packer_template = "%s-mass-images.json" % name
             template_path = os.path.join(packer_dir, packer_template)
             if os.path.exists(template_path):
                 os.remove(template_path)
             with open(template_path, 'w') as f:
                 json.dump(template, f, indent=4)
+
+        # Add the given Curtin hooks when creating the tar from the
+        # disk image.
+        if 'curtin_hooks' in data:
+            curtin_path = os.path.join(
+                os.path.dirname(__file__), "..", "..", "curtin")
+            curtin_hooks = os.path.realpath(
+                data['curtin_hooks'].format(curtin_path=curtin_path))
+        else:
+            curtin_hooks = ''
 
         # Packer must be run in the same directory as the template so the post
         # processor can convert image into something usable by MAAS.
@@ -433,7 +421,10 @@ def import_packer_maas(args, cfgdata):
             for key, value in data['packer_vars'].items():
                 packer_cmd += ['-var', "%s=%s" % (key, value)]
         packer_cmd += [packer_template]
-        proc = subprocess.run(packer_cmd, cwd=packer_dir)
+        proc = subprocess.run(
+            packer_cmd, cwd=packer_dir,
+            env={'CURTIN_HOOKS': curtin_hooks, **os.environ},
+        )
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 cmd=' '.join(packer_cmd), returncode=proc.returncode)
