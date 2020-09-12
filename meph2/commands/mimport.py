@@ -438,8 +438,14 @@ def import_packer_maas(args, cfgdata):
                 sys.exit("Error: Unable to find image from Packer!")
             ftype = 'root-dd.gz'
 
-        version_template = datetime.now().strftime("%Y%m%d") + "_%02d"
+        date = datetime.now().strftime("%Y%m%d")
+        version_template = date + "_%02d"
         version_num = 1
+        for version in product_tree['products'][product_id]['versions']:
+            existing_version, existing_version_num = version.split('_')
+            existing_version_num = int(existing_version_num)
+            if existing_version == date and version_num < existing_version_num:
+                version_num = existing_version_num + 1
         version = version_template % version_num
         while version in product_tree['products'][product_id]['versions']:
             version_num += 1
