@@ -99,6 +99,10 @@ SUBCOMMANDS = {
                          'help': ('only remove files orphaned longer than'
                                   'this. if no unit given, default is days.')
                          }),
+            ('--now', {'default': False,
+                       'help': 'reap orphans now',
+                       'action': 'store_true',
+                       }),
         ],
     },
     'sign': {

@@ -381,7 +381,7 @@ def main_reap_orphans(args):
 
     for orphan, when in known_orphans.items():
         location = os.path.join(data_d, orphan)
-        if not util.read_timestamp(when) + delta < now:
+        if not args.now and not util.read_timestamp(when) + delta < now:
             continue
         if args.dry_run:
             sys.stderr.write('Reaping %s orphaned on %s\n' % (orphan, when))
