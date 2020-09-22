@@ -207,6 +207,11 @@ def import_bootloaders(args, product_tree, cfgdata):
 def import_release_notifications(args, product_tree, cfgdata):
     product_id = cfgdata["product_id"]
     release_notification = cfgdata['release-notification']
+
+    # Simple check to ensure the maas_version is a string. It is very easy to
+    # typo and write it as a float.
+    assert isinstance(release_notification["maas_version"], str)
+
     if product_id in product_tree["products"]:
         versions = product_tree['products'][product_id]['versions']
         if release_notification == versions[max(versions.keys())]:
