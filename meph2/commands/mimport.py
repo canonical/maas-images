@@ -222,7 +222,7 @@ def import_release_notifications(args, product_tree, cfgdata):
             "name": "release-notifications",
             "label": "candidate",
             "versions": versions,
-            "arch": "notifications",
+            "arch": "all",
             "release": "notifications",
         }
 
