@@ -238,7 +238,7 @@ def import_release_notifications(args, product_tree, cfgdata):
     notification_dir = os.path.abspath(os.path.join(
         os.path.dirname(__file__), '..', '..', 'release-notifications'))
 
-    version_dir = os.path.join(os.path.realpath(args.target), f"release-notifications/{version}/")
+    version_dir = os.path.join(os.path.realpath(args.target), "release-notifications/{}/".format(version))
     versioned_notification = os.path.join(version_dir, "release-notification.yaml")
     os.makedirs(version_dir, exist_ok=True)
 
@@ -247,7 +247,7 @@ def import_release_notifications(args, product_tree, cfgdata):
     with open(versioned_notification,"rb") as f:
         hash = hashlib.sha256(f.read()).hexdigest();
 
-    path = f"release-notifications/{version}/release-notification.yaml"
+    path = "release-notifications/{}/release-notification.yaml".format(version)
     item = {
         "ftype": "notifications",
         "path": path,

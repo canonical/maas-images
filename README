@@ -253,7 +253,7 @@ Trusty images are built like this:
 The release notification stream is used to let MAAS know when new versions have
 been released so users can then be informed.
 
-This  is a bit of a non-standard way of using simplestreams as we only want to
+This is a bit of a non-standard way of using simplestreams as we only want to
 deliver the metadata and no files. There is a requirement for a file however,
 so we do include a small token file with no real content.
 
