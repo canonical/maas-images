@@ -210,7 +210,10 @@ def import_release_notifications(args, product_tree, cfgdata):
 
     # Simple check to ensure the maas_version is a string. It is very easy to
     # typo and write it as a float.
-    assert isinstance(release_notification["maas_version"], str)
+    if (not isinstance(release_notification["maas_version"], str)
+        or not re.match('\d+\.\d+\.\d+', release_notification["maas_version"])):
+        raise ValueError(
+            "maas_version should be a string with the full SemVer version. for example: '2.9.1'")
 
     if product_id in product_tree["products"]:
         versions = product_tree['products'][product_id]['versions']
