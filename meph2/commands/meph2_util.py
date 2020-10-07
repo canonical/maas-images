@@ -3,9 +3,17 @@
 import argparse
 import copy
 import os
+import re
 from functools import partial
 import shutil
 import sys
+import yaml
+
+try:
+    from urllib import request as urllib_request
+except ImportError:
+    # python2
+    import urllib2 as urllib_request
 
 from meph2 import util
 from meph2.commands.flags import COMMON_ARGS, SUBCOMMANDS
@@ -155,7 +163,8 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
             del ptree['products'][oname]
 
     def fixed_content_id(self, content_id):
-        # when promoting from candidate, our content ids get ':candidate' removed
+        # when promoting from candidate, our content ids get ':candidate'
+        # removed
         #  com.ubuntu.maas:candidate:v2:download => com.ubuntu.maas:v2:download
         return(content_id.replace(":candidate", ""))
 
@@ -217,16 +226,13 @@ class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
 def main_insert(args):
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
-
     mirror_config = {'max_items': 20, 'keep_items': True,
                      'filters': filter_list}
-
     policy = partial(util.endswith_policy, src_path, args.keyring)
     smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
+    tstore = objectstores.FileStore(args.target)
 
     if args.dry_run:
-        smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
-        tstore = objectstores.FileStore(args.target)
         drmirror = DryRunMirrorWriter(config=mirror_config, objectstore=tstore)
         drmirror.sync(smirror, src_path)
         for (pedigree, path, size) in drmirror.downloading:
@@ -235,8 +241,6 @@ def main_insert(args):
                 fmt.format(pedigree='/'.join(pedigree), path=path) + "\n")
         return 0
 
-    smirror = mirrors.UrlMirrorReader(src_url, policy=policy)
-    tstore = objectstores.FileStore(args.target)
     tmirror = InsertBareMirrorWriter(config=mirror_config, objectstore=tstore)
     tmirror.sync(smirror, src_path)
 
@@ -481,6 +485,383 @@ def main_import(args):
 
     from meph2.commands import mimport
     return(mimport.main_import(args))
+
+
+def get_stream_label(product_streams):
+    """Returns the label for the stream.
+
+    This assumes the stream uses a consistent label and is identified in
+    the stream's filename using for format FQDN:label:[version]?:name"""
+    stream_label = None
+    for product_stream in product_streams:
+        stream = os.path.basename(product_stream).split(':')
+        label = stream[1]
+        if stream_label:
+            assert label == stream_label, "All labels must be identical!"
+        else:
+            stream_label = label
+    return stream_label
+
+
+def get_stream_name_without_label(product_stream):
+    stream_name = os.path.basename(product_stream).split(':')
+    del stream_name[1]
+    return ':'.join(stream_name)
+
+
+def get_product_name_without_label(product_name, label):
+    m = re.search(
+        r"^(?P<fqdn>.*)[\.:]%s(?P<product>:.*)$" % label, product_name)
+    assert m, "Unable to find label %s in product %s!" % (label, product_name)
+    return ''.join(m.groups())
+
+
+def main_diff(args):
+    src_product_streams = util.load_product_streams(args.src, True)
+    src_label = get_stream_label(src_product_streams)
+    target_product_streams = util.load_product_streams(args.target, True)
+    target_label = get_stream_label(target_product_streams)
+    diff = {}
+
+    # Iterate over both streams to make sure we capture anything
+    # missing.
+    for product_stream in src_product_streams + target_product_streams:
+        diff_stream_name = get_stream_name_without_label(product_stream)
+        if src_label in product_stream:
+            src_product_stream = product_stream
+            target_product_stream = product_stream.replace(
+                src_label, target_label)
+        else:
+            src_product_stream = product_stream.replace(
+                target_label, src_label)
+            target_product_stream = product_stream
+
+        src_product_stream_path = os.path.join(args.src, src_product_stream)
+        target_product_stream_path = os.path.join(
+            args.target, target_product_stream)
+
+        src_stream_missing = False
+        target_stream_missing = False
+        if src_label in product_stream:
+            try:
+                content = util.load_content(src_product_stream_path, True)
+            except OSError:
+                src_stream_missing = True
+            try:
+                other_content = util.load_content(
+                    target_product_stream_path, True)
+            except OSError:
+                target_stream_missing = True
+        else:
+            try:
+                content = util.load_content(target_product_stream_path, True)
+            except OSError:
+                target_stream_missing = True
+            try:
+                other_content = util.load_content(
+                    src_product_stream_path, True)
+            except OSError:
+                src_stream_missing = True
+
+        # Verify the product stream exists in both streams.
+        if src_stream_missing or target_stream_missing:
+            if diff_stream_name not in diff:
+                diff[diff_stream_name] = {
+                    'not_merged': (
+                        src_label if src_stream_missing else target_label)
+                }
+            else:
+                diff[diff_stream_name]['not_merged'] = (
+                    src_label if src_stream_missing else target_label)
+            continue
+
+        for product, data in content['products'].items():
+            if src_label in product:
+                label = src_label
+                other_label = target_label
+            else:
+                label = target_label
+                other_label = src_label
+            other_product = product.replace(label, other_label)
+            diff_product_name = get_product_name_without_label(product, label)
+            # Verify the product is in both streams.
+            if other_product not in other_content['products']:
+                if diff_stream_name not in diff:
+                    diff[diff_stream_name] = {}
+                if diff_product_name not in diff[diff_stream_name]:
+                    diff[diff_stream_name][diff_product_name] = {}
+                diff[diff_stream_name][diff_product_name]['labels'] = [
+                    label]
+                continue
+            else:
+                other_data = other_content['products'][other_product]
+            for key, value in data.items():
+                if key == 'versions':
+                    if args.new_versions_only and target_label in product:
+                        continue
+                    for version, version_data in value.items():
+                        if version in other_data.get('versions', {}):
+                            assert version_data == other_data[
+                                'versions'][version], (
+                                    "%s %s exists in both streams but data "
+                                    " does not match!" % (product, version))
+                        else:
+                            if diff_stream_name not in diff:
+                                diff[diff_stream_name] = {}
+                            if diff_product_name not in diff[diff_stream_name]:
+                                diff[diff_stream_name][diff_product_name] = {}
+                            if 'versions' not in diff[
+                                    diff_stream_name][diff_product_name]:
+                                diff[diff_stream_name][diff_product_name][
+                                    'versions'] = {}
+                            if version not in diff[
+                                    diff_stream_name][diff_product_name][
+                                        'versions']:
+                                diff[diff_stream_name][diff_product_name][
+                                    'versions'][version] = {}
+                            diff[diff_stream_name][diff_product_name][
+                                'versions'][version]['labels'] = [label]
+                            if args.latest_only:
+                                latest = version
+                                for diff_version in [
+                                        i for i in diff[diff_stream_name][
+                                            diff_product_name][
+                                                'versions'].keys()
+                                        if i != latest]:
+                                    if latest > diff_version:
+                                        del diff[diff_stream_name][
+                                            diff_product_name]['versions'][
+                                                diff_version]
+                                    else:
+                                        del diff[diff_stream_name][
+                                            diff_product_name]['versions'][
+                                                latest]
+                                        latest = diff_version
+                elif key == 'label':
+                    # Label is expected to be different
+                    continue
+                elif value != other_data.get(key):
+                    if diff_stream_name not in diff:
+                        diff[diff_stream_name] = {}
+                    if diff_product_name not in diff[diff_stream_name]:
+                        diff[diff_stream_name][diff_product_name] = {}
+                    # Keep dictionary order consistent
+                    if label == src_label:
+                        diff[diff_stream_name][diff_product_name][key] = {
+                            src_label: value,
+                            target_label: other_data.get(key),
+                        }
+                    else:
+                        diff[diff_stream_name][diff_product_name][key] = {
+                            src_label: other_data.get(key),
+                            target_label: value,
+                        }
+
+    def output(buff):
+        buff.write("# Generated by %s-%s\n" % (
+            os.path.basename(sys.argv[0]), util.get_version()))
+        buff.write("# Generated on %s\n" % sutil.timestamp())
+        buff.write("# Source: %s\n" % args.src)
+        buff.write("# Target: %s\n" % args.target)
+        buff.write("# new-versions-only: %s\n" % args.new_versions_only)
+        buff.write("# latest-only: %s\n\n" % args.latest_only)
+        yaml.safe_dump(diff, buff)
+
+    if args.output:
+        if os.path.exists(args.output):
+            os.remove(args.output)
+        with open(args.output, 'w') as f:
+            output(f)
+    else:
+        output(sys.stdout)
+    return 0
+
+
+def find_stream(diff_product_stream, product_streams):
+    found = False
+    for product_stream in product_streams:
+        if diff_product_stream == get_stream_name_without_label(
+                product_stream):
+            found = True
+            break
+    # New product streams should be merged in.
+    assert found, "Target stream %s not found!" % product_stream
+    return product_stream
+
+
+def copy_items(version_data, src_path, target_path):
+    for item in version_data['items'].values():
+        src_item_path = os.path.join(src_path, item['path'])
+        target_item_path = os.path.join(target_path, item['path'])
+        if os.path.exists(target_item_path):
+            # Items in a product may be referenced multiple times.
+            # e.g all kernel versions of the same arch use the same SquashFS.
+            continue
+        os.makedirs(os.path.dirname(target_item_path), exist_ok=True)
+        if os.path.exists(src_item_path):
+            print("INFO: Copying %s to %s" % (src_item_path, target_item_path))
+            # Attempt to use a hard link when both streams are on the same
+            # filesystem to save space. Will fallback to a copy.
+            try:
+                os.link(src_item_path, target_item_path)
+            except OSError:
+                shutil.copy2(src_item_path, target_item_path)
+        else:
+            print("INFO: Downloading %s to %s" % (
+                src_item_path, target_item_path))
+            urllib_request.urlretrieve(src_item_path, target_item_path)
+        assert util.get_file_info(target_item_path)['sha256'] == item[
+            'sha256'], ("Target file %s hash %s does not match!" % (
+                target_item_path, item['sha256']))
+
+
+def patch_versions(
+        value, args, target_label, target_product, target_data, target_path,
+        src_content, src_product_stream_path, src_label, src_path):
+    write_product_stream = False
+    for version, version_data in value.items():
+        if version in target_data['versions']:
+            if target_label in version_data.get('labels', []):
+                # If the version already exists in the target stream skip
+                # adding it. This allows CPC to run a nightly cron job.
+                print("INFO: Skipping, version %s already exists!" % version)
+            else:
+                print("INFO: Deleting version %s" % version)
+                del target_data['versions'][version]
+                write_product_stream = True
+        elif target_label in version_data.get('labels', []):
+            print("INFO: Adding version %s to %s" % (version, target_product))
+            assert src_product_stream_path, (
+                "A source must be given when adding a version to a product!")
+            write_product_stream = True
+            if not src_content:
+                src_content = util.load_content(src_product_stream_path, True)
+            src_product = target_product.replace(target_label, src_label)
+            src_data = src_content['products'][src_product]
+            target_data['versions'][version] = src_data['versions'][version]
+            if not args.dry_run:
+                copy_items(
+                    target_data['versions'][version], src_path, target_path)
+    return write_product_stream
+
+
+def main_patch(args):
+    streams = args.streams[0]
+    regenerate_index = False
+    if len(streams) == 1:
+        target_path = streams[0]
+        target_product_streams = util.load_product_streams(streams[0])
+        target_label = get_stream_label(target_product_streams)
+        src_path = None
+        src_product_streams = []
+        src_label = None
+    elif len(streams) == 2:
+        target_path = streams[1]
+        target_product_streams = util.load_product_streams(streams[1])
+        target_label = get_stream_label(target_product_streams)
+        src_path = streams[0]
+        src_product_streams = util.load_product_streams(streams[0], True)
+        src_label = get_stream_label(src_product_streams)
+    else:
+        raise AssertionError("A max of 2 streams can be given!")
+
+    if args.input:
+        with open(args.input, 'r') as f:
+            diff = yaml.safe_load(f)
+    else:
+        diff = yaml.safe_load(sys.stdin)
+
+    if diff is None:
+        print("WARNING: No diff defined!")
+        return 0
+
+    for product_stream, stream_data in diff.items():
+        write_product_stream = False
+        target_stream = find_stream(product_stream, target_product_streams)
+        target_product_stream_path = os.path.join(target_path, target_stream)
+        if src_product_streams:
+            src_stream = find_stream(product_stream, src_product_streams)
+            src_product_stream_path = os.path.join(src_path, src_stream)
+        else:
+            src_product_stream_path = None
+
+        for product, product_data in stream_data.items():
+            found_product = False
+            product_regex = re.compile(r"^%s$" % product)
+            target_content = util.load_content(target_product_stream_path)
+            # Only load source content when promoting a version. This allows
+            # users to create a patch to modify the values or remove versions
+            # without needing a source.
+            src_content = None
+            for target_product, target_data in list(
+                    target_content['products'].items()):
+                if product_regex.search(get_product_name_without_label(
+                        target_product, target_label)):
+                    found_product = True
+                    print(
+                        "INFO: Found matching product in target for %s, %s" % (
+                            product, target_product))
+                    for key, value in product_data.items():
+                        if key == 'labels':
+                            if target_label not in value:
+                                print(
+                                    "INFO: Deleting product %s" %
+                                    target_product)
+                                del target_content['products'][target_product]
+                                regenerate_index = write_product_stream = True
+                                break
+                        elif key == 'versions':
+                            ret = patch_versions(
+                                value, args, target_label, target_product,
+                                target_data, target_path, src_content,
+                                src_product_stream_path, src_label,
+                                src_path)
+                            regenerate_index |= ret
+                            write_product_stream |= ret
+                        elif (
+                                target_label in value and
+                                target_data[key] != value[target_label]):
+                            print(
+                                "INFO: Updating key %s %s -> %s" % (
+                                    key, target_data[key],
+                                    value[target_label]))
+                            regenerate_index = write_product_stream = True
+                            target_data[key] = value[target_label]
+            if not found_product:
+                assert src_product_stream_path, (
+                    "A source must be given when adding a new product!")
+                src_content = util.load_content(
+                    src_product_stream_path, True)
+                for src_product, src_data in src_content['products'].items():
+                    if (
+                            product_regex.search(
+                                get_product_name_without_label(
+                                    src_product, src_label))
+                            and target_label in product_data.get('labels', [])
+                            ):
+                        write_product_stream = found_product = True
+                        print("INFO: Promoting %s into %s" % (
+                            product, target_stream))
+                        new_product = src_product.replace(
+                            src_label, target_label)
+                        target_content['products'][new_product] = src_data
+                        target_content['products'][new_product][
+                            'label'] = target_label
+                        if not args.dry_run:
+                            for version_data in src_data['versions'].values():
+                                copy_items(version_data, src_path, target_path)
+            if write_product_stream and not args.dry_run:
+                print("INFO: Writing %s" % target_product_stream_path)
+                os.remove(target_product_stream_path)
+                with open(target_product_stream_path, 'wb') as f:
+                    f.write(util.dump_data(target_content).strip())
+            else:
+                # Validate the modified stream is still valid during
+                # a dry run.
+                util.dump_data(target_content).strip()
+    if regenerate_index and not args.dry_run:
+        util.gen_index_and_sign(target_path, sign=not args.no_sign)
+    return 0
 
 
 def main():

@@ -225,6 +225,43 @@ its usage is fairly simple.
 
 The default is '3d'.
 
+=== diff ===
+It is often useful to compare the difference between two MAAS streams. While
+SimpleStreams supports multiple labels in the same stream this tool is written
+to work with the MAAS streams, as such it assumes each stream consistently uses
+a different label. The tool will identify missing product streams, missing
+products, differences in the value of keys, and missing versions. Stream and
+product names have their label removed. The streams may be local or remote.
+Output defaults to stdout but may be written to a file with '-o'.
+'--new-versions-only' may be used to only output new versions found in the
+target stream. '--latest-only' may be used to only show the latest version
+missing. The YAML output may be modified and passed to the 'patch' command.
+
+Example usage:
+
+$ meph2-util diff --latest-only -o conf/cpc-patch.yaml \
+    http://images.maas.io/ephemeral-v3/candidate \
+    http://images.maas.io/ephemeral-v3/stable
+
+== patch ===
+Modifying a stream can be done using a structured YAML file. A patch may
+modify metadata, add and remove products, and add or remove product versions.
+Products may be specified as a regular expression. When modifying or removing
+only a target stream is required. When adding a product or version a source
+stream must also be given. The source stream may be local or remote over
+HTTP(S). Streams are resigned after being modified unless the '--no-sign'
+flag is passed. '--dry-run' may be used to test the patch without actually
+modifying the stream. The YAML file references streams and products without
+a label included in the name, it is automatically added based on the stream.
+
+See doc/example-patches
+
+Example usage:
+
+$ meph2-util patch -i conf/cpc-patch.yaml \
+    http://images.maas.io/ephemeral-v3/candidate \
+    /path/to/stable
+
 === Known callers ===
 This is just a list of known callers to reference when changing things.
 

@@ -1,0 +1,9 @@
+# Products can be entirely removed. The logic works similarly to removing a
+# version. If the stream label isn't found in labels, it is removed.
+#
+# Note: Patch only modifies the stream metadata when deleting. To cleanup
+# left over finds use the find-orphans and reap-orphans commands.
+
+com.ubuntu.maas:v3:download.json:
+  com.ubuntu.maas:v3:boot:(16\.10|17|18\.10|19).*:
+    labels: {}

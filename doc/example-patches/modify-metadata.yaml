@@ -1,0 +1,19 @@
+# Patch can be used to modify metadata. The patch command will use the
+# value assoicated with the label of the stream. Lets say Ubuntu 20.10
+# becomes an LTS release. By using a regular expression you can easily
+# patch all 20.10 products.
+#
+# Note: The dates are quoted otherwise yaml.safe_load returns them as
+# a Date object.
+
+com.ubuntu.maas:v3:download.json:
+  com.ubuntu.maas:v3:boot:20.10:.*:
+    support_eol:
+      candidate: "2030-07-22"
+      stable: "2030-07-22"
+    support_esm_eol:
+      candidate: "2035-07-22"
+      stable: "2035-07-22"
+    release_title:
+      candidate: 20.10 LTS
+      stable: 20.10 LTS

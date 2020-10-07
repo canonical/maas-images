@@ -1,6 +1,7 @@
-#   Copyright (C) 2013 Canonical Ltd.
+#   Copyright (C) 2013-2020 Canonical Ltd.
 #
 #   Author: Scott Moser <scott.moser@canonical.com>
+#           Lee Trager <lee.trager@canonical.com>
 #
 #   Simplestreams is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU Affero General Public License as published by
@@ -26,6 +27,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 
@@ -264,8 +266,8 @@ def dump_data(data, end_cr=True):
     return bytestr
 
 
-def load_content(path):
-    if not os.path.exists(path):
+def load_content(path, allow_url=False):
+    if not allow_url and not os.path.exists(path):
         return {}
     with scontentsource.UrlContentSource(path) as tcs:
         return sutil.load_content(tcs.read())
@@ -280,9 +282,9 @@ def load_products(path, product_streams):
     return products
 
 
-def load_product_streams(src):
+def load_product_streams(src, allow_url=False):
     index_path = os.path.join(src, STREAMS_D, "index.json")
-    if not os.path.exists(index_path):
+    if not allow_url and not os.path.exists(index_path):
         return []
     with scontentsource.UrlContentSource(index_path) as tcs:
         index = sutil.load_content(tcs.read())
@@ -309,6 +311,15 @@ def ensure_product_entry(tree):
     if 'products' not in tree:
         tree['products'] = {}
     return
+
+
+def get_version():
+    try:
+        return subprocess.check_output(
+            ['git', 'describe', '--always', '--dirty'],
+            cwd=os.path.dirname(__file__)).decode().strip()
+    except subprocess.CalledProcessError:
+        return 'unknown'
 
 
 # vi: ts=4 expandtab syntax=python

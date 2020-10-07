@@ -1,0 +1,11 @@
+# A product may be promoted like a version. Simply list the labels the product
+# should belong to and patch will add them to any stream whois label matches.
+#
+# Note: The patch command will require a source to pull the version from.
+# The source may be local or remote over HTTP(S).
+
+com.ubuntu.maas:v3:download.json:
+  com.ubuntu.maas:v3:boot:20.10:.*:
+    labels:
+      - candidate
+      - stable

@@ -73,6 +73,59 @@ SUBCOMMANDS = {
             COMMON_FLAGS['version'], COMMON_FLAGS['filters'],
         ]
     },
+    'diff': {
+        'help': (
+            'Creates a diff, represented by a YAML file, which how two '
+            'streams differ. This assumes each stream uses a separate label '
+            'consistently.'
+        ),
+        'opts': [
+            (
+                ('-o', '--output'),
+                {'help': 'Specify file to output to, defaults to STDOUT'}
+            ),
+            (
+                ('--new-versions-only'),
+                {
+                    'help': (
+                        'Only show new versions from the source in diff. '
+                        'Do not include old versions from the target.'
+                    ),
+                    'action': 'store_true',
+                    'default': False,
+                },
+            ),
+            (
+                ('--latest-only'),
+                {
+                    'help': 'Only include the latest missing version in diff.',
+                    'action': 'store_true',
+                    'default': False,
+                },
+            ), COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+        ],
+    },
+    'patch': {
+        'help': (
+            'Apply a patch, represented by a YAML file generated with diff, '
+            'which describes how a stream should be edited.'
+        ),
+        'opts': [
+            (
+                ('-i', '--input'),
+                {'help': 'Specify the patch YAML to apply, defaults to STDIN'}
+            ), COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
+            (
+                ('streams', ), {
+                    'action': 'append',
+                    'nargs': '+',
+                    'help': (
+                        'The stream to apply the patch YAML to. Multiple '
+                        'streams must be given to insert new versions'
+                    )
+                }),
+        ],
+    },
     'clean-md': {
         'help': 'clean streams metadata only to keep "max" items',
         'opts': [

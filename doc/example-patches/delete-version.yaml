@@ -1,0 +1,13 @@
+# Deleting a version can be done by defining the product and version without
+# a label matching the stream. The patch command supports Python regular
+# expressions so you don't have to define each product individually. The
+# patch below removes 20200721 from all 20.04 products. Because versions
+# aren't being added this patch may be used without defining a source.
+#
+# Note: Patch only modifies the stream metadata when deleting. To cleanup
+# left over finds use the find-orphans and reap-orphans commands.
+
+com.ubuntu.maas:v3:download.json:
+  com.ubuntu.maas:v3:boot:20.04:.*:
+    versions:
+      '20200721': {}
