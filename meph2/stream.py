@@ -11,7 +11,7 @@ import yaml
 
 from simplestreams.log import LOG
 
-ALL_ITEM_TAGS = {'label': 'daily', 'os': 'ubuntu'}
+ALL_ITEM_TAGS = {'label': 'candidate', 'os': 'ubuntu'}
 
 PATH_COMMON = "%(release)s/%(arch)s/"
 BOOT_COMMON = PATH_COMMON + "%(version_name)s/%(kname)s/%(flavor)s"

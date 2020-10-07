@@ -135,7 +135,7 @@ class InsertBareMirrorWriter(BareMirrorWriter):
 
 class ReleasePromoteMirror(InsertBareMirrorWriter):
     # this does not do reference counting or .data/ storage
-    # it converts a daily item to a release item and inserts it.
+    # it converts a candidate item to a release item and inserts it.
 
     # we take care of writing file in insert_products
     insert_index_entry = BareMirrorWriter._noop
@@ -145,7 +145,7 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
                                                    objectstore=objectstore)
         self.label = label
 
-    def rel2daily(self, ptree):
+    def rel2candidate(self, ptree):
         ret = copy.deepcopy(ptree)
         ret['content_id'] = self.fixed_content_id(ret['content_id'])
 
@@ -155,25 +155,25 @@ class ReleasePromoteMirror(InsertBareMirrorWriter):
             del ptree['products'][oname]
 
     def fixed_content_id(self, content_id):
-        # when promoting from daily, our content ids get ':daily' removed
-        #  com.ubuntu.maas:daily:v2:download => com.ubuntu.maas:v2:download
-        return(content_id.replace(":daily", ""))
+        # when promoting from candidate, our content ids get ':candidate' removed
+        #  com.ubuntu.maas:candidate:v2:download => com.ubuntu.maas:v2:download
+        return(content_id.replace(":candidate", ""))
 
     def fixed_pedigree(self, pedigree):
         return tuple([self.fixed_product_id(pedigree[0])] + list(pedigree[1:]))
 
     def fixed_product_id(self, product_id):
-        # when promoting from daily, product ids get '.daily' removed
-        #  com.ubuntu.maas.daily:v2:boot:13.10:armhf:generic-lpae ->
+        # when promoting from candidate, product ids get '.candidate' removed
+        #  com.ubuntu.maas.candidate:v2:boot:13.10:armhf:generic-lpae ->
         #     com.ubuntu.maas:v2:boot:13.10:armhf:generic-lpae
-        return product_id.replace(".daily:", ":")
+        return product_id.replace(".candidate:", ":")
 
     def load_products(self, path, content_id):
         # this loads the released products, but returns it in form
-        # of daily products
+        # of candidate products
         ret = super(ReleasePromoteMirror, self).load_products(
             path=path, content_id=self.fixed_content_id(content_id))
-        return self.rel2daily(ret)
+        return self.rel2candidate(ret)
 
     def insert_item(self, data, src, target, pedigree, contentsource):
         ret = super(ReleasePromoteMirror, self).insert_item(

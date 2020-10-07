@@ -1,5 +1,5 @@
-product_id: "com.ubuntu.maas.daily:1:{os}:{firmware_platform}:{arch}"
-content_id: "com.ubuntu.maas:daily:1:bootloader-download"
+product_id: "com.ubuntu.maas.candidate:1:{os}:{firmware_platform}:{arch}"
+content_id: "com.ubuntu.maas:candidate:1:bootloader-download"
 
 bootloaders:
  - firmware-platform: pxe

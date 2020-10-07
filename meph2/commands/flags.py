@@ -59,7 +59,7 @@ SUBCOMMANDS = {
             ]
     },
     'promote': {
-        'help': 'promote a product/version from daily to release',
+        'help': 'promote a product/version from candidate to stable',
         'opts': [
             COMMON_FLAGS['dry-run'], COMMON_FLAGS['no-sign'],
             COMMON_FLAGS['keyring'],

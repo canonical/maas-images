@@ -1,28 +1,28 @@
 To get local copies of maas ephemerals, you can do:
 
   burl=http://maas.ubuntu.com/images/ephemeral-v2
-  for stream in releases daily; do
+  for stream in releases candidate; do
      sstream-mirror --no-item-download \
         $burl/$stream/streams/v1/index.json "$stream.d"; done
 
 
 Then, to test promote you could do:
    $ sstream-query --output-format="%(product_name)s %(version_name)s" --max=1 \
-      daily.d/streams/v1/index.json  arch=i386 | sort -u
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-p 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-r 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-s 20140414
-   com.ubuntu.maas.daily:v2:boot:13.10:i386:hwe-s 20140416
-   com.ubuntu.maas.daily:v2:boot:14.04:i386:hwe-t 20140416.1
+      candidate.d/streams/v1/index.json  arch=i386 | sort -u
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-p 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-q 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-r 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-s 20140414
+   com.ubuntu.maas.candidate:v3:boot:13.10:i386:hwe-s 20140416
+   com.ubuntu.maas.candidate:v3:boot:14.04:i386:hwe-t 20140416.1
 
    $ sstream-query \
         --output-format="%(product_name)s %(version_name)s/%(item_name)s" \
         releases.d/streams/v1/index.json | sort -u > before
 
    $ meph2-util promote --no-sign --skip-file-copy --label=release \
-        daily.d/streams/v1/index.json releases.d/ 20140414 \
-        product_name=com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q
+        candidate.d/streams/v1/index.json releases.d/ 20140414 \
+        product_name=com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-q
 
    $ sstream-query \
         --output-format="%(product_name)s %(version_name)s/%(item_name)s" \

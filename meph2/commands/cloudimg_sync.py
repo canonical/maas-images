@@ -16,8 +16,8 @@ import os
 import sys
 import yaml
 
-CLOUD_IMAGES_DAILY = ("http://cloud-images.ubuntu.com/daily/"
-                      "streams/v1/com.ubuntu.cloud:daily:download.json")
+CLOUD_IMAGES_CANDIDATE = ("http://cloud-images.ubuntu.com/candidate/"
+                      "streams/v1/com.ubuntu.cloud:candidate:download.json")
 
 FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
@@ -36,7 +36,7 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
     # this turns a v2 products tree into a cloud-image products tree.
     # it pays attention only to products with krel == release
     # (in an attempt to only get "primary")
-    ret = util.empty_iid_products("com.ubuntu.cloud:daily:download")
+    ret = util.empty_iid_products("com.ubuntu.cloud:candidate:download")
     # rebuilds is {cloudimgYYYYMMDD:newYYYYMMDD}
     for product in prodtree.get('products'):
         if not (prodtree['products'][product].get('krel') ==
@@ -44,8 +44,8 @@ def v2_to_cloudimg_products(prodtree, rebuilds={}):
             continue
 
         # com.ubuntu.maas:boot:12.04:amd64:hwe-s =>
-        # com.ubuntu.cloud.daily:server:12.04:amd64
-        tprod = ("com.ubuntu.cloud.daily:server:%(version)s:%(arch)s" %
+        # com.ubuntu.cloud.candidate:server:12.04:amd64
+        tprod = ("com.ubuntu.cloud.candidate:server:%(version)s:%(arch)s" %
                  prodtree['products'][product])
 
         if tprod not in ret['products']:
@@ -99,7 +99,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.rebuilds = rebuilds
 
     def load_products(self, path=None, content_id=None):
-        if content_id != "com.ubuntu.cloud:daily:download":
+        if content_id != "com.ubuntu.cloud:candidate:download":
             raise ValueError("Not expecting to sync with content_id: %s" %
                              content_id)
 
@@ -172,7 +172,7 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
             fp.write(util.dump_data(index))
 
     def filter_index_entry(self, data, src, pedigree):
-        if pedigree[0] != "com.ubuntu.cloud:daily:download":
+        if pedigree[0] != "com.ubuntu.cloud:candidate:download":
             LOG.info("skipping index entry %s" % '/'.join(pedigree))
             return False
         return True
@@ -209,7 +209,7 @@ def main():
     parser.add_argument('--proposed', action='store_true', default=False)
     parser.add_argument('--rebuild', action='append', default=[],
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
-    parser.add_argument('--source', default=CLOUD_IMAGES_DAILY,
+    parser.add_argument('--source', default=CLOUD_IMAGES_CANDIDATE,
                         help='cloud images mirror')
     parser.add_argument('--target', default=None,
                         help="maas ephemeral v2 or v3 mirror, overrides "

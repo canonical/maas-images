@@ -207,9 +207,9 @@ enable_di: False
 ##    so for now, we just don't have a stream for that.
 ##  * kernel meta package in all cases here is linux-image-<flavor>
 
-default_target: http://images.maas.io/ephemeral-v3/daily/streams/v1/com.ubuntu.maas:daily:v3:download.json
-content_id: com.ubuntu.maas:daily:v3:download
-product_id_pre: com.ubuntu.maas.daily:v3:boot
+default_target: http://images.maas.io/ephemeral-v3/candidate/streams/v1/com.ubuntu.maas:candidate:v3:download.json
+content_id: com.ubuntu.maas:candidate:v3:download
+product_id_pre: com.ubuntu.maas.candidate:v3:boot
 
 # By default maas-images uses the krel in the boot path. This worked for the v2
 # stream because there was only one kernel per release/arch/krel/kflavor. The

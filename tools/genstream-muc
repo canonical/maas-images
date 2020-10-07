@@ -162,7 +162,7 @@ class FakeProduct(object):
         self._versions[version] = d
 
     def get_label(self, version):
-        return 'daily'
+        return 'candidate'
 
     def makepaths(self, target, makedata=makedata_filepath):
         for version_id, ver in self._versions.items():

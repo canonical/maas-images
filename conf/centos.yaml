@@ -1,7 +1,7 @@
 image_index: http://cloud.centos.org/centos/{version}/images/image-index
 
-product_id: "com.ubuntu.maas.daily:centos-bases:{version}:{arch}"
-content_id: "com.ubuntu.maas:daily:centos-bases-download"
+product_id: "com.ubuntu.maas.candidate:centos-bases:{version}:{arch}"
+content_id: "com.ubuntu.maas:candidate:centos-bases-download"
 os: centos
 arch: amd64
 base_mirror: http://mirrors.edge.kernel.org

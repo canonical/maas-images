@@ -67,7 +67,7 @@ def import_remote_config(args, product_tree, cfgdata):
             print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
                 'subarches': 'generic',
-                'label': 'daily',
+                'label': 'candidate',
                 'subarch': 'generic',
                 'arch': arch,
                 'os': os_name,
@@ -175,7 +175,7 @@ def import_bootloaders(args, product_tree, cfgdata):
         if product_tree['products'].get(product_id) is None:
             print("Creating new product %s" % product_id)
             product_tree['products'][product_id] = {
-                'label': 'daily',
+                'label': 'candidate',
                 'arch': firmware_platform['arch'],
                 'arches': firmware_platform['arches'],
                 'os': firmware_platform['os'],

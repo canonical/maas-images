@@ -1,6 +1,6 @@
-This builds maas ephemeral images from daily builds of cloud images.
+This builds maas ephemeral images from candidate builds of cloud images.
 Ie, it creates stuff that goes on
-  http://images.maas.io/ephemeral-v2/daily/
+  http://images.maas.io/ephemeral-v3/candidate
 from stuff on
   http://cloud-images.ubuntu.com/daily
 
@@ -50,7 +50,7 @@ To force a build, use '--target=force'
     copied from maas.ubuntu.com for all other products, but will only
     create new content for products that match the provided filters.
 
-  If the maas ephemeral data is up to date with the latest cloud image daily
+  If the maas ephemeral data is up to date with the latest cloud image candidate
   then meph2-cloudimg-sync will not do anything.
 
 In order to 'rebuild' something.  To create a new '20160101.1' even when
@@ -114,10 +114,10 @@ an existing stream.  This option (meph2-util insert) is additive only.
 
 === insert data ===
 Given output of a meph2-cloudimg-sync command above in build-output.d
-and local daily stream directory daily-stream.d you can add the new data
+and local candidate stream directory candidate-stream.d you can add the new data
 with:
 
-  meph2-util insert build-output.d daily-stream.d
+  meph2-util insert build-output.d candidate-stream.d
 
 If you do not want to sign (create .gpg and .sjson files), then you will
 have to use '--no-sign'.
@@ -126,23 +126,23 @@ You can use '--dry-run' to only report what would be done.
 
 === Promoting Builds ===
 Promoting is done on a specific version of a product.
-You promote a daily build to a released build with a given label.
+You promote a candidate build to a released build with a given label.
 Likely that label is 'release'.
 
    # list the product-ids and version are available for promotion
    $ sstream-query --output-format="%(product_name)s %(version_name)s" --max=1 \
-      daily.d/streams/v1/index.json arch=i386 | sort -u
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-p 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-r 20140414
-   com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-s 20140414
-   com.ubuntu.maas.daily:v2:boot:13.10:i386:hwe-s 20140416
-   com.ubuntu.maas.daily:v2:boot:14.04:i386:hwe-t 20140416.1
+      candidate.d/streams/v1/index.json arch=i386 | sort -u
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-p 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-q 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-r 20140414
+   com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-s 20140414
+   com.ubuntu.maas.candidate:v3:boot:13.10:i386:hwe-s 20140416
+   com.ubuntu.maas.candidate:v3:boot:14.04:i386:hwe-t 20140416.1
 
    # promote the listed version
    $ meph2-util promote --label=release \
-        daily.d/streams/v1/index.json releases.d/ 20140414 \
-        product_name=com.ubuntu.maas.daily:v2:boot:12.04:i386:hwe-q
+        candidate.d/streams/v1/index.json stable.d/ 20140414 \
+        product_name=com.ubuntu.maas.candidate:v3:boot:12.04:i386:hwe-q
 
 
 == cleaning old images ==
@@ -158,7 +158,7 @@ clean-md is the meph-util subcommand that allows you to keep only a given
 number of builds.  For example, to keep the latest 3 versions of every
 product in the meta-data, you would run:
 
-  meph2-util clean-md --max=3 daily-sream.d/
+  meph2-util clean-md --max=3 candidate-stream.d/
 
 This *only* modifies the meta-data, it does not delete files, use find-orphans
 and reap-orphans for that.
@@ -176,7 +176,7 @@ Example usage:
  my-orphans.json with any new items, but will not update first-orphaned
  timestamp.
 
-  $ meph2-util find-orphans my-orphans.json ./daily/ ./daily/streams/v1/*.json
+  $ meph2-util find-orphans my-orphans.json ./candidate/ ./candidate/streams/v1/*.json
 
 More complex usage:
  Its possible that 2 streams dirs could share a data directory, similar
@@ -184,11 +184,11 @@ More complex usage:
  directory tree layout (note, 'path' elements would have 'data' in them in
  this example):
 
-   daily/
+   candidate/
      data -> ../data/
      streams/v1/index.json
-     streams/v1/daily.json
-   released/
+     streams/v1/candidate.json
+   stable/
      data -> ../data
      streams/v1/index.json
      streams/v1/released.json
@@ -199,10 +199,10 @@ More complex usage:
  Then, we could run meph-util find-orphans with:
 
    $ meph2-util find-orphans my-orphans.json ./data/ \
-       ./daily/streams/v1/index.json released/streams/v1/index.json
+       ./candidate/streams/v1/index.json stable/streams/v1/index.json
 
  That will look through files in data/ that are not referenced by path
- elements in either the daily/streams/v1/ or released/streams/v1/ files.
+ elements in either the candidate/streams/v1/ or stable/streams/v1/ files.
 
  There is no --dry-run for finding orphans as it is non-destructive.
 
