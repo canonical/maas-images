@@ -4,3 +4,5 @@ com.ubuntu.maas:v3:download.json:
   com.ubuntu.maas:v3:boot:19.04:.*:
     labels:
       - candidate
+      - stable
+
