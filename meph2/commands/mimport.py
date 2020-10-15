@@ -2,6 +2,7 @@
 
 from collections import OrderedDict
 from configparser import ConfigParser
+from copy import deepcopy
 from datetime import datetime
 import argparse
 import hashlib
@@ -421,10 +422,9 @@ def import_packer_maas(args, cfgdata):
             for key, value in data['packer_vars'].items():
                 packer_cmd += ['-var', "%s=%s" % (key, value)]
         packer_cmd += [packer_template]
-        proc = subprocess.run(
-            packer_cmd, cwd=packer_dir,
-            env={'CURTIN_HOOKS': curtin_hooks, **os.environ},
-        )
+        env = deepcopy(os.environ)
+        env['CURTIN_HOOKS'] = curtin_hooks
+        proc = subprocess.run(packer_cmd, cwd=packer_dir, env=env)
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 cmd=' '.join(packer_cmd), returncode=proc.returncode)
