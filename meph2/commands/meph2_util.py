@@ -600,12 +600,21 @@ def main_diff(args):
                     if args.new_versions_only and target_label in product:
                         continue
                     for version, version_data in value.items():
-                        if version in other_data.get('versions', {}):
+                        other_versions = other_data.get('versions', {})
+                        if version in other_versions:
                             assert version_data == other_data[
                                 'versions'][version], (
                                     "%s %s exists in both streams but data "
                                     " does not match!" % (product, version))
                         else:
+                            if args.latest_only:
+                                newer_found = False
+                                for other_version in other_versions:
+                                    if other_version > version:
+                                        newer_found = True
+                                        break
+                                if newer_found:
+                                    continue
                             if diff_stream_name not in diff:
                                 diff[diff_stream_name] = {}
                             if diff_product_name not in diff[diff_stream_name]:
@@ -619,24 +628,15 @@ def main_diff(args):
                                         'versions']:
                                 diff[diff_stream_name][diff_product_name][
                                     'versions'][version] = {}
-                            diff[diff_stream_name][diff_product_name][
-                                'versions'][version]['labels'] = [label]
-                            if args.latest_only:
-                                latest = version
-                                for diff_version in [
-                                        i for i in diff[diff_stream_name][
-                                            diff_product_name][
-                                                'versions'].keys()
-                                        if i != latest]:
-                                    if latest > diff_version:
-                                        del diff[diff_stream_name][
-                                            diff_product_name]['versions'][
-                                                diff_version]
-                                    else:
-                                        del diff[diff_stream_name][
-                                            diff_product_name]['versions'][
-                                                latest]
-                                        latest = diff_version
+                            if args.promote:
+                                diff[diff_stream_name][diff_product_name][
+                                    'versions'][version]['labels'] = [
+                                        label,
+                                        other_label,
+                                    ]
+                            else:
+                                diff[diff_stream_name][diff_product_name][
+                                    'versions'][version]['labels'] = [label]
                 elif key == 'label':
                     # Label is expected to be different
                     continue
@@ -664,7 +664,9 @@ def main_diff(args):
         buff.write("# Source: %s\n" % args.src)
         buff.write("# Target: %s\n" % args.target)
         buff.write("# new-versions-only: %s\n" % args.new_versions_only)
-        buff.write("# latest-only: %s\n\n" % args.latest_only)
+        buff.write("# latest-only: %s\n" % args.latest_only)
+        buff.write("# promote: %s\n" % args.promote)
+        buff.write("\n")
         yaml.safe_dump(diff, buff)
 
     if args.output:

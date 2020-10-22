@@ -102,7 +102,16 @@ SUBCOMMANDS = {
                     'action': 'store_true',
                     'default': False,
                 },
-            ), COMMON_FLAGS['src'], COMMON_FLAGS['target'],
+            ),
+            (
+                ('--promote'),
+                {
+                    'help': 'Generate diff which promotes missing items.',
+                    'action': 'store_true',
+                    'default': False,
+                },
+            ),
+            COMMON_FLAGS['src'], COMMON_FLAGS['target'],
         ],
     },
     'patch': {
