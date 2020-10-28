@@ -619,13 +619,15 @@ def main_diff(args):
                                 diff[diff_stream_name] = {}
                             if diff_product_name not in diff[diff_stream_name]:
                                 diff[diff_stream_name][diff_product_name] = {}
-                            if 'versions' not in diff[
-                                    diff_stream_name][diff_product_name]:
+                            if (
+                                    'versions' not in diff[diff_stream_name][
+                                        diff_product_name]
+                                    or args.latest_only
+                                    ):
                                 diff[diff_stream_name][diff_product_name][
                                     'versions'] = {}
-                            if version not in diff[
-                                    diff_stream_name][diff_product_name][
-                                        'versions']:
+                            if version not in diff[diff_stream_name][
+                                    diff_product_name]['versions']:
                                 diff[diff_stream_name][diff_product_name][
                                     'versions'][version] = {}
                             if args.promote:
