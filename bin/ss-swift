@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+#
+# ss-swift - Sync a SimpleStream to an OpenStack Swift container
+#
+# Author: Lee Trager <lee.trager@canonical.com>
+#
+# Copyright (C) 2020 Canonical
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import os
+import sys
+
+from simplestreams import (
+    util as sutil,
+    mirrors,
+)
+
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from meph2 import util
+from swiftclient.service import SwiftService, SwiftUploadObject
+
+
+def get_stream_files(args):
+    product_streams = util.load_product_streams(args.path)
+    metadata = [os.path.join(util.STREAMS_D, 'index.json')]
+    data = []
+    for product_stream in product_streams:
+        metadata.append(product_stream)
+        products = util.load_content(os.path.join(args.path, product_stream))
+        for product in products.get('products', {}).values():
+            for version in product.get('versions', {}).values():
+                for item in version['items'].values():
+                    data.append(item['path'])
+    return metadata, data
+
+
+def upload_files(args, files):
+    objs = []
+    dirs = set()
+    for f in files:
+        if args.prefix:
+            object_name = os.path.join(args.prefix, f)
+        else:
+            object_name = f
+        objs.append(SwiftUploadObject(os.path.join(args.path, f), object_name))
+        while object_name:
+            object_name = os.path.dirname(object_name)
+            if object_name:
+                dirs.add(object_name)
+    for d in dirs:
+        objs.append(SwiftUploadObject(None, d, options={'dir_marker': True}))
+
+    upload_error = False
+    with SwiftService(options={'skip_identical': True}) as swift:
+        for r in swift.upload(args.container, objs):
+            if r['success']:
+                output = "%s" % r['action']
+                if 'status' in r:
+                    output = "%s - %s" % (output, r['status'])
+                if 'object' in r:
+                    output = "%s - %s" % (output, r['object'])
+                elif 'container' in r:
+                    output = "%s - %s" % (output, r['container'])
+                print(output)
+            else:
+                upload_error = True
+                print("ERROR: %s" % r, file=sys.stderr)
+    if upload_error:
+        print('Error uploading files!', file=sys.stderr)
+        sys.exit(1)
+    return dirs
+
+
+def cleanup(args, expected):
+    if args.prefix:
+        new_expected = [
+            i
+            if i.startswith(args.prefix)
+            else os.path.join(args.prefix, i)
+            for i in expected
+        ]
+        expected = new_expected
+        options = {'prefix': args.prefix}
+    else:
+        options = None
+    del_objs = []
+    error = False
+
+    with SwiftService() as swift:
+        for r in swift.list(args.container, options):
+            if not r['success']:
+                error = True
+                print("ERROR: %s" % r, file=sys.stderr)
+            else:
+                for obj in r['listing']:
+                    if obj['name'] not in expected:
+                        del_objs.append(obj['name'])
+        if error:
+            print('Error cleaning up container!', file=sys.stderr)
+            sys.exit(1)
+        if not del_objs:
+            print("INFO: Nothing to cleanup!")
+            return
+        for r in swift.delete(args.container, del_objs):
+            if r['success']:
+                print("deleted - %s" % r['object'])
+            else:
+                error = True
+                print("ERROR: %s" % r, file=sys.stderr)
+        if error:
+            print('Error cleaning up files in container!', file=sys.stderr)
+            sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Upload a SimpleStream to Swift.")
+    parser.add_argument(
+        "--prefix",
+        help="Prefix to be added to path when uploading.",
+    )
+    parser.add_argument(
+        "path",
+        help="Path to the SimpleStream to upload.",
+    )
+    parser.add_argument(
+        "container",
+        help="Name of the Swift container to upload to.",
+    )
+    args = parser.parse_args()
+
+    metadata, data = get_stream_files(args)
+    # Upload data first so when metadata goes live its available.
+    dirs = upload_files(args, data)
+    dirs = dirs.union(upload_files(args, metadata))
+    cleanup(args, data + metadata + list(dirs))
+
+
+if __name__ == "__main__":
+    main()
