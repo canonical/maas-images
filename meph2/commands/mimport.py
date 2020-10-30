@@ -287,6 +287,29 @@ def import_qcow2(
     return sha256.hexdigest()
 
 
+def unique_manifest(current_versions, target, new_manifest_file):
+    if not os.path.isfile(new_manifest_file):
+        # Not all Packer image types generate a manifest.
+        return True
+    with open(new_manifest_file, "r") as f:
+        new_manifest = [line.strip() for line in f.readlines()]
+    for version in reversed(current_versions.values()):
+        if 'manifest' not in version.get('items', {}):
+            continue
+        old_manifest_file = os.path.join(
+            target, version['items']['manifest']['path'])
+        unique = True
+        with open(old_manifest_file, "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line not in new_manifest:
+                    unique = False
+                    break
+        if unique:
+            return False
+    return True
+
+
 def import_packer_maas(args, cfgdata):
     for name, data in cfgdata['packer-maas'].items():
         arch = data.get('arch', 'amd64')
@@ -312,8 +335,8 @@ def import_packer_maas(args, cfgdata):
                 'subarch': 'generic',
                 'arch': arch,
                 'os': data['os'],
-                'version': data['version'],
-                'release': data['release'],
+                'version': str(data['version']),
+                'release': str(data['release']),
                 'release_title': data['release_title'],
                 'versions': {},
             }
@@ -424,10 +447,22 @@ def import_packer_maas(args, cfgdata):
         packer_cmd += [packer_template]
         env = deepcopy(os.environ)
         env['CURTIN_HOOKS'] = curtin_hooks
+        packer_manifest_path = os.path.join(packer_dir, "manifest")
+        env['MANIFEST'] = packer_manifest_path
         proc = subprocess.run(packer_cmd, cwd=packer_dir, env=env)
         if proc.returncode != 0:
             raise subprocess.CalledProcessError(
                 cmd=' '.join(packer_cmd), returncode=proc.returncode)
+
+        if not unique_manifest(
+                product_tree['products'][product_id]['versions'],
+                args.target,
+                packer_manifest_path):
+            print(
+                "INFO: %s does not have updates available, no new image "
+                "created." % product_id
+            )
+            continue
 
         packer_image = os.path.join(packer_dir, "%s.tar.gz" % name)
         if os.path.exists(packer_image):
@@ -451,8 +486,9 @@ def import_packer_maas(args, cfgdata):
             version_num += 1
             version = version_template % version_num
 
-        image_path = '/'.join(
-            [data['os'], str(data['release']), arch, version, ftype])
+        product_path = '/'.join(
+            [data['os'], str(data['release']), arch, version])
+        image_path = os.path.join(product_path, ftype)
         real_image_path = os.path.join(
             os.path.realpath(args.target), image_path)
         real_image_dir = os.path.dirname(real_image_path)
@@ -460,14 +496,25 @@ def import_packer_maas(args, cfgdata):
             os.makedirs(real_image_dir)
         shutil.move(packer_image, real_image_path)
 
-        ftype_data = util.get_file_info(real_image_path)
-        ftype_data['ftype'] = ftype
-        ftype_data['path'] = image_path
+        image_ftype_data = util.get_file_info(real_image_path)
+        image_ftype_data['ftype'] = ftype
+        image_ftype_data['path'] = image_path
         product_tree['products'][product_id]['versions'][version] = {
             'items': {
-                ftype: ftype_data,
+                ftype: image_ftype_data,
                 }
             }
+
+        if os.path.exists(packer_manifest_path):
+            manifest_path = os.path.join(product_path, "%s.manifest" % ftype)
+            real_manifest_path = os.path.join(
+                os.path.realpath(args.target), manifest_path)
+            shutil.move(packer_manifest_path, real_manifest_path)
+            manifest_ftype_data = util.get_file_info(real_manifest_path)
+            manifest_ftype_data['ftype'] = 'manifest'
+            manifest_ftype_data['path'] = manifest_path
+            product_tree['products'][product_id]['versions'][
+                version]['items']['manifest'] = manifest_ftype_data
 
         md_d = os.path.join(args.target, 'streams', 'v1')
         if not os.path.exists(md_d):
@@ -476,7 +523,7 @@ def import_packer_maas(args, cfgdata):
         with open(os.path.join(args.target, target_product_stream), 'wb') as fp:
             fp.write(util.dump_data(product_tree))
 
-            
+
 def main_import(args):
     cfg_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
