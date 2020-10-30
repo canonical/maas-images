@@ -204,6 +204,64 @@ def import_bootloaders(args, product_tree, cfgdata):
             'items': items
         }
 
+def import_release_notifications(args, product_tree, cfgdata):
+    product_id = cfgdata["product_id"]
+    release_notification = cfgdata['release-notification']
+
+    # Simple check to ensure the maas_version is a string. It is very easy to
+    # typo and write it as a float.
+    if (not isinstance(release_notification["maas_version"], str)
+        or not re.match('\d+\.\d+\.\d+', release_notification["maas_version"])):
+        raise ValueError(
+            "maas_version should be a string with the full SemVer version. for example: '2.9.1'")
+
+    if product_id in product_tree["products"]:
+        versions = product_tree['products'][product_id]['versions']
+        if release_notification == versions[max(versions.keys())]:
+            return
+    else:
+        versions = {}
+        product_tree["products"][product_id] = {
+            "name": "release-notifications",
+            "label": "candidate",
+            "versions": versions,
+            "arch": "all",
+            "release": "notifications",
+        }
+
+    today = datetime.utcnow().strftime('%Y%m%d')
+    point = 0
+    while True:
+        version = "%s.%d" % (today, point)
+        if version not in versions:
+            break
+        else:
+            point += 1
+
+    notification_dir = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '..', '..', 'release-notifications'))
+
+    version_dir = os.path.join(os.path.realpath(args.target), "release-notifications/{}/".format(version))
+    versioned_notification = os.path.join(version_dir, "release-notification.yaml")
+    os.makedirs(version_dir, exist_ok=True)
+
+    with open(versioned_notification, "w") as f:
+        f.write("This file is unused.")
+    with open(versioned_notification,"rb") as f:
+        hash = hashlib.sha256(f.read()).hexdigest();
+
+    path = "release-notifications/{}/release-notification.yaml".format(version)
+    item = {
+        "ftype": "notifications",
+        "path": path,
+        "sha256": hash,
+        "size": os.stat(versioned_notification).st_size,
+        "release_notification": release_notification,
+    }
+
+    product_tree['products'][product_id]["versions"][version] = {"items": {
+        "release_notification": item
+    }}
 
 def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
@@ -552,6 +610,9 @@ def main_import(args):
             import_remote_config(args, product_tree, cfgdata)
         elif cfgdata.get('bootloaders') is not None:
             import_bootloaders(args, product_tree, cfgdata)
+        elif cfgdata.get('release-notification') is not None:
+            product_tree["datatype"] = "release-notifications"
+            import_release_notifications(args, product_tree, cfgdata)
         else:
             sys.exit('Unsupported import yaml!\n')
 

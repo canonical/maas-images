@@ -29,7 +29,7 @@ example:
 
 This will build from source-image into output.d for 'arch' and 'release'.
 The 'version' provided is a serial (YYYYMMDD such as 20160101).
-source-image can be either a url or a local file of type 
+source-image can be either a url or a local file of type
   '.tar.gz', '-root.tar.gz', or '-root.tar.xz' or '.img'
 
 Note, using conf/meph-v2.yaml will build the v2 format stream
@@ -149,7 +149,7 @@ Likely that label is 'release'.
 Cleaning is done in 2 parts:
   * cleaning meta-data (removing entries from the products files)
   * finding orphans: identify which files in the tree are no longer referenced.
-  * purging orphans: removing files that are known to have been orpaned for
+  * purging orphans: removing files that are known to have been orphaned for
                      a given amount of time (3 days).
 
 === cleaning meta-data ===
@@ -210,7 +210,7 @@ More complex usage:
 === cleaning / reaping orphans ===
 Reaping orphans is what actually removes files.  There is a '--dry-run' to
 indicate what would be done.
- 
+
 its usage is fairly simple.
 
   $ meph2-util reap-orphans --older 7d my-orphans.json ./data/
@@ -283,3 +283,21 @@ Trusty images are built like this:
  - v3:
     meph2-cloudimg-sync --config=conf/meph-v3.yaml -vvv out.d \
        arch=$arch release=trusty
+
+
+=== Release Notifications ===
+
+The release notification stream is used to let MAAS know when new versions have
+been released so users can then be informed.
+
+This is a bit of a non-standard way of using simplestreams as we only want to
+deliver the metadata and no files. There is a requirement for a file however,
+so we do include a small token file with no real content.
+
+There will only ever be one release notification, as there is only ever one
+latest version of MAAS. To insert a new release notification into the stream
+the config file in `conf/release-notifications.yaml` should be updated to
+reflect the new MAAS release and the message we want to show users running a
+older version. The `version: 1.0` field should stay the same and should only
+be incremented if we changes to the release notifications and want older MAAS
+versions to ignore it.
