@@ -590,8 +590,15 @@ def main_diff(args):
                     diff[diff_stream_name] = {}
                 if diff_product_name not in diff[diff_stream_name]:
                     diff[diff_stream_name][diff_product_name] = {}
-                diff[diff_stream_name][diff_product_name]['labels'] = [
-                    label]
+                if args.promote:
+                    diff[diff_stream_name][diff_product_name]['labels'] = [
+                        label,
+                        other_label,
+                    ]
+                else:
+                    diff[diff_stream_name][diff_product_name]['labels'] = [
+                        label,
+                    ]
                 continue
             else:
                 other_data = other_content['products'][other_product]
