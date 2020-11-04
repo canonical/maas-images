@@ -4,14 +4,19 @@ packer-maas:
         release: 8
         version: 8
         release_title: "CentOS 8"
+        support_eol: 2029-05-31
         # The build system lp:maas-images runs on only has limited access
         # to the Internet. Use this specific mirror during build.
         yum_mirror: http://mirrors.edge.kernel.org/centos
     centos7:
         os: centos
-        release: 7
-        version: 7
+        # images.maas.io always contained CentOS 7 with the latest point
+        # release. The 7.0 was kept to ensure a smooth transition to
+        # packer-maas generated images.
+        release: centos70
+        version: 7.0
         release_title: "CentOS 7"
+        support_eol: 2024-06-30
         # The build system lp:maas-images runs on only has limited access
         # to the Internet. Use this specific mirror during build.
         yum_mirror: http://mirrors.edge.kernel.org/centos

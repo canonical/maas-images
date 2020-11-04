@@ -398,6 +398,9 @@ def import_packer_maas(args, cfgdata):
                 'release_title': data['release_title'],
                 'versions': {},
             }
+        if 'support_eol' in data:
+            product_tree['products'][product_id]['support_eol'] = data[
+                'support_eol'].strftime("%Y-%m-%d")
 
         packer_dir = os.path.abspath(os.path.join(
             os.path.dirname(__file__), '..', '..', 'packer-maas', name))
