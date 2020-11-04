@@ -6,4 +6,4 @@ release-notification:
   maas_version: "2.8.0"
   message: >
     <strong>We’ve released MAAS 2.8.</strong> This version supports LXD VM hosts, faster UI and many bug fixes.
-    Find out <a href="/docs/release-notes">what’s new in 2.8</a>.
+    Find out <a href="https://maas.io/docs/release-notes">what’s new in 2.8</a>.
