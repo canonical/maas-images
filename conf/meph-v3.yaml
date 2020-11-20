@@ -32,6 +32,7 @@ subarches:
  - &sa_hwe_b_edge   [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &sa_hwe_ee       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
  - &sa_hwe_ff       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
+ - &sa_hwe_ff_edge  [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-20.04]
  - &sa_hwe_gg       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
  - &sa_hwe_hh       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
@@ -45,6 +46,7 @@ subarches:
  - &arm_hwe_b_edge  [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04]
  - &arm_hwe_ee      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10]
  - &arm_hwe_ff      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04]
+ - &arm_hwe_ff_edge [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-20.04]
  - &arm_hwe_gg      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
  - &arm_hwe_hh      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
 
