@@ -49,6 +49,9 @@ SUBCOMMANDS = {
                             'The config file for the image to import.'}),
             COMMON_FLAGS['target'],
             COMMON_FLAGS['max'],
+            (('-f', '--force'),
+             {'help': 'Force regeneration of images even if manifest matches.',
+              'action': 'store_true', 'default': False}),
             ]
     },
     'merge': {

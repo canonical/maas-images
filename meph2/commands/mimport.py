@@ -515,7 +515,7 @@ def import_packer_maas(args, cfgdata):
             raise subprocess.CalledProcessError(
                 cmd=' '.join(packer_cmd), returncode=proc.returncode)
 
-        if not unique_manifest(
+        if not args.force and not unique_manifest(
                 product_tree['products'][product_id]['versions'],
                 args.target,
                 packer_manifest_path):
