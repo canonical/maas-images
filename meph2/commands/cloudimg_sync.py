@@ -16,8 +16,8 @@ import os
 import sys
 import yaml
 
-CLOUD_IMAGES_CANDIDATE = ("http://cloud-images.ubuntu.com/candidate/"
-                      "streams/v1/com.ubuntu.cloud:candidate:download.json")
+CLOUD_IMAGES_CANDIDATE = ("http://cloud-images.ubuntu.com/daily/"
+                      "streams/v1/com.ubuntu.cloud:daily:download.json")
 
 FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
@@ -99,7 +99,9 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         self.rebuilds = rebuilds
 
     def load_products(self, path=None, content_id=None):
-        if content_id != "com.ubuntu.cloud:candidate:download":
+        if content_id not in (
+                "com.ubuntu.cloud:candidate:download",
+                "com.ubuntu.cloud:daily:download"):
             raise ValueError("Not expecting to sync with content_id: %s" %
                              content_id)
 
