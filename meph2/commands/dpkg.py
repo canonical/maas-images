@@ -68,11 +68,11 @@ def gpg_verify_data(signature, data_file):
     shutil.rmtree(tmp, ignore_errors=True)
 
 
-def get_packages(base_url, architecture, pkg_name):
+def get_packages(base_url, component, architecture, pkg_name):
     """Gets the package list from the archive verified."""
     global _packages
     release_url = '%s/%s' % (base_url, 'Release')
-    path = 'main/binary-%s/Packages.xz' % architecture
+    path = '%s/binary-%s/Packages.xz' % (component, architecture)
     packages_url = '%s/%s' % (base_url, path)
     if packages_url in _packages:
         return _packages[packages_url]
@@ -120,7 +120,7 @@ def dpkg_a_newer_than_b(ver_a, ver_b):
 
 def get_package(
         archive, pkg_name, architecture, release=None, dest=None,
-        proposed=False):
+        proposed=False, allow_universe=False):
     """Look through the archives for package metadata. If a dest is given
     download the package.
 
@@ -133,16 +133,24 @@ def get_package(
     dists = ('%s-updates' % release, '%s-security' % release, release)
     if proposed:
         dists = ('%s-proposed' % release,) + dists
-    sys.stderr.write('Searching %s for %s\n' % (', '.join(dists), pkg_name))
+    if allow_universe:
+        components = ('main', 'universe')
+    else:
+        components = ('main',)
+    sys.stderr.write(
+        'Searching %s in components %s for %s\n' % (
+            ', '.join(dists), ', '.join(components), pkg_name)
+    )
     for dist in dists:
         base_url = '%s/dists/%s' % (archive, dist)
-        packages = get_packages(base_url, architecture, pkg_name)
-        if pkg_name in packages:
-            if package is None or dpkg_a_newer_than_b(
-                    packages[pkg_name]['Version'], package['Version']):
-                package = packages[pkg_name]
-                sys.stderr.write('Found %s-%s in %s\n' %
-                                 (pkg_name, package['Version'], dist))
+        for component in components:
+            packages = get_packages(base_url, component, architecture, pkg_name)
+            if pkg_name in packages:
+                if package is None or dpkg_a_newer_than_b(
+                        packages[pkg_name]['Version'], package['Version']):
+                    package = packages[pkg_name]
+                    sys.stderr.write('Found %s-%s in %s\n' %
+                                     (pkg_name, package['Version'], dist))
     # Download it if it was found and a dest was set
     if package is not None and dest is not None:
         pkg_data = geturl('%s/%s' % (archive, package['Filename']))
@@ -242,12 +250,15 @@ def archive_files(items, target):
 
 def extract_files_from_packages(
         archive, packages, architecture, files, release, target, path,
-        grub_format=None, grub_config=None, grub_output=None, proposed=False):
+        grub_format=None, grub_config=None, grub_output=None, proposed=False,
+        allow_universe=False):
     tmp = tempfile.mkdtemp(prefix='maas-images-')
     src_packages = []
     for package in packages:
         package = get_package(
-            archive, package, architecture, release, tmp, proposed=proposed)
+            archive, package, architecture, release, tmp, proposed,
+            allow_universe
+        )
         pkg_path = os.path.join(tmp, os.path.basename(package['Filename']))
         if pkg_path is None:
             sys.stderr.write('%s not found in archives!' % package)

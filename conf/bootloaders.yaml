@@ -9,7 +9,11 @@ bootloaders:
    arch: i386
    arches: i386,amd64
    archive: http://archive.ubuntu.com/ubuntu
-   release: bionic
+   release: focal
+   # pxelinux and syslinux-common were accidentally removed from main. It has
+   # been added back to main and is supported by foundations however because
+   # there have been no updates its still in universe.
+   allow_universe: True
    os: pxelinux
    files:
     - usr/lib/PXELINUX/pxelinux.0
@@ -22,7 +26,7 @@ bootloaders:
    arch: amd64
    arches: amd64
    archive: http://archive.ubuntu.com/ubuntu
-   release: bionic
+   release: focal
    os: grub-efi-signed
    files:
     - usr/lib/shim/shimx64.efi.signed, bootx64.efi
@@ -33,7 +37,7 @@ bootloaders:
    arch: arm64
    arches: arm64
    archive: http://ports.ubuntu.com
-   release: bionic
+   release: focal
    os: grub-efi
    files:
     - usr/lib/grub/arm64-efi/
@@ -54,7 +58,7 @@ bootloaders:
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
-   release: xenial
+   release: focal
    os: grub-ieee1275
    files:
     - usr/lib/grub/powerpc-ieee1275/
