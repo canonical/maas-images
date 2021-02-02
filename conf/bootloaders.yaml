@@ -37,7 +37,7 @@ bootloaders:
    arch: arm64
    arches: arm64
    archive: http://ports.ubuntu.com
-   release: focal
+   release: bionic
    os: grub-efi
    files:
     - usr/lib/grub/arm64-efi/
@@ -58,7 +58,7 @@ bootloaders:
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
-   release: focal
+   release: xenial
    os: grub-ieee1275
    files:
     - usr/lib/grub/powerpc-ieee1275/
