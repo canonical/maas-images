@@ -26,7 +26,7 @@ bootloaders:
    arch: amd64
    arches: amd64
    archive: http://archive.ubuntu.com/ubuntu
-   release: focal
+   release: bionic
    os: grub-efi-signed
    files:
     - usr/lib/shim/shimx64.efi.signed, bootx64.efi
