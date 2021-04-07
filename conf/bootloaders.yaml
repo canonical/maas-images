@@ -33,31 +33,25 @@ bootloaders:
     - usr/lib/grub/x86_64-efi-signed/grubnetx64.efi.signed, grubx64.efi
  - firmware-platform: uefi
    packages:
-    - grub-efi-arm64-bin
+    - shim-signed
+    - grub-efi-arm64-signed
    arch: arm64
    arches: arm64
    archive: http://ports.ubuntu.com
-   release: bionic
+   release: focal
    os: grub-efi
    files:
-    - usr/lib/grub/arm64-efi/
-   grub_format: arm64-efi
-   grub_output: grubaa64.efi
-   grub_config: |
-      # MAAS GRUB2 pre-loader configuration file
-      
-      # Load based on MAC address first.
-      configfile (pxe)/grub/grub.cfg-${net_default_mac}
-
-      # Failed to load based on MAC address.
-      # Load arm64 by default, UEFI only supported by 64-bit
-      configfile (pxe)/grub/grub.cfg-default-arm64
+    - usr/lib/shim/shimaa64.efi.signed, bootaa64.efi
+    - usr/lib/grub/arm64-efi-signed/grubnetaa64.efi.signed, grubaa64.efi
  - firmware-platform: open-firmware
    packages:
     - grub-ieee1275-bin
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
+   # We are waiting to upgrade to Focal for prebuilt signed PPC64 GRUB and
+   # shim packages to be built, like all other platforms have. The builder
+   # is on Precice and is unable to create Focal grub image.
    release: xenial
    os: grub-ieee1275
    files:
