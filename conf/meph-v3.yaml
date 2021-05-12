@@ -35,6 +35,7 @@ subarches:
  - &sa_hwe_ff_edge  [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-19.10, hwe-20.04]
  - &sa_hwe_gg       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
  - &sa_hwe_hh       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
+ - &sa_hwe_ii       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -49,6 +50,7 @@ subarches:
  - &arm_hwe_ff_edge [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-19.10, hwe-20.04]
  - &arm_hwe_gg      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10]
  - &arm_hwe_hh      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
+ - &arm_hwe_ii      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
 
 misc:
  - &glpae generic-lpae
@@ -59,6 +61,20 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "21.10"
+   release: impish
+   kernels:
+    - [impish,       amd64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       amd64,    ga-21.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
+    - [impish,       arm64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [impish,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [impish,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [impish,       armhf,    ga-21.10,        generic,     linux-generic,                        *arm_hwe_hh]
+    - [impish,       i386,     ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       i386,     ga-21.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
+    - [impish,       ppc64el,  ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       s390x,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
  - version: "21.04"
    release: hirsute
    kernels:
