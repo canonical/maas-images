@@ -703,7 +703,7 @@ def find_stream(diff_product_stream, product_streams):
             found = True
             break
     # New product streams should be merged in.
-    assert found, "Target stream %s not found!" % product_stream
+    assert found, "Target stream %s not found!" % diff_product_stream
     return product_stream
 
 
