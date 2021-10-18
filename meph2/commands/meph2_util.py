@@ -838,10 +838,10 @@ def main_patch(args):
                             write_product_stream |= ret
                         elif (
                                 target_label in value and
-                                target_data[key] != value[target_label]):
+                                target_data.get(key) != value[target_label]):
                             print(
                                 "INFO: Updating key %s %s -> %s" % (
-                                    key, target_data[key],
+                                    key, target_data.get(key),
                                     value[target_label]))
                             regenerate_index = write_product_stream = True
                             target_data[key] = value[target_label]
