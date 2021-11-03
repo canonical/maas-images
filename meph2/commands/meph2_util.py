@@ -610,8 +610,8 @@ def get_diff(source, target, promote=False, new_versions_only=False, latest_only
                     for version, version_data in value.items():
                         other_versions = other_data.get('versions', {})
                         if version in other_versions:
-                            assert version_data == other_data[
-                                'versions'][version], (
+                            assert version_data["items"] == other_data[
+                                'versions'][version]["items"], (
                                     "%s %s exists in both streams but data "
                                     " does not match!" % (product, version))
                         else:
