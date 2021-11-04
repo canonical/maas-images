@@ -66,31 +66,27 @@ releases:
  - version: "22.04"
    release: jammy
    kernels:
-    - [jammy,       amd64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [jammy,       amd64,    ga-22.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
-    - [jammy,       arm64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [jammy,       amd64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
+    - [jammy,       amd64,    ga-22.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_jj]
+    - [jammy,       arm64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
     - [jammy,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [jammy,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
     - [jammy,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
-    - [jammy,       armhf,    ga-22.04,        generic,     linux-generic,                        *arm_hwe_hh]
-    - [jammy,       i386,     ga-22.04,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [jammy,       i386,     ga-22.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
-    - [jammy,       ppc64el,  ga-22.04,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [jammy,       s390x,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [jammy,       armhf,    ga-22.04,        generic,     linux-generic,                        *arm_hwe_jj]
+    - [jammy,       ppc64el,  ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
+    - [jammy,       s390x,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
  - version: "21.10"
    release: impish
    kernels:
-    - [impish,       amd64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [impish,       amd64,    ga-21.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
-    - [impish,       arm64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       amd64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_ii]
+    - [impish,       amd64,    ga-21.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ii]
+    - [impish,       arm64,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_ii]
     - [impish,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [impish,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
     - [impish,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
-    - [impish,       armhf,    ga-21.10,        generic,     linux-generic,                        *arm_hwe_hh]
-    - [impish,       i386,     ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [impish,       i386,     ga-21.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_hh]
-    - [impish,       ppc64el,  ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
-    - [impish,       s390x,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_hh]
+    - [impish,       armhf,    ga-21.10,        generic,     linux-generic,                        *arm_hwe_ii]
+    - [impish,       ppc64el,  ga-21.10,        generic,     linux-generic,                        *sa_hwe_ii]
+    - [impish,       s390x,    ga-21.10,        generic,     linux-generic,                        *sa_hwe_ii]
  - version: "21.04"
    release: hirsute
    kernels:
