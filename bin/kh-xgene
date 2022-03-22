@@ -1,5 +1,7 @@
 #!/bin/bash
 
+XGENE_KERNEL_MAX_SIZE="16777152"
+
 cleanup() { [ -n "$TEMP_D" ] && rm -Rf "${TEMP_D}"; }
 error() { echo "$@" 1>&2; }
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
@@ -24,10 +26,20 @@ kernel="$1"
 initrd="$2"
 info=${VERSION_FLAVOR:-"unknown-ver unknown-flavor"}
 
-cp "$kernel" "${TEMP_D}/kernel" ||
+if [ "$(compress_type $kernel)" = "none" ]; then
+    # Compress to increase odds of remaining under $XGENE_KERNEL_MAX_SIZE
+    # LP: #1954692
+    gzip -9 < "$kernel" > "${TEMP_D}/kernel" ||
+	fail "failed to gzip '$kernel'"
+else
+    cp "$kernel" "${TEMP_D}/kernel" ||
 	fail "failed copy kernel '$kernel'"
+fi
 cp "$initrd" "${TEMP_D}/initrd" ||
 	fail "failed copy initrd '$initrd'"
+
+[ "$(stat -c '%s' "${TEMP_D}/kernel")" -le "$XGENE_KERNEL_MAX_SIZE" ] ||
+    fail "kernel is larger than \$XGENE_KERNEL_MAX_SIZE"
 
 comp="$(compress_type ${TEMP_D}/kernel)"
 mkimage -A arm -O linux -T kernel  -C $comp -a 0x80000 -e 0x80000 \
