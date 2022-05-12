@@ -37,6 +37,7 @@ subarches:
  - &sa_hwe_hh       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
  - &sa_hwe_ii       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
  - &sa_hwe_jj       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04]
+ - &sa_hwe_kk       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -53,6 +54,7 @@ subarches:
  - &arm_hwe_hh      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
  - &arm_hwe_ii      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
  - &arm_hwe_jj      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04]
+ - &arm_hwe_kk      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
 
 misc:
  - &glpae generic-lpae
@@ -63,6 +65,18 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "22.10"
+   release: kinetic
+   kernels:
+    - [kinetic,       amd64,    ga-22.10,        generic,     linux-generic,                        *sa_hwe_kk]
+    - [kinetic,       amd64,    ga-22.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_kk]
+    - [kinetic,       arm64,    ga-22.10,        generic,     linux-generic,                        *sa_hwe_kk]
+    - [kinetic,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
+    - [kinetic,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
+    - [kinetic,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
+    - [kinetic,       armhf,    ga-22.10,        generic,     linux-generic,                        *arm_hwe_kk]
+    - [kinetic,       ppc64el,  ga-22.10,        generic,     linux-generic,                        *sa_hwe_kk]
+    - [kinetic,       s390x,    ga-22.10,        generic,     linux-generic,                        *sa_hwe_kk]
  - version: "22.04"
    release: jammy
    kernels:
