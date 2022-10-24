@@ -120,163 +120,136 @@ com.ubuntu.maas:v3:download.json:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:ga-18.04-lowlatency:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-lowlatency:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-lowlatency-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:ga-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:xgene-uboot:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:xgene-uboot-mustang:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:ga-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:generic-lpae-generic-lpae:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:ga-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:ga-18.04-lowlatency:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-lowlatency:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-lowlatency-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:ga-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:ga-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:hwe-18.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:hwe-18.04-edge:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:ga-20.04:
     versions:
       '20221018':
@@ -474,55 +447,41 @@ com.ubuntu.maas:v3:download.json:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:ga-22.04-lowlatency:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:ga-22.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot-mustang:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:ga-22.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:22.04:armhf:generic-lpae-generic-lpae:
-    versions:
-      '20221018':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:ga-22.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:ga-22.04:
     versions:
       '20221018':
         labels:
         - candidate
-        - stable
   com.ubuntu.maas:v3:boot:22.10:amd64:ga-22.10:
     labels:
     - candidate
