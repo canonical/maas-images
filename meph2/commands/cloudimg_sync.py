@@ -270,7 +270,7 @@ def main():
     smirror = mirrors.UrlMirrorReader(source_url, policy=policy)
 
     with open(args.config) as fp:
-        cfgdata = yaml.load(fp)
+        cfgdata = yaml.safe_load(fp)
     if args.target is None:
         target = cfgdata['default_target']
     else:

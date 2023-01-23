@@ -99,7 +99,7 @@ def main():
     log.basicConfig(stream=args.log_file, level=level)
 
     with open(args.config, "r") as fp:
-        cfgdata = yaml.load(fp)
+        cfgdata = yaml.safe_load(fp)
 
     # --proposed only turns proposed on, not off.
     if not cfgdata.get('enable_proposed', False):

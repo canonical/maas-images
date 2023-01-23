@@ -89,7 +89,7 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     if cfgdata is None:
         with open(DEF_MEPH2_CONFIG) as fp:
-            cfgdata = yaml.load(fp)
+            cfgdata = yaml.safe_load(fp)
 
     rdata = None
     for r in cfgdata['releases']:
