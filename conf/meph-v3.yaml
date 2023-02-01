@@ -37,6 +37,7 @@ subarches:
  - &sa_hwe_hh       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
  - &sa_hwe_ii       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
  - &sa_hwe_jj       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04]
+ - &sa_hwe_jj_edge  [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-19.10, hwe-20.04, hwe-22.04]
  - &sa_hwe_kk       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
  - &sa_hwe_ll       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
@@ -55,6 +56,7 @@ subarches:
  - &arm_hwe_hh      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04]
  - &arm_hwe_ii      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10]
  - &arm_hwe_jj      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04]
+ - &arm_hwe_jj_edge [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, hwe-18.10, hwe-19.04, hwe-19.10, hwe-20.04, hwe-22.04]
  - &arm_hwe_kk      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
  - &arm_hwe_ll      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04]
 
@@ -96,13 +98,27 @@ releases:
    kernels:
     - [jammy,       amd64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
     - [jammy,       amd64,    ga-22.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_jj]
+    - [jammy,       amd64,    hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
+    - [jammy,       amd64,    hwe-22.04,       lowlatency,  linux-lowlatency-hwe-22.04,           *sa_hwe_jj]
+    - [jammy,       amd64,    hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
+    - [jammy,       amd64,    hwe-22.04-edge,  lowlatency,  linux-lowlatency-hwe-22.04-edge,      *sa_hwe_jj_edge]
     - [jammy,       arm64,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
+    - [jammy,       arm64,    hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
+    - [jammy,       arm64,    hwe-22.04,       lowlatency,  linux-lowlatency-hwe-22.04,           *sa_hwe_jj]
+    - [jammy,       arm64,    hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
+    - [jammy,       arm64,    hwe-22.04-edge,  lowlatency,  linux-lowlatency-hwe-22.04-edge,      *sa_hwe_jj_edge]
     - [jammy,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
     - [jammy,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
     - [jammy,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
     - [jammy,       armhf,    ga-22.04,        generic,     linux-generic,                        *arm_hwe_jj]
+    - [jammy,       armhf,    hwe-22.04,       generic,     linux-generic-hwe-22.04,              *arm_hwe_jj]
+    - [jammy,       armhf,    hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *arm_hwe_jj_edge]
     - [jammy,       ppc64el,  ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
+    - [jammy,       ppc64el,  hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
+    - [jammy,       ppc64el,  hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
     - [jammy,       s390x,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
+    - [jammy,       s390x,    hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
+    - [jammy,       s390x,    hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
  - version: "21.10"
    release: impish
    kernels:
