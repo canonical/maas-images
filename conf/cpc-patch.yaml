@@ -508,128 +508,159 @@ com.ubuntu.maas:v3:download.json:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:ga-22.04-lowlatency:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-lowlatency:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-lowlatency-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:ga-22.04:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-lowlatency:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-lowlatency-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot-mustang:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:ga-22.04:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:generic-lpae-generic-lpae:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:hwe-22.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:hwe-22.04-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:ga-22.04:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:hwe-22.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:hwe-22.04-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:ga-22.04:
     versions:
       '20230328':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:hwe-22.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:hwe-22.04-edge:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:22.10:amd64:ga-22.10:
     versions:
       '20230325':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:amd64:ga-22.10-lowlatency:
     versions:
       '20230325':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:arm64:ga-22.10:
     versions:
       '20230324':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:arm64:xgene-uboot:
     versions:
       '20230324':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:arm64:xgene-uboot-mustang:
     versions:
       '20230324':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:armhf:ga-22.10:
     versions:
       '20230325':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:armhf:generic-lpae-generic-lpae:
     versions:
       '20230325':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:ppc64el:ga-22.10:
     versions:
       '20230325':
         labels:
         - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:s390x:ga-22.10:
     versions:
       '20230325':
@@ -638,27 +669,36 @@ com.ubuntu.maas:v3:download.json:
   com.ubuntu.maas:v3:boot:23.04:amd64:ga-23.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:amd64:ga-23.04-lowlatency:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:arm64:ga-23.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:arm64:xgene-uboot:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:arm64:xgene-uboot-mustang:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:armhf:ga-23.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:armhf:generic-lpae-generic-lpae:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:ppc64el:ga-23.04:
     labels:
     - candidate
+    - stable
   com.ubuntu.maas:v3:boot:23.04:s390x:ga-23.04:
     labels:
     - candidate
+    - stable
