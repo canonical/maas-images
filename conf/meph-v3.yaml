@@ -76,7 +76,6 @@ releases:
     - [lunar,       amd64,    ga-23.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_ll]
     - [lunar,       arm64,    ga-23.04,        generic,     linux-generic,                        *sa_hwe_ll]
     - [lunar,       arm64,    *mustang,        generic,     linux-generic,                        [*mustang], *kh-mustang]
-    - [lunar,       arm64,    *xguboot,        generic,     linux-generic,                        [*xguboot], *kh-xgene]
     - [lunar,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
     - [lunar,       armhf,    ga-23.04,        generic,     linux-generic,                        *arm_hwe_ll]
     - [lunar,       ppc64el,  ga-23.04,        generic,     linux-generic,                        *sa_hwe_ll]
