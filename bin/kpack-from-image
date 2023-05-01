@@ -194,8 +194,12 @@ copy_modules_dir kernel/drivers/infiniband  # LP: #1835275
 copy_modules_dir kernel/drivers/dax         # LP: #1833604
 copy_modules_dir kernel/drivers/nvdimm      # LP: #1833604
 copy_modules_dir kernel/net/openvswitch     # LP: #1914762
+copy_modules_dir kernel/net/vmw_vsock       # LP: #2018454
+copy_modules_dir kernel/net/9p              # LP: #2018454
 manual_add_modules bcache                   # LP: #1513176
 manual_add_modules hpilo                    # LP: #1761639
+manual_add_modules virtiofs                 # LP: #2018454
+manual_add_modules 9p                       # LP: #2018454
 case $(dpkg --print-architecture) in
     arm64)
         manual_add_modules i2c-thunderx # LP: #1702976
