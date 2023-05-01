@@ -193,6 +193,7 @@ copy_modules_dir kernel/drivers/net/bonding # LP: #1835275
 copy_modules_dir kernel/drivers/infiniband  # LP: #1835275
 copy_modules_dir kernel/drivers/dax         # LP: #1833604
 copy_modules_dir kernel/drivers/nvdimm      # LP: #1833604
+copy_modules_dir kernel/net/openvswitch     # LP: #1914762
 manual_add_modules bcache                   # LP: #1513176
 manual_add_modules hpilo                    # LP: #1761639
 case $(dpkg --print-architecture) in
