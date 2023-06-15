@@ -6,14 +6,10 @@ bootloaders:
    packages:
     - pxelinux
     - syslinux-common
-   arch: i386
-   arches: i386,amd64
+   arch: amd64
+   arches: amd64
    archive: http://archive.ubuntu.com/ubuntu
    release: jammy
-   # pxelinux and syslinux-common were accidentally removed from main. It has
-   # been added back to main and is supported by foundations however because
-   # there have been no updates its still in universe.
-   allow_universe: True
    os: pxelinux
    files:
     - usr/lib/PXELINUX/pxelinux.0
