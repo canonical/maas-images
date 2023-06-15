@@ -7,7 +7,7 @@ bootloaders:
     - pxelinux
     - syslinux-common
    arch: amd64
-   arches: amd64
+   arches: amd64, i386
    archive: http://archive.ubuntu.com/ubuntu
    release: jammy
    os: pxelinux
