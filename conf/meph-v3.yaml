@@ -77,7 +77,6 @@ releases:
     - [mantic,       amd64,    ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
     - [mantic,       amd64,    ga-23.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_mm]
     - [mantic,       arm64,    ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
-    - [mantic,       armhf,    *glpae,          *glpae,      linux-generic-lpae,                   [*glpae]]
     - [mantic,       armhf,    ga-23.10,        generic,     linux-generic,                        *arm_hwe_mm]
     - [mantic,       ppc64el,  ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
     - [mantic,       s390x,    ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
