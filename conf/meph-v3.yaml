@@ -41,6 +41,7 @@ subarches:
  - &sa_hwe_kk       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
  - &sa_hwe_ll       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04]
  - &sa_hwe_mm       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10]
+ - &sa_hwe_nn       [generic,           hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10, ga-24.04]
  - &arm_hwe_t       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t]
  - &arm_hwe_u       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u]
  - &arm_hwe_v       [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v]
@@ -61,6 +62,7 @@ subarches:
  - &arm_hwe_kk      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10]
  - &arm_hwe_ll      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04]
  - &arm_hwe_mm      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10]
+ - &arm_hwe_nn      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10, ga-24.04]
 
 misc:
  - &glpae generic-lpae
@@ -71,6 +73,15 @@ misc:
  - &kh-xgene   {suffix: .xgene, kihelper: "kh-xgene", di-format: 'xgene'}
 
 releases:
+ - version: "24.04"
+   release: noble
+   kernels:
+    - [noble,       amd64,    ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
+    - [noble,       amd64,    ga-24.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_nn]
+    - [noble,       arm64,    ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
+    - [noble,       armhf,    ga-24.04,        generic,     linux-generic,                        *arm_hwe_nn]
+    - [noble,       ppc64el,  ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
+    - [noble,       s390x,    ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
  - version: "23.10"
    release: mantic
    kernels:
