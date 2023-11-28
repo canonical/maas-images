@@ -1,13 +1,13 @@
 packer-maas:
-    centos8:
-        os: centos
-        release: 8
-        version: 8
-        release_title: "CentOS 8"
-        support_eol: 2029-05-31
-        # The build system lp:maas-images runs on only has limited access
-        # to the Internet. Use this specific mirror during build.
-        yum_mirror: http://mirrors.edge.kernel.org/centos
+    # centos8:
+    #     os: centos
+    #     release: 8
+    #     version: 8
+    #     release_title: "CentOS 8"
+    #     support_eol: 2021-12-31
+    #     # The build system lp:maas-images runs on only has limited access
+    #     # to the Internet. Use this specific mirror during build.
+    #     yum_mirror: http://mirrors.edge.kernel.org/centos
     centos7:
         os: centos
         # images.maas.io always contained CentOS 7 with the latest point
@@ -19,7 +19,7 @@ packer-maas:
         support_eol: 2024-06-30
         # The build system lp:maas-images runs on only has limited access
         # to the Internet. Use this specific mirror during build.
-        yum_mirror: http://mirrors.edge.kernel.org/centos
+        yum_mirror: http://mirrors.edge.kernel.org/centos/7
         # Curtin added native support for CentOS in 18.1-59 which was
         # released with MAAS 2.3. Since the stream may be used by older
         # versions of MAAS add the hooks back in.
