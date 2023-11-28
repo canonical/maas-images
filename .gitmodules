@@ -1,4 +1,4 @@
 [submodule "packer-maas"]
 	path = packer-maas
 	url = https://github.com/canonical/packer-maas.git
-	branch = master
+	branch = main
