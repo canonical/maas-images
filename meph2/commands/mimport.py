@@ -6,7 +6,6 @@ from copy import deepcopy
 from datetime import datetime
 import argparse
 import hashlib
-import json
 import os
 import re
 import shutil
@@ -210,6 +209,7 @@ def import_bootloaders(args, product_tree, cfgdata):
             'items': items
         }
 
+
 def import_release_notifications(args, product_tree, cfgdata):
     product_id = cfgdata["product_id"]
     release_notification = cfgdata['release-notification']
@@ -217,7 +217,7 @@ def import_release_notifications(args, product_tree, cfgdata):
     # Simple check to ensure the maas_version is a string. It is very easy to
     # typo and write it as a float.
     if (not isinstance(release_notification["maas_version"], str)
-        or not re.match('\d+\.\d+\.\d+', release_notification["maas_version"])):
+        or not re.match(r'\d+\.\d+\.\d+', release_notification["maas_version"])):
         raise ValueError(
             "maas_version should be a string with the full SemVer version. for example: '2.9.1'")
 
@@ -244,17 +244,14 @@ def import_release_notifications(args, product_tree, cfgdata):
         else:
             point += 1
 
-    notification_dir = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), '..', '..', 'release-notifications'))
-
     version_dir = os.path.join(os.path.realpath(args.target), "release-notifications/{}/".format(version))
     versioned_notification = os.path.join(version_dir, "release-notification.yaml")
     os.makedirs(version_dir, exist_ok=True)
 
     with open(versioned_notification, "w") as f:
         f.write("This file is unused.")
-    with open(versioned_notification,"rb") as f:
-        hash = hashlib.sha256(f.read()).hexdigest();
+    with open(versioned_notification, "rb") as f:
+        hash = hashlib.sha256(f.read()).hexdigest()
 
     path = "release-notifications/{}/release-notification.yaml".format(version)
     item = {
@@ -268,6 +265,7 @@ def import_release_notifications(args, product_tree, cfgdata):
     product_tree['products'][product_id]["versions"][version] = {"items": {
         "release_notification": item
     }}
+
 
 def get_image_index_images(url):
     """ Given a URL to an image-index config file return a dictionary of
@@ -413,84 +411,17 @@ def import_packer_maas(args, cfgdata):
         if not os.path.exists(packer_dir):
             sys.exit("Error: Unable to find packer directory %s" % name)
 
-        # Packer refuses to run if build artifacts are still around.
-        for build_artifact in [
-                'output-qemu', "%s.tar.gz" % name, "%s.dd.gz" % name]:
-            build_artifact_path = os.path.join(packer_dir, build_artifact)
-            if os.path.isdir(build_artifact_path):
-                shutil.rmtree(build_artifact_path)
-            elif os.path.exists(build_artifact_path):
-                os.remove(build_artifact_path)
+        env = deepcopy(os.environ)
 
-        packer_template = data.get('template', "%s.json" % name)
+        # Packer refuses to run if build artifacts are still around.
+        packer_cmd = ["make", "clean"]
+        proc = subprocess.run(packer_cmd, cwd=packer_dir, env=env)
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                cmd=' '.join(packer_cmd), returncode=proc.returncode)
 
         if 'yum_mirror' in data:
-            # A yum mirrorlist allows yum to pick the fastest mirror from
-            # a set of servers given by a remote host. A yum baseurl is a
-            # specific mirror. If 'yum_mirror' is given replace any
-            # mirrorlists used in the kickstart file with baseurls. This
-            # is needed for the builder as it only allows external access
-            # to specific domains.
-            orig_kickstart_path = os.path.join(
-                packer_dir, 'http', "%s.ks" % name)
-            kickstart_path = os.path.join(
-                packer_dir, 'http', "%s-maas-images.ks" % name)
-            if os.path.exists(kickstart_path):
-                os.remove(kickstart_path)
-            mirrorlist_re = re.compile(
-                r'^.*(?P<mirrorlist>--mirrorlist=[\'"]?\S+[\'"]?)')
-            # For CentOS 6
-            url_re = re.compile(
-                r'^\w*url\s+--url=[\'"]?(?P<url>.+/centos)\S+')
-            with open(orig_kickstart_path, 'r') as orig_kickstart, open(kickstart_path, 'w') as kickstart:
-                for line in orig_kickstart:
-                    mirrorlist_m = mirrorlist_re.search(line)
-                    url_m = url_re.search(line)
-                    if mirrorlist_m is not None:
-                        mirrorlist = mirrorlist_m.group('mirrorlist')
-                        mirrorlist_query = mirrorlist.split('/')[-1]
-                        if '?' in mirrorlist_query:
-                            mirrorlist_query = mirrorlist_query.split(
-                                '?', 1)[1]
-                        if mirrorlist_query.endswith(("'", '"')):
-                            mirrorlist_query = mirrorlist_query[:-1]
-                        repo = {'yum_mirror': data['yum_mirror']}
-                        for q in mirrorlist_query.split('&'):
-                            k, v = q.split('=', 2)
-                            repo[k] = v
-                        # url and repo lines define this differently...
-                        if line.startswith('url'):
-                            baseurl = '--url="'
-                        else:
-                            baseurl = '--baseurl="'
-                        if 'release' not in repo:
-                            repo['release'] = repo['repo']
-                        baseurl += '{yum_mirror}/{release}/{repo}/{arch}'.format(
-                            **repo)
-                        if data['version'] >= 8:
-                            baseurl += '/os'
-                        baseurl += '"'
-                        line = line.replace(mirrorlist, baseurl)
-                    elif url_m is not None:
-                        line = line.replace(
-                            url_m.group('url'), data['yum_mirror'])
-                    kickstart.write(line)
-
-            # Modify the given template to use the modified kickstart file.
-            template_path = os.path.join(packer_dir, packer_template)
-            with open(template_path, 'r') as f:
-                template = json.load(f)
-            for builder in template['builders']:
-                for i, cmd in enumerate(builder['boot_command']):
-                    if cmd.startswith("inst.ks"):
-                        builder['boot_command'][i] = cmd.replace(
-                            "%s.ks" % name, "%s-maas-images.ks" % name)
-            packer_template = "%s-mass-images.json" % name
-            template_path = os.path.join(packer_dir, packer_template)
-            if os.path.exists(template_path):
-                os.remove(template_path)
-            with open(template_path, 'w') as f:
-                json.dump(template, f, indent=4)
+            env["KS_MIRROR"] = data["yum_mirror"]
 
         # Add the given Curtin hooks when creating the tar from the
         # disk image.
@@ -502,17 +433,7 @@ def import_packer_maas(args, cfgdata):
         else:
             curtin_hooks = ''
 
-        # Packer must be run in the same directory as the template so the post
-        # processor can convert image into something usable by MAAS.
-        packer_path = os.environ.get('PACKER_PATH', 'packer')
-        packer_cmd = [packer_path, 'build']
-        # Set packer variables which are used to define the path to an ISO
-        # if required to build the image.
-        if 'packer_vars' in data:
-            for key, value in data['packer_vars'].items():
-                packer_cmd += ['-var', "%s=%s" % (key, value)]
-        packer_cmd += [packer_template]
-        env = deepcopy(os.environ)
+        packer_cmd = ["make", "all"]
         env['CURTIN_HOOKS'] = curtin_hooks
         packer_manifest_path = os.path.join(packer_dir, "manifest")
         env['MANIFEST'] = packer_manifest_path
