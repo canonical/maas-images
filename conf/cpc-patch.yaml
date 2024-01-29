@@ -7,7 +7,12 @@
 # promote: True
 
 com.ubuntu.maas:centos-bases-download.json:
-  com.ubuntu.maas:centos-bases:7.0:amd64: {}
+  com.ubuntu.maas:centos-bases:7.0:amd64:
+    versions:
+      '20240128_01':
+        labels:
+        - candidate
+        - stable
 com.ubuntu.maas:v3:download.json:
   com.ubuntu.maas:v3:boot:16.04:amd64:ga-16.04:
     support_esm_eol:
