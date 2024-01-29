@@ -6,6 +6,8 @@
 # latest-only: True
 # promote: True
 
+com.ubuntu.maas:centos-bases-download.json:
+  com.ubuntu.maas:centos-bases:7.0:amd64: {}
 com.ubuntu.maas:v3:download.json:
   com.ubuntu.maas:v3:boot:16.04:amd64:ga-16.04:
     support_esm_eol:
@@ -228,7 +230,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -237,7 +239,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -246,7 +248,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -255,7 +257,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -264,7 +266,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -273,7 +275,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -282,7 +284,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -291,7 +293,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -300,7 +302,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -309,7 +311,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -318,7 +320,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -327,7 +329,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -336,7 +338,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -345,7 +347,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -354,7 +356,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -363,7 +365,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -372,7 +374,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -381,7 +383,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -390,7 +392,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -399,7 +401,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -408,7 +410,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240125':
+      '20240126':
         labels:
         - candidate
         - stable
@@ -788,39 +790,3 @@ com.ubuntu.maas:v3:download.json:
     labels:
     - candidate
     - stable
-  com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10-lowlatency:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:arm64:ga-23.10:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:armhf:ga-23.10:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:ppc64el:ga-23.10:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:s390x:ga-23.10:
-    versions:
-      '20240126':
-        labels:
-        - candidate
-        - stable
