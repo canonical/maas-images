@@ -202,6 +202,7 @@ manual_add_modules virtiofs                 # LP: #2018454
 manual_add_modules 9p                       # LP: #2018454
 case $(dpkg --print-architecture) in
     arm64)
+        manual_add_modules cppc-cpufreq # LP: #2046452
         manual_add_modules i2c-thunderx # LP: #1702976
         ;;
 esac
