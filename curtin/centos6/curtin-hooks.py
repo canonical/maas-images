@@ -119,7 +119,7 @@ def write_fstab(target, curtin_fstab):
 def extract_kernel_params(data):
     """Extracts the kernel parametes from the provided
     grub config data."""
-    match = re.search('^\s+kernel (.+?)$', data, re.MULTILINE)
+    match = re.search(r'^\s+kernel (.+?)$', data, re.MULTILINE)
     return match.group(0)
 
 
@@ -204,7 +204,7 @@ def get_grub_root(target):
             ]).encode('utf-8')
         out, err = in_chroot(['grub', '--batch'],
                              data=data, capture=True)
-        regex = re.search('^\s+(\(.+?\))$', out, re.MULTILINE)
+        regex = re.search(r'^\s+(\(.+?\))$', out, re.MULTILINE)
         return regex.groups()[0]
 
 

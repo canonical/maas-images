@@ -84,7 +84,7 @@ def get_packages(base_url, component, architecture, pkg_name):
     pkg_data = geturl(packages_url)
     regex_path = re.escape(path)
     sha256sum = re.search(
-        ("^\s*?([a-fA-F0-9]{64})\s*[0-9]+\s+%s$" % regex_path).encode('utf-8'),
+        (r"^\s*?([a-fA-F0-9]{64})\s*[0-9]+\s+%s$" % regex_path).encode('utf-8'),
         release_file,
         re.MULTILINE).group(1)
     if get_sha256(pkg_data).encode('utf-8') != sha256sum:
