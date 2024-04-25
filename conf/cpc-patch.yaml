@@ -235,7 +235,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -244,7 +244,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -253,7 +253,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -262,7 +262,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -271,7 +271,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -280,7 +280,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2025-05-29'
       stable: '2025-04-23'
     versions:
-      '20240319':
+      '20240416':
         labels:
         - candidate
         - stable
@@ -288,62 +288,137 @@ com.ubuntu.maas:v3:download.json:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot-mustang:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:generic-lpae-generic-lpae:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
+    versions:
+      '20240416':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:21.04:amd64:ga-21.04:
     support_eol:
       candidate: '2022-01-20'
@@ -720,42 +795,6 @@ com.ubuntu.maas:v3:download.json:
     labels:
     - candidate
     - stable
-  com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10-lowlatency:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:arm64:ga-23.10:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:armhf:ga-23.10:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:ppc64el:ga-23.10:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.10:s390x:ga-23.10:
-    versions:
-      '20240417':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:24.04:amd64:ga-24.04:
     labels:
     - candidate
