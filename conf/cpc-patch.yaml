@@ -9,7 +9,7 @@
 com.ubuntu.maas:centos-bases-download.json:
   com.ubuntu.maas:centos-bases:7.0:amd64:
     versions:
-      '20240128_01':
+      '20240501_01':
         labels:
         - candidate
         - stable
