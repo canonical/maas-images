@@ -511,7 +511,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -520,7 +520,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -529,7 +529,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -538,7 +538,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -547,7 +547,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -556,7 +556,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -565,7 +565,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -574,7 +574,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -583,7 +583,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -592,7 +592,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -601,7 +601,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -610,7 +610,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -619,7 +619,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -628,7 +628,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -637,7 +637,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -646,7 +646,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -655,7 +655,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -664,7 +664,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -673,7 +673,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -682,7 +682,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -691,7 +691,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -700,7 +700,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
@@ -709,7 +709,7 @@ com.ubuntu.maas:v3:download.json:
       candidate: '2027-06-01'
       stable: '2027-04-21'
     versions:
-      '20240501':
+      '20240524':
         labels:
         - candidate
         - stable
