@@ -64,6 +64,7 @@ subarches:
  - &arm_hwe_ll      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04]
  - &arm_hwe_mm      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10]
  - &arm_hwe_nn      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10, ga-24.04]
+ - &arm_hwe_oo      [generic, highbank, hwe-p, hwe-q, hwe-r, hwe-s, hwe-t, hwe-u, hwe-v, hwe-w, ga-16.04, ga-16.10, ga-17.04, ga-17.10, ga-18.04, ga-18.10, ga-19.04, ga-19.10, ga-20.04, ga-20.10, ga-21.04, ga-21.10, ga-22.04, ga-22.10, ga-23.04, ga-23.10, ga-24.04, ga-24.10]
 
 misc:
  - &glpae generic-lpae
@@ -80,6 +81,7 @@ releases:
     - [ oracular,    amd64,    ga-24.10,        generic,     linux-generic,                        *sa_hwe_oo ]
     - [ oracular,    amd64,    ga-24.10,        lowlatency,  linux-image-lowlatency,               *sa_hwe_oo ]
     - [ oracular,    arm64,    ga-24.10,        generic,     linux-generic,                        *sa_hwe_oo ]
+    - [ oracular,    armhf,    ga-24.10,        generic,     linux-generic,                        *arm_hwe_oo ]
     - [ oracular,    ppc64el,  ga-24.10,        generic,     linux-generic,                        *sa_hwe_oo ]
     - [ oracular,    s390x,    ga-24.10,        generic,     linux-generic,                        *sa_hwe_oo ]
  - version: "24.04"
