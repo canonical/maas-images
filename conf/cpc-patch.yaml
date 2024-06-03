@@ -832,26 +832,38 @@ com.ubuntu.maas:v3:download.json:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:24.04:amd64:ga-24.04:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:24.04:amd64:ga-24.04-lowlatency:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:24.04:arm64:ga-24.04:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:24.04:armhf:ga-24.04:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:24.04:ppc64el:ga-24.04:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:24.04:s390x:ga-24.04:
-    labels:
-    - candidate
-    - stable
+    versions:
+      '20240602':
+        labels:
+        - candidate
+        - stable
