@@ -9,7 +9,7 @@
 com.ubuntu.maas:centos-bases-download.json:
   com.ubuntu.maas:centos-bases:7.0:amd64:
     versions:
-      '20240501_01':
+      '20240604_01':
         labels:
         - candidate
         - stable
@@ -797,37 +797,37 @@ com.ubuntu.maas:v3:download.json:
     - stable
   com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:23.10:amd64:ga-23.10-lowlatency:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:23.10:arm64:ga-23.10:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:23.10:armhf:ga-23.10:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:23.10:ppc64el:ga-23.10:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
   com.ubuntu.maas:v3:boot:23.10:s390x:ga-23.10:
     versions:
-      '20240522':
+      '20240605':
         labels:
         - candidate
         - stable
