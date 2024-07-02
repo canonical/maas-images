@@ -234,191 +234,86 @@ com.ubuntu.maas:v3:download.json:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:ga-20.04-lowlatency:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-lowlatency:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-lowlatency-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot-mustang:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:generic-lpae-generic-lpae:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:ga-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04-edge:
     support_eol:
       candidate: '2025-05-29'
       stable: '2025-04-23'
-    versions:
-      '20240618':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:21.04:amd64:ga-21.04:
     support_eol:
       candidate: '2022-01-20'
