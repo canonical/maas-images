@@ -92,6 +92,7 @@ releases:
     - [noble,       arm64,    ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
     - [noble,       armhf,    ga-24.04,        generic,     linux-generic,                        *arm_hwe_nn]
     - [noble,       ppc64el,  ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
+    - [noble,       riscv64,  ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
     - [noble,       s390x,    ga-24.04,        generic,     linux-generic,                        *sa_hwe_nn]
  - version: "23.10"
    release: mantic
@@ -101,6 +102,7 @@ releases:
     - [mantic,       arm64,    ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
     - [mantic,       armhf,    ga-23.10,        generic,     linux-generic,                        *arm_hwe_mm]
     - [mantic,       ppc64el,  ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
+    - [mantic,       riscv64,  ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
     - [mantic,       s390x,    ga-23.10,        generic,     linux-generic,                        *sa_hwe_mm]
  - version: "23.04"
    release: lunar
@@ -147,6 +149,7 @@ releases:
     - [jammy,       ppc64el,  ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
     - [jammy,       ppc64el,  hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
     - [jammy,       ppc64el,  hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
+    - [jammy,       riscv64,  ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
     - [jammy,       s390x,    ga-22.04,        generic,     linux-generic,                        *sa_hwe_jj]
     - [jammy,       s390x,    hwe-22.04,       generic,     linux-generic-hwe-22.04,              *sa_hwe_jj]
     - [jammy,       s390x,    hwe-22.04-edge,  generic,     linux-generic-hwe-22.04-edge,         *sa_hwe_jj_edge]
