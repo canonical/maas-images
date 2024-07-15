@@ -547,48 +547,6 @@ com.ubuntu.maas:v3:download.json:
         labels:
         - candidate
         - stable
-  com.ubuntu.maas:v3:boot:23.04:amd64:ga-23.04:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:amd64:ga-23.04-lowlatency:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:arm64:ga-23.04:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:armhf:ga-23.04:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:armhf:generic-lpae-generic-lpae:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:ppc64el:ga-23.04:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
-  com.ubuntu.maas:v3:boot:23.04:s390x:ga-23.04:
-    versions:
-      '20240123':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:24.04:amd64:ga-24.04:
     versions:
       '20240605':
