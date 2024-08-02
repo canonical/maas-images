@@ -510,94 +510,209 @@ com.ubuntu.maas:v3:download.json:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:ga-22.04-lowlatency:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-lowlatency:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:amd64:hwe-22.04-lowlatency-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:ga-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-lowlatency:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:hwe-22.04-lowlatency-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:arm64:xgene-uboot-mustang:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:ga-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:generic-lpae-generic-lpae:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:hwe-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:armhf:hwe-22.04-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:ga-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:hwe-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:ppc64el:hwe-22.04-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:ga-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:hwe-22.04:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.04:s390x:hwe-22.04-edge:
     support_eol:
       candidate: '2027-06-01'
       stable: '2027-04-21'
+    versions:
+      '20240802':
+        labels:
+        - candidate
+        - stable
   com.ubuntu.maas:v3:boot:22.10:amd64:ga-22.10:
     versions:
       '20230325':
