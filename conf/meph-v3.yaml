@@ -81,7 +81,6 @@ releases:
    release: plucky
    kernels:
     - [ plucky,    amd64,    ga-25.04,        generic,     linux-generic,                        *sa_hwe_pp ]
-    - [ plucky,    amd64,    ga-25.04,        lowlatency,  linux-image-lowlatency,               *sa_hwe_pp ]
     - [ plucky,    arm64,    ga-25.04,        generic,     linux-generic,                        *sa_hwe_pp ]
     - [ plucky,    armhf,    ga-25.04,        generic,     linux-generic,                        *arm_hwe_pp ]
     - [ plucky,    ppc64el,  ga-25.04,        generic,     linux-generic,                        *sa_hwe_pp ]
