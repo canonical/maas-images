@@ -1,0 +1,139 @@
+#!/usr/bin/python3
+"""Build a new image stream that can be used to deploy machines.
+
+Deploy images are built using the latest cloud images that are
+available.
+
+Bootloaders are pulled in, like the ones in the candidate stream.
+
+An optional PPA can provided, in order to upgrade certain packages
+in the image.
+
+By default, a new GPG key is generated in order to sign the stream.
+"""
+import argparse
+import os
+from pathlib import Path
+import subprocess
+import sys
+import textwrap
+from typing import List, Optional
+
+
+def build_unsigned_stream(
+    series: List[str], arches: List[str], build_path: Path, ppa: Optional[str]
+):
+    if not build_path.exists():
+        build_path.mkdir(parents=True)
+    else:
+        return
+    bin_path = str(Path("bin/").absolute())
+    meph_env = os.environ.copy()
+    if bin_path not in meph_env["PATH"]:
+        meph_env["PATH"] = f"{bin_path}:{meph_env['PATH']}"
+    if ppa:
+        meph_env["M2E_ADD_REPOS"] = ppa
+
+    subprocess.run(
+        [
+            "./bin/meph2-cloudimg-sync",
+            "--config",
+            "./conf/meph-v3.yaml",
+            "--target=force",
+            f"--arches={','.join(set(arches))}",
+            "--max=1",
+            str(build_path),
+            f"release~({'|'.join(series)})",
+        ],
+        env=meph_env,
+    )
+    bootloaders_path = build_path / "bootloaders"
+    subprocess.run(
+        [
+            "./bin/meph2-import",
+            "--no-sign",
+            "./conf/bootloaders.yaml",
+            str(bootloaders_path),
+        ],
+    )
+    subprocess.run(
+        [
+            "./bin/meph2-util",
+            "merge",
+            "--no-sign",
+            str(bootloaders_path),
+            str(build_path),
+        ],
+    )
+
+
+def ensure_gpg_home(gpg_home_path: Path):
+    if gpg_home_path.exists():
+        return
+    gpg_home_path.mkdir(parents=True)
+
+    env = os.environ.copy()
+    env["GNUPGHOME"] = str(gpg_home_path)
+    gpg_script = textwrap.dedent("""
+        Key-Type: 1
+        Key-Length: 4096
+        Subkey-Type: 1
+        Subkey-Length: 4096
+        Expire-Date: 0
+        Name-Real: MAAS Images
+        Name-Email: maas-images@example.com
+        %no-protection
+    """)
+    subprocess.run(
+        ["gpg", "--full-gen-key", "--batch"],
+        input=gpg_script.encode("ascii"),
+        check=True,
+        env=env,
+    )
+
+
+def sign_stream(images_path: Path, gpg_home_path: Path):
+    env = os.environ.copy()
+    env["GNUPGHOME"] = str(gpg_home_path)
+    bin_path = str(Path("bin/").absolute())
+    if bin_path not in env["PATH"]:
+        env["PATH"] = f"{bin_path}:{env['PATH']}"
+    subprocess.run(
+        [
+            "./bin/meph2-util",
+            "sign",
+            str(images_path),
+        ],
+        env=env,
+        check=True,
+    )
+    public_key_path = images_path / "gpg.key"
+    subprocess.run(
+        [
+            "gpg",
+            "--export",
+            "-o",
+            str(public_key_path),
+        ],
+        env=env,
+        check=True,
+    )
+
+
+def main(raw_args: List[str]):
+    parser = argparse.ArgumentParser(usage=__doc__)
+    parser.add_argument("series", nargs="+")
+    parser.add_argument("--arch", "-a", action="append")
+    parser.add_argument("--images-dir", "-b", default="build/images")
+    parser.add_argument("--gpg-home", "-g", default="build/gpg")
+    parser.add_argument("--ppa", "-p", nargs="?")
+    args = parser.parse_args(raw_args)
+    if not args.arch:
+        args.arch = ["amd64"]
+    build_unsigned_stream(args.series, args.arch, Path(args.images_dir), args.ppa)
+    ensure_gpg_home(Path(args.gpg_home))
+    sign_stream(Path(args.images_dir), Path(args.gpg_home))
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
