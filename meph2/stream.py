@@ -116,6 +116,7 @@ def create_version(arch, release, version_name, img_url, out_d,
                          "It must be a string." % (release, version))
 
     enable_proposed = cfgdata.get('enable_proposed', False)
+    proposed_packages = cfgdata.get("proposed_packages", "")
 
     # default kernel can be:
     #  string or None: use this as the value for all arch
@@ -186,6 +187,9 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     if enable_proposed:
         mci2e_flags.append("--proposed")
+        if proposed_packages:
+            mci2e_flags.append("--proposed-packages")
+            mci2e_flags.append(proposed_packages)
 
     gencmd = ([mci2e] + mci2e_flags +
               ([] if need_rootimg else ['--no-gzip']) +

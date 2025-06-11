@@ -39,6 +39,7 @@ IMAGES_PPA_URL="http://ppa.launchpad.net/maas-maintainers/maas-ephemeral-images/
 UBUNTU_MIRROR=${UBUNTU_MIRROR:-"http://archive.ubuntu.com/ubuntu/"}
 UBUNTU_MIRROR_PORTS=${UBUNTU_MIRROR_PORTS:-"http://ports.ubuntu.com/ubuntu-ports/"}
 PROPOSED_ARCHIVE_FILE="/etc/apt/sources.list.d/proposed.list"
+PROPOSED_PIN_FILE="/etc/apt/preferences.d/proposed-selective"
 
 VERBOSITY=0
 TOP_D="${0%/*}"
@@ -63,6 +64,9 @@ Usage: ${0##*/} [ options ] disk kpkg kernel initrd [manifest]
 
    options:
       -v | --verbose      increase verbosity
+      --proposed          enable the -proposed pocket
+      --proposed-packages comma-separated list of packages to install
+                          from -proposed
 EOF
 }
 
@@ -240,6 +244,7 @@ apply_updates_chrooted() {
     local release="" arch="" VERBOSITY=${_VERBOSITY:-1}
     local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
     local proposed=${proposed:-false}
+    local proposed_packages=${proposed_packages:-""}
     local repos="${m2e_repos}" add_packages="${m2e_add_packages}"
     required="kpkg pubd"
     known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
@@ -308,6 +313,16 @@ apply_updates_chrooted() {
             { error "failed writing to $PROPOSED_ARCHIVE_FILE"; return 1; }
         debug 1 "addition of proposed turns dist-upgrade on"
         dist_upgrade=true
+        # If only some packages are to be installed from proposed, make
+        # sure that an 'apt upgrade' won't pull in anything from proposed.
+        if [ "${proposed_packages}" != "" ]; then
+            cat > /etc/apt/preferences.d/proposed-updates <<EOF
+# Configure apt to allow selective installs of packages from proposed
+Package: *
+Pin: release a=${release}-proposed
+Pin-Priority: 400
+EOF
+        fi
     else
         log_change false "$change"
         debug 1 "not enabling proposed for $release (proposed=$proposed)."
@@ -423,6 +438,17 @@ apply_updates_chrooted() {
     fi
     installed="$missing"
 
+    change="apt-get install proposed packages: $proposed_packages"
+    if [ "${proposed_packages}" != "" ]; then
+        log_change true "$change"
+        for package_name in $proposed_packages; do
+            _apt install -t "${release}-proposed" ${package_name} ||
+                { error "failed apt-get install ${package_name}"; return 1; }
+        done
+    else
+        log_change false "$change"
+    fi
+
     if ${ppa_clear} && [ -f "$IMAGES_PPA_FILE" ]; then
         debug 1 "disabling ppa in $IMAGES_PPA_FILE."
         sed -i "s,^,#," "$IMAGES_PPA_FILE" ||
@@ -527,12 +553,13 @@ apply_updates() {
     # update directory given, and pull out kernel and initramfs
     # to given locations
     short_opts="a:hv"
-    long_opts="arch:,fix-perms-ref:,help,proposed,verbose"
+    long_opts="arch:,fix-perms-ref:,help,proposed,proposed-packages:,verbose"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; return 1; }
     local debian_arch="" perms_ref="" qemu_arch="" proposed=false
+    local proposed_packages=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -541,6 +568,7 @@ apply_updates() {
                --fix-perms-ref) perms_ref="$next"; shift;;
             -h|--help) Usage ; exit 0;;
                --proposed) proposed=true;;
+               --proposed-packages) proposed_packages="${next//,/ }"; shift;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
             --) shift; break;;
         esac
@@ -623,6 +651,7 @@ apply_updates() {
 
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
         proposed=$proposed \
+        proposed_packages=$proposed_packages \
         pubd="$pubd" \
         unshare-pidns \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
@@ -687,7 +716,7 @@ elif [ "$1" = "apply_updates_chrooted" ]; then
     "$@"
 else
     short_opts="a:hv"
-    long_opts="arch:,help,proposed,verbose,zero"
+    long_opts="arch:,help,proposed,proposed-packages:,verbose,zero"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
@@ -696,6 +725,7 @@ else
     vargs=""
     zero=false
     proposed=""
+    proposed_packages=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -703,6 +733,7 @@ else
             -a|--arch) arch="$next"; shift;;
             -h|--help) Usage ; exit 0;;
                --proposed) proposed="--proposed";;
+               --proposed-packages) proposed_packages="--proposed-packages $next";;
             -v|--verbose) vargs="${vargs}v";;
                --zero) zero=true;;
             --) shift; break;;
@@ -725,6 +756,7 @@ else
         mount-image-callback --sys --proc --system-resolvconf "$img" -- \
         "$0" apply_updates ${vargs:+-$vargs} \
             ${proposed} \
+            ${proposed_packages} \
             "--fix-perms-ref=$img" \
             ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||

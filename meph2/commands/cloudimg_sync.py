@@ -209,6 +209,8 @@ def main():
                         default=[], help='which arches to build, "," delim')
     parser.add_argument('--disable-di', action='store_true', default=False)
     parser.add_argument('--proposed', action='store_true', default=False)
+    parser.add_argument('--proposed-packages', type=str, default="",
+                        help="Comma-separated string for packages to install from proposed.")
     parser.add_argument('--rebuild', action='append', default=[],
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_CANDIDATE,
@@ -279,6 +281,9 @@ def main():
     # --proposed only turns proposed on, not off.
     if not cfgdata.get('enable_proposed', False):
         cfgdata['enable_proposed'] = args.proposed
+
+    if args.proposed_packages:
+        cfgdata["proposed_packages"] = args.proposed_packages
 
     if args.disable_di:
         enable_di = False

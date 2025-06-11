@@ -35,6 +35,9 @@ Usage: ${0##*/} [ options ] source-image output-image.gz
                          root-image-gz: root-image that is compressed with gzip
                          root-tar: tarball of / (supports .tar.xz .tar.gz)
                          squashfs-image: a squahsfs image (.squashfs)
+    --proposed         enable the -proposed pocket
+    --proposed-packages comma-separated list of packages to install
+                          from -proposed
 
    Example:
      ${0##*/} --kernel=linux-generic \\
@@ -489,7 +492,7 @@ inargs() {
 
 main() {
     local short_opts="a:fhk:p:v"
-    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,no-squashfs,proposed,verbose"
+    local long_opts="arch:,help,format:,kernel:,krd-pack:,manifest:,no-gzip,no-squashfs,proposed,proposed-packages:,verbose"
     local getopt_out=""
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -500,6 +503,7 @@ main() {
     local kpacks="" src_in="" src="" arch="" vflags="" fmt="auto"
     local working_space="1024M" zero_img="true" fs_img_size="1400M"
     local manifest_out="" proposed_flag="" need_squashfs=true
+    local proposed_packages_flag=""
     kpacks=( )
 
     while [ $# -ne 0 ]; do
@@ -514,6 +518,7 @@ main() {
                --no-gzip) gzip=false;;
                --no-squashfs) need_squashfs=false;;
                --proposed) proposed_flag="--proposed";;
+               --proposed-packages) proposed_packages_flag="--proposed-packages ${next}"; shift;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1)); vflags="${vflags}v";;
             --) shift; break;;
         esac
@@ -603,7 +608,8 @@ main() {
     local manif="${TEMP_D}/manifest"
     local mc2ephem=""
     mc2ephem=( maas-cloudimg2ephemeral $vflags ${arch:+"--arch=$arch"}
-               $proposed_flag "$imgfile" "$kpkg" "$pkout" "$piout" "$manif" )
+               $proposed_flag $proposed_packages_flag "$imgfile" "$kpkg"
+               "$pkout" "$piout" "$manif" )
     ddebug 1 "starting ${mc2ephem[*]}"
     "${mc2ephem[@]}" ||
         { error "failed to turn $imgfile to ephemeral"; return 1; }

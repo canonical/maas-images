@@ -21,7 +21,8 @@ from typing import List, Optional
 
 
 def build_unsigned_stream(
-    series: List[str], arches: List[str], build_path: Path, ppa: Optional[str]
+    series: List[str], arches: List[str], build_path: Path, ppa: Optional[str],
+    proposed_packages: Optional[str]
 ):
     if not build_path.exists():
         build_path.mkdir(parents=True)
@@ -34,17 +35,29 @@ def build_unsigned_stream(
     if ppa:
         meph_env["M2E_ADD_REPOS"] = ppa
 
+    cloudimg_sync_options: List[str] = [
+        "--config",
+        "./conf/meph-v3.yaml",
+        "--target=force",
+        f"--arches={','.join(set(arches))}",
+        "--max=1",
+    ]
+    if proposed_packages:
+        cloudimg_sync_options.extend([
+            "--proposed",
+            f"--proposed-packages={proposed_packages}",
+        ])
+    cloudimg_sync_command = [
+        "./bin/meph2-cloudimg-sync",
+    ]
+    cloudimg_sync_command.extend(cloudimg_sync_options)
+    cloudimg_sync_command.extend([
+        str(build_path),
+        f"release~({'|'.join(series)})",
+    ])
+
     subprocess.run(
-        [
-            "./bin/meph2-cloudimg-sync",
-            "--config",
-            "./conf/meph-v3.yaml",
-            "--target=force",
-            f"--arches={','.join(set(arches))}",
-            "--max=1",
-            str(build_path),
-            f"release~({'|'.join(series)})",
-        ],
+        cloudimg_sync_command,
         env=meph_env,
     )
     bootloaders_path = build_path / "bootloaders"
@@ -70,7 +83,7 @@ def build_unsigned_stream(
 def ensure_gpg_home(gpg_home_path: Path):
     if gpg_home_path.exists():
         return
-    gpg_home_path.mkdir(parents=True)
+    gpg_home_path.mkdir(parents=True, mode=0o700)
 
     env = os.environ.copy()
     env["GNUPGHOME"] = str(gpg_home_path)
@@ -127,10 +140,15 @@ def main(raw_args: List[str]):
     parser.add_argument("--images-dir", "-b", default="build/images")
     parser.add_argument("--gpg-home", "-g", default="build/gpg")
     parser.add_argument("--ppa", "-p", nargs="?")
+    parser.add_argument(
+        "--proposed-packages", nargs="?",
+        help="Comma-separated list of packages to install from proposed")
     args = parser.parse_args(raw_args)
     if not args.arch:
         args.arch = ["amd64"]
-    build_unsigned_stream(args.series, args.arch, Path(args.images_dir), args.ppa)
+    build_unsigned_stream(
+        args.series, args.arch, Path(args.images_dir), args.ppa,
+        args.proposed_packages)
     ensure_gpg_home(Path(args.gpg_home))
     sign_stream(Path(args.images_dir), Path(args.gpg_home))
 
