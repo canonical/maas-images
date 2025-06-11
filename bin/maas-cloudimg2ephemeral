@@ -67,6 +67,9 @@ Usage: ${0##*/} [ options ] disk kpkg kernel initrd [manifest]
       --proposed          enable the -proposed pocket
       --proposed-packages comma-separated list of packages to install
                           from -proposed
+      --pre-purge-packages comma-separated list of packages to purge
+                           and then reinstall after any repos have been
+                           added
 EOF
 }
 
@@ -245,6 +248,7 @@ apply_updates_chrooted() {
     local ppa_clear=${PPA_CLEAR:-true} change="" dist_upgrade=${DIST_UPGRADE:-false}
     local proposed=${proposed:-false}
     local proposed_packages=${proposed_packages:-""}
+    local pre_purge_packages=${pre_purge_packages:-""}
     local repos="${m2e_repos}" add_packages="${m2e_add_packages}"
     required="kpkg pubd"
     known="apt_opts PPA_CLEAR VERBOSITY DIST_UPGRADE"
@@ -415,6 +419,15 @@ EOF
     fi
     removed="$toremove"
 
+    change="pre-purge packages: $pre_purge_packages"
+    if [ "${pre_purge_packages}" != "" ]; then
+        log_change true "$change"
+        _apt remove --purge $pre_purge_packages ||
+            { error "failed apt-get remove --purge"; return 1; }
+    else
+        log_change false "$change"
+    fi
+
     change="apt-get dist-upgrade"
     if [ "${dist_upgrade}" != "false" ]; then
         log_change true "$change"
@@ -553,13 +566,14 @@ apply_updates() {
     # update directory given, and pull out kernel and initramfs
     # to given locations
     short_opts="a:hv"
-    long_opts="arch:,fix-perms-ref:,help,proposed,proposed-packages:,verbose"
+    long_opts="arch:,fix-perms-ref:,help,proposed,proposed-packages:,pre-purge-packages:,verbose"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
         { bad_Usage; return 1; }
     local debian_arch="" perms_ref="" qemu_arch="" proposed=false
     local proposed_packages=""
+    local pre_purge_packages=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -569,6 +583,7 @@ apply_updates() {
             -h|--help) Usage ; exit 0;;
                --proposed) proposed=true;;
                --proposed-packages) proposed_packages="${next//,/ }"; shift;;
+               --pre-purge-packages) pre_purge_packages="${next//,/ }"; shift;;
             -v|--verbose) VERBOSITY=$((${VERBOSITY}+1));;
             --) shift; break;;
         esac
@@ -652,6 +667,7 @@ apply_updates() {
     cross=$cross apt_opts="$apt_opts" kpkg="$kpkg" _VERBOSITY="$VERBOSITY" \
         proposed=$proposed \
         proposed_packages=$proposed_packages \
+        pre_purge_packages=$pre_purge_packages \
         pubd="$pubd" \
         unshare-pidns \
         chroot "$dir" /bin/bash -s apply_updates_chrooted < "$me" ||
@@ -716,7 +732,7 @@ elif [ "$1" = "apply_updates_chrooted" ]; then
     "$@"
 else
     short_opts="a:hv"
-    long_opts="arch:,help,proposed,proposed-packages:,verbose,zero"
+    long_opts="arch:,help,proposed,proposed-packages:,pre-purge-packages:,verbose,zero"
     getopt_out=$(getopt --name "${0##*/}" \
         --options "${short_opts}" --long "${long_opts}" -- "$@") &&
         eval set -- "${getopt_out}" ||
@@ -726,6 +742,7 @@ else
     zero=false
     proposed=""
     proposed_packages=""
+    pre_purge_packages=""
 
     while [ $# -ne 0 ]; do
         cur=${1}; next=${2};
@@ -734,6 +751,7 @@ else
             -h|--help) Usage ; exit 0;;
                --proposed) proposed="--proposed";;
                --proposed-packages) proposed_packages="--proposed-packages $next";;
+               --pre-purge-packages) pre_purge_packages="--pre-purge-packages $next";;
             -v|--verbose) vargs="${vargs}v";;
                --zero) zero=true;;
             --) shift; break;;
@@ -757,6 +775,7 @@ else
         "$0" apply_updates ${vargs:+-$vargs} \
             ${proposed} \
             ${proposed_packages} \
+            ${pre_purge_packages} \
             "--fix-perms-ref=$img" \
             ${arch:+"--arch=$arch"} _MOUNTPOINT_ \
             "$kpkg" "$kernel" "$initrd" ${manifest:+"${manifest}"} ||

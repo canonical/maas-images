@@ -117,6 +117,7 @@ def create_version(arch, release, version_name, img_url, out_d,
 
     enable_proposed = cfgdata.get('enable_proposed', False)
     proposed_packages = cfgdata.get("proposed_packages", "")
+    pre_purge_packages = cfgdata.get("pre_purge_packages", "")
 
     # default kernel can be:
     #  string or None: use this as the value for all arch
@@ -190,6 +191,10 @@ def create_version(arch, release, version_name, img_url, out_d,
         if proposed_packages:
             mci2e_flags.append("--proposed-packages")
             mci2e_flags.append(proposed_packages)
+
+    if pre_purge_packages:
+        mci2e_flags.append("--pre-purge-packages")
+        mci2e_flags.append(pre_purge_packages)
 
     gencmd = ([mci2e] + mci2e_flags +
               ([] if need_rootimg else ['--no-gzip']) +

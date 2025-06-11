@@ -211,6 +211,8 @@ def main():
     parser.add_argument('--proposed', action='store_true', default=False)
     parser.add_argument('--proposed-packages', type=str, default="",
                         help="Comma-separated string for packages to install from proposed.")
+    parser.add_argument('--pre-purge-packages', type=str, default="",
+                        help="Comma-separated string for packages to purge before installing any packages.")
     parser.add_argument('--rebuild', action='append', default=[],
                         help='rebuild version name YYYYMMDD:YYYMMDD.1')
     parser.add_argument('--source', default=CLOUD_IMAGES_CANDIDATE,
@@ -284,6 +286,9 @@ def main():
 
     if args.proposed_packages:
         cfgdata["proposed_packages"] = args.proposed_packages
+
+    if args.pre_purge_packages:
+        cfgdata["pre_purge_packages"] = args.pre_purge_packages
 
     if args.disable_di:
         enable_di = False

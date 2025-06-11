@@ -22,7 +22,7 @@ from typing import List, Optional
 
 def build_unsigned_stream(
     series: List[str], arches: List[str], build_path: Path, ppa: Optional[str],
-    proposed_packages: Optional[str]
+    proposed_packages: str, pre_purge_packages: str,
 ):
     if not build_path.exists():
         build_path.mkdir(parents=True)
@@ -47,6 +47,15 @@ def build_unsigned_stream(
             "--proposed",
             f"--proposed-packages={proposed_packages}",
         ])
+    if pre_purge_packages:
+        cloudimg_sync_options.extend([
+            f"--pre-purge-packages={pre_purge_packages}",
+        ])
+        # Packages in the --proposed-packages list will be installed automatically. For the
+        # other packages, we need to install them explicitly.
+        install_packages = set(pre_purge_packages.split(",")) - set(proposed_packages.split(","))
+        if install_packages:
+            meph_env["M2E_ADD_PACKAGES"] = " ".join(sorted(install_packages))
     cloudimg_sync_command = [
         "./bin/meph2-cloudimg-sync",
     ]
@@ -141,14 +150,17 @@ def main(raw_args: List[str]):
     parser.add_argument("--gpg-home", "-g", default="build/gpg")
     parser.add_argument("--ppa", "-p", nargs="?")
     parser.add_argument(
-        "--proposed-packages", nargs="?",
+        "--proposed-packages", nargs="?", default="",
         help="Comma-separated list of packages to install from proposed")
+    parser.add_argument(
+        "--pre-purge-packages", nargs="?", default="",
+        help="Comma-separated list of packages to purge before installing anything")
     args = parser.parse_args(raw_args)
     if not args.arch:
         args.arch = ["amd64"]
     build_unsigned_stream(
         args.series, args.arch, Path(args.images_dir), args.ppa,
-        args.proposed_packages)
+        args.proposed_packages, args.pre_purge_packages)
     ensure_gpg_home(Path(args.gpg_home))
     sign_stream(Path(args.images_dir), Path(args.gpg_home))
 
