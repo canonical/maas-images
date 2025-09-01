@@ -1116,3 +1116,97 @@ com.ubuntu.maas:v3:download.json:
   com.ubuntu.maas:v3:boot:25.10:s390x:ga-25.10:
     labels:
     - candidate
+  com.ubuntu.maas:v3:boot:12.04:amd64:hwe-p:
+    versions:
+      '20170417': {}
+      '20170424': {}
+  com.ubuntu.maas:v3:boot:12.04:amd64:hwe-q:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:amd64:hwe-r:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:amd64:hwe-s:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:amd64:hwe-t:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:armhf:highbank-highbank:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:i386:hwe-p:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:i386:hwe-q:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:i386:hwe-r:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:i386:hwe-s:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:12.04:i386:hwe-t:
+    versions:
+      '20170331': {}
+      '20170417': {}
+  com.ubuntu.maas:v3:boot:14.04:amd64:.*:
+    versions:
+      '20190429': {}
+      '20190514': {}
+  com.ubuntu.maas:v3:boot:14.04:arm64:.*:
+    versions:
+      '20190409': {}
+      '20190429': {}
+  com.ubuntu.maas:v3:boot:14.04:armhf:.*:
+    versions:
+      '20190409': {}
+      '20190429': {}
+  com.ubuntu.maas:v3:boot:14.04:i386:.*:
+    versions:
+      '20190429': {}
+      '20190514': {}
+  com.ubuntu.maas:v3:boot:14.04:ppc64el:.*:
+    versions:
+      '20190409': {}
+      '20190429': {}
+  com.ubuntu.maas:v3:boot:16.04:.*:
+    versions:
+      '20210623': {}
+      '20210721': {}
+      '20210804': {}
+  com.ubuntu.maas:v3:boot:18.04:.*:
+    versions:
+      '20230522': {}
+      '20230523': {}
+      '20230524': {}
+  com.ubuntu.maas:v3:boot:20.04:.*:
+    versions:
+      '20250527': {}
+      '20250530': {}
+      '20250605': {}
+  com.ubuntu.maas:v3:boot:20.10:.*:
+    versions:
+      '20210622.1': {}
+      '20210625': {}
+      '20210716': {}
+  com.ubuntu.maas:v3:boot:21.04:.*:
+    versions:
+      '20211202': {}
+      '20220106': {}
+      '20220107': {}
+  com.ubuntu.maas:v3:boot:21.10:.*:
+    versions:
+      '20220602': {}
+      '20220613': {}
+      '20220616': {}
