@@ -124,434 +124,194 @@ com.ubuntu.maas:v3:download.json:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:ga-18.04-lowlatency:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-lowlatency:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:amd64:hwe-18.04-lowlatency-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:ga-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:xgene-uboot:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:arm64:xgene-uboot-mustang:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:ga-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:generic-lpae-generic-lpae:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:armhf:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:ga-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:ga-18.04-lowlatency:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-lowlatency:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:i386:hwe-18.04-lowlatency-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:ga-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:ppc64el:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:ga-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:hwe-18.04:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:18.04:s390x:hwe-18.04-edge:
     support_esm_eol:
       candidate: '2028-04-26'
       stable: '2028-04-26'
-    versions:
-      '20230522':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:ga-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:ga-20.04-lowlatency:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-lowlatency:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:amd64:hwe-20.04-lowlatency-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:ga-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:hwe-20.04-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:arm64:xgene-uboot-mustang:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:ga-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:generic-lpae-generic-lpae:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:armhf:hwe-20.04-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:ga-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:ppc64el:hwe-20.04-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:ga-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:20.04:s390x:hwe-20.04-edge:
     support_esm_eol:
       candidate: '2030-04-23'
       stable: '2030-04-23'
-    versions:
-      '20250527':
-        labels:
-        - candidate
-        - stable
   com.ubuntu.maas:v3:boot:21.04:amd64:ga-21.04:
     support_eol:
       candidate: '2022-01-20'
