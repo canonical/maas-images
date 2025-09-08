@@ -45,40 +45,51 @@ def get_sha256(data):
     return sha256.hexdigest()
 
 
-def gpg_verify_data(signature, data_file):
-    """Verify's data using the signature."""
-    tmp = tempfile.mkdtemp(prefix='maas-images')
-    sig_out = os.path.join(tmp, 'verify.gpg')
-    with open(sig_out, 'wb') as stream:
-        stream.write(signature)
-
-    data_out = os.path.join(tmp, 'verify')
-    with open(data_out, 'wb') as stream:
-        stream.write(data_file)
-
-    subprocess.check_output(
-        [
+def gpg_verify_data(data_file):
+    """Verify's data using an inline signature."""
+    with tempfile.NamedTemporaryFile(prefix='maas-images') as tmp_file:
+        tmp_file.write(data_file)
+        tmp_file.flush()
+        cmd = [
             'gpgv',
             '--keyring', os.path.join(
                 os.path.dirname(__file__), '..', '..', 'keyring.gpg'),
             '--keyring', '/usr/share/keyrings/ubuntu-archive-keyring.gpg',
-            sig_out, data_out
-        ], stderr=subprocess.STDOUT)
+            tmp_file.name
+        ]
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
-    shutil.rmtree(tmp, ignore_errors=True)
+
+def gpg_extract_content(clearsigned_data):
+    """Extracts content from a clearsigned PGP message using gpg."""
+    with tempfile.NamedTemporaryFile(prefix='maas-images') as tmp_file:
+        tmp_file.write(clearsigned_data)
+        tmp_file.flush()
+        cmd = [
+            'gpg',
+            '--decrypt',
+            '--keyring', os.path.join(
+                os.path.dirname(__file__), '..', '..', 'keyring.gpg'),
+            '--keyring', '/usr/share/keyrings/ubuntu-archive-keyring.gpg',
+            '--batch',
+            '--output', '-',
+            tmp_file.name]
+        content = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+        return content
 
 
 def get_packages(base_url, component, architecture, pkg_name):
     """Gets the package list from the archive verified."""
     global _packages
-    release_url = '%s/%s' % (base_url, 'Release')
+    in_release_url = '%s/%s' % (base_url, 'InRelease')
     path = '%s/binary-%s/Packages.xz' % (component, architecture)
     packages_url = '%s/%s' % (base_url, path)
     if packages_url in _packages:
         return _packages[packages_url]
-    release_file = geturl(release_url)
-    release_file_gpg = geturl('%s.gpg' % release_url)
-    gpg_verify_data(release_file_gpg, release_file)
+
+    in_release_file = geturl(in_release_url)
+    gpg_verify_data(in_release_file)
+    release_file = gpg_extract_content(in_release_file)
 
     # Download the packages file and verify the SHA256SUM
     pkg_data = geturl(packages_url)
