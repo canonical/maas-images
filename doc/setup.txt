@@ -1,3 +1,0 @@
-To set up system for development, including installation of packages
-execute:
-  ./system-setup
