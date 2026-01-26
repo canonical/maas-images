@@ -35,7 +35,7 @@ bootloaders:
    arch: arm64
    arches: arm64
    archive: http://ports.ubuntu.com
-   release: jammy
+   release: noble
    os: grub-efi
    files:
     - usr/lib/shim/shimaa64.efi.signed.latest, bootaa64.efi
