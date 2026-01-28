@@ -1,6 +1,6 @@
 # MAAS Images
 
-MAAS Images builds the image stream that's on https://images.maas.io, more specifically what's at https://images.maas.io/ephemeral-v3/candidate/, which is the candidate stream.
+MAAS Images builds the image stream that's on https://images.maas.io. More specifically what's at https://images.maas.io/ephemeral-v3/candidate/, which is the candidate stream.
 
 It also includes tools to handle the the [stable stream](https://images.maas.io/ephemeral-v3/stable/), which includes promoting already published versions from the [candidate stream](https://images.maas.io/ephemeral-v3/candidate/).
 
