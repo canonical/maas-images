@@ -19,6 +19,7 @@ It also contains tools so that you can build your own stream of MAAS images, tha
 
 tutorial/index
 how-to/index
+explanation/index
 reference/index
 ```
 
@@ -42,7 +43,18 @@ reference/index
 
 ````{grid} 1 1 2 2
 
+```{grid-item-card} [Explanation](explanation/index)
+
+**Discussion and clarification** of key topics
+
+- {doc}`explanation/image-creation-overview`
+
+```
+
 ```{grid-item-card} [Reference](reference/index)
 
 **Technical information** - understand the different parts of MAAS Images more in detail
+
+- {doc}`reference/image-creation`
+
 ```
