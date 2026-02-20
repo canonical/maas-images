@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 
 import yaml
 
@@ -16,6 +17,8 @@ import yaml
 # to keep all documentation based on it consistent and on brand:
 # https://github.com/canonical/canonical-sphinx
 
+# Make sure that sphinx can find the project Python code.
+sys.path.insert(0, os.path.abspath(".."))
 
 #######################
 # Project information #
@@ -180,6 +183,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_sitemap",
     "myst_parser",
+    "sphinxarg.ext",
 ]
 
 # Additional MyST syntax

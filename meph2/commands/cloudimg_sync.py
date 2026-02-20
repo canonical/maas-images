@@ -1,23 +1,34 @@
 #!/usr/bin/python3
+"""Sync cloud images from cloud-images.ubuntu.com to a MAAS images stream.
 
-from simplestreams import util as sutil
-from simplestreams import contentsource
-from simplestreams import log
-from simplestreams.log import LOG
-from simplestreams import mirrors
-from simplestreams import filters
+This script connects to the download images simplestreams at
+cloud-images.ubuntu.com.
 
-from meph2 import DEF_MEPH2_CONFIG, util, ubuntu_info
-from meph2.stream import create_version
+For each product version at cloud-images.ubuntu.com, it will check whether
+that version already exists in the local MAAS images stream.
+
+If the version does not exist, it downloads the image and creates the version
+in the MAAS images stream, the same way that meph2-build would create it.
+
+"""
 
 import argparse
 import copy
 import os
 import sys
-import yaml
 
-CLOUD_IMAGES_CANDIDATE = ("http://cloud-images.ubuntu.com/daily/"
-                      "streams/v1/com.ubuntu.cloud:daily:download.json")
+import yaml
+from simplestreams import contentsource, filters, log, mirrors
+from simplestreams import util as sutil
+from simplestreams.log import LOG
+
+from meph2 import DEF_MEPH2_CONFIG, ubuntu_info, util
+from meph2.stream import create_version
+
+CLOUD_IMAGES_CANDIDATE = (
+    "http://cloud-images.ubuntu.com/daily/"
+    "streams/v1/com.ubuntu.cloud:daily:download.json"
+)
 
 FORCE_URL = "force"  # a fake target url that will have nothing in it
 DEFAULT_ARCHES = {
@@ -198,38 +209,68 @@ class CloudImg2Meph2Sync(mirrors.BasicMirrorWriter):
         return filters.filter_item(self.filters, data, src, pedigree)
 
 
+def create_parser():
+    parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        "--max", type=int, default=1, help="store at most MAX items in the target"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="only report what would be done",
+    )
+    parser.add_argument(
+        "--arches", action="append", default=[], help='which arches to build, "," delim'
+    )
+    parser.add_argument("--disable-di", action="store_true", default=False)
+    parser.add_argument("--proposed", action="store_true", default=False)
+    parser.add_argument(
+        "--proposed-packages",
+        type=str,
+        default="",
+        help="Comma-separated string for packages to install from proposed.",
+    )
+    parser.add_argument(
+        "--pre-purge-packages",
+        type=str,
+        default="",
+        help="Comma-separated string for packages to purge before installing any packages.",
+    )
+    parser.add_argument(
+        "--rebuild",
+        action="append",
+        default=[],
+        help="rebuild version name YYYYMMDD:YYYMMDD.1",
+    )
+    parser.add_argument(
+        "--source", default=CLOUD_IMAGES_CANDIDATE, help="cloud images mirror"
+    )
+    parser.add_argument(
+        "--target",
+        default=None,
+        help="maas ephemeral v2 or v3 mirror, overrides "
+        'config. Use "%s" to force build [DEV ONLY!]' % FORCE_URL,
+    )
+    parser.add_argument(
+        "--keyring",
+        action="store",
+        default=None,
+        help="keyring to be specified to gpg via --keyring",
+    )
+    parser.add_argument("--config", default=DEF_MEPH2_CONFIG, help="config")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--log-file", default=sys.stderr, type=argparse.FileType("w"))
+
+    parser.add_argument("output_d")
+    parser.add_argument("filters", nargs="*", default=[])
+
+    return parser
+
+
 def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--max', type=int, default=1,
-                        help='store at most MAX items in the target')
-    parser.add_argument('--dry-run', action='store_true', default=False,
-                        help='only report what would be done')
-    parser.add_argument('--arches', action='append',
-                        default=[], help='which arches to build, "," delim')
-    parser.add_argument('--disable-di', action='store_true', default=False)
-    parser.add_argument('--proposed', action='store_true', default=False)
-    parser.add_argument('--proposed-packages', type=str, default="",
-                        help="Comma-separated string for packages to install from proposed.")
-    parser.add_argument('--pre-purge-packages', type=str, default="",
-                        help="Comma-separated string for packages to purge before installing any packages.")
-    parser.add_argument('--rebuild', action='append', default=[],
-                        help='rebuild version name YYYYMMDD:YYYMMDD.1')
-    parser.add_argument('--source', default=CLOUD_IMAGES_CANDIDATE,
-                        help='cloud images mirror')
-    parser.add_argument('--target', default=None,
-                        help="maas ephemeral v2 or v3 mirror, overrides "
-                             'config. Use "%s" to force build [DEV ONLY!]' %
-                             FORCE_URL)
-    parser.add_argument('--keyring', action='store', default=None,
-                        help='keyring to be specified to gpg via --keyring')
-    parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='config')
-    parser.add_argument('--verbose', '-v', action='count', default=0)
-    parser.add_argument('--log-file', default=sys.stderr,
-                        type=argparse.FileType('w'))
-
-    parser.add_argument('output_d')
-    parser.add_argument('filters', nargs='*', default=[])
+    parser = create_parser()
 
     args = parser.parse_args()
 

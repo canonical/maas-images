@@ -55,6 +55,7 @@ reference/index
 
 **Technical information** - understand the different parts of MAAS Images more in detail
 
+- {doc}`reference/commands`
 - {doc}`reference/image-creation`
 
 ```

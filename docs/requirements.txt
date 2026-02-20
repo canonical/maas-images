@@ -27,6 +27,11 @@ sphinxcontrib-svg2pdfconverter[CairoSVG]
 sphinx-last-updated-by-git
 sphinx-sitemap
 sphinxcontrib-mermaid==2.0.0
+sphinx-argparse
+
+# Project dependencies
+distro-info
+python-simplestreams
 
 # Vale dependencies
 rst2html
