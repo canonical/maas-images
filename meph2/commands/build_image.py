@@ -1,18 +1,38 @@
 #!/usr/bin/python3
+"""Create a new version in the MAAS images stream.
 
-from simplestreams import log
-from simplestreams import util as sutil
+It takes an Ubuntu cloud image and creates a new version for it in
+each of the products specified in the config file.
 
-from meph2 import DEF_MEPH2_CONFIG, util
-from meph2.stream import (
-    create_version, IMAGE_FORMATS)
+It creates a product in the stream for each kernel that is specified
+in the releases section of the config file.
+
+For example:
+
+    meph2-build --conf conf/meph-v3.yaml amd64 noble 123456 ./noble.squashfs  my-stream
+
+That command would create the following products, each having a `123456` version:
+
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:ga-24.04
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:ga-24.04-lowlatency
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:hwe-24.04
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:hwe-24.04-edge
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:hwe-24.04-lowlatency
+    - com.ubuntu.maas.candidate:v3:boot:24.04:amd64:hwe-24.04-lowlatency-edge
+"""
 
 import argparse
 import copy
 import json
 import os
 import sys
+
 import yaml
+from simplestreams import log
+from simplestreams import util as sutil
+
+from meph2 import DEF_MEPH2_CONFIG, util
+from meph2.stream import IMAGE_FORMATS, create_version
 
 
 def dump_stream_data(out_d, cvdata, content_id, version_name):
@@ -62,36 +82,53 @@ def dump_json_data(fname, cvdata, version_name):
                             sort_keys=True, separators=(',', ': ')))
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def create_parser():
+    parser = argparse.ArgumentParser(description=__doc__)
 
     di_msg = "d-i scraping, overriding the 'enable_di' key in the config."
-    parser.add_argument('--dry-run', action='store_true', default=False,
-                        help='only report what would be done')
-    parser.add_argument('--enable-di', action='store_true', default=None,
-                        help='enable' + di_msg)
-    parser.add_argument('--disable-di', action='store_false',
-                        dest='enable_di', default=None,
-                        help='disable ' + di_msg)
-    parser.add_argument('--proposed', action='store_true', default=False)
-    parser.add_argument('--config', default=DEF_MEPH2_CONFIG, help='v2 config')
-    parser.add_argument('--image-format', default=None,
-                        help='format of img in img_url.',
-                        choices=IMAGE_FORMATS)
-    parser.add_argument('--flat-json', metavar='FILE', default=None,
-                        help='dump json metadata to FILE')
-    parser.add_argument('--verbose', '-v', action='count', default=0)
-    parser.add_argument('--log-file', default=sys.stderr,
-                        type=argparse.FileType('w'))
-
-    parser.add_argument('arch', help='dpkg arch to build for')
-    parser.add_argument('release',
-                        help='ubuntu release/suite (trusty, xenial ...)')
-    parser.add_argument('version_name', help='build_serial/version_name')
     parser.add_argument(
-        'img_url', help='source image to build from.  will not be modified.')
-    parser.add_argument('output_d')
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="only report what would be done",
+    )
+    parser.add_argument(
+        "--enable-di", action="store_true", default=None, help="enable" + di_msg
+    )
+    parser.add_argument(
+        "--disable-di",
+        action="store_false",
+        dest="enable_di",
+        default=None,
+        help="disable " + di_msg,
+    )
+    parser.add_argument("--proposed", action="store_true", default=False)
+    parser.add_argument("--config", default=DEF_MEPH2_CONFIG, help="v2 config")
+    parser.add_argument(
+        "--image-format",
+        default=None,
+        help="format of img in img_url.",
+        choices=IMAGE_FORMATS,
+    )
+    parser.add_argument(
+        "--flat-json", metavar="FILE", default=None, help="dump json metadata to FILE"
+    )
+    parser.add_argument("--verbose", "-v", action="count", default=0)
+    parser.add_argument("--log-file", default=sys.stderr, type=argparse.FileType("w"))
 
+    parser.add_argument("arch", help="dpkg arch to build for")
+    parser.add_argument("release", help="ubuntu release/suite (trusty, xenial ...)")
+    parser.add_argument("version_name", help="build_serial/version_name")
+    parser.add_argument(
+        "img_url", help="source image to build from.  will not be modified."
+    )
+    parser.add_argument("output_d")
+
+    return parser
+
+
+def main():
+    parser = create_parser()
     args = parser.parse_args()
 
     vlevel = min(args.verbose, 2)
