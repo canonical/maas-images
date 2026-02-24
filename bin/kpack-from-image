@@ -13,27 +13,31 @@ fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] image kernel-package out-dir
+Usage: kpack-from-image [ options ] <image> <kernel-package> <out-dir>
 
-  Install kernel-package into image and copy the generated kernel
-  and initrd out into out-dir
-    out-dir/
+  Install <kernel-package> into <image> and copy the generated kernel
+  and initrd out into <out-dir>
+    <out-dir>/
       kernel
       initrd
       dtb-<filename>.dtb # for each file in lib/firmare/<ver>/device-tree
 
+  Unless --copy none is specified, <image> is not modifed. Instead, either
+  a copy is made, or an overlayfs is being used. The default is to use
+  an overlayfs, assuming that mount-image-callback and supports overlayfs.
+
   Requires sudo to invoke mount-image-callback.
 
-  options:
+  Options:
      --kihelper PROG   invoke PROG with kernel and initrd
                       This allows re-packing (ie, mkimage the files)
                       PROG is invoked with 2 arguments:
                         kernel-path initrd-path
                       it will have in its environment:
                         ROOT: path to the mounted 'image'
-                        VERSION_FLAVOR: a string like 3.13.0-29-generic 
+                        VERSION_FLAVOR: a string like 3.13.0-29-generic
     --copy mode       use 'mode' to copy. default: auto
-                      one of: ${COPY_TYPES}
+                      one of: auto overlay qcow2 cp none
                       overlay can be used only with mount-image-callback support
 EOF
 }
@@ -133,7 +137,7 @@ kernel_from_mp() {
     local me="" myd=""
     me=$(readlink -f "$0") && myd="${me%/*}" ||
         { error "couldn't figure out full path to $0"; return 1; }
-        
+
     if [ -n "$kihelper" ]; then
         if ! command -v "$kihelper" >/dev/null 2>&1 ; then
             [ -x "$myd/$kihelper" ] ||
@@ -312,7 +316,7 @@ match_one_file() {
 }
 
 vrun() {
-    local vlvl="$1" msg="$2" 
+    local vlvl="$1" msg="$2"
     shift 2
     debug $vlvl "$msg: $*"
     "$@"
@@ -321,7 +325,7 @@ vrun() {
 chrooted() {
     # this is expected to run chrooted inside the root
     # installs all packages (arguments), writes kernel
-    # and initramfs and 'verflav' to /tmp/ 
+    # and initramfs and 'verflav' to /tmp/
     VERBOSITY=${CHROOTED_VERBOSITY:-${VERBOSITY}}
     local pkgs="" kpkg="" copymods zzgrub emd="" out pkg rel arch
     local skip_update=${KPACK_SKIP_APT_UPDATE:-false}
@@ -352,7 +356,7 @@ chrooted() {
         debug 1 "adding proposed ($mirror) to $proposed_lfile"
         echo "deb $mirror ${rel}-proposed main universe multiverse" \
             > "$proposed_lfile"
-        $skip_update && 
+        $skip_update &&
             { skip_update=false; debug 1 "enabling update due to proposed"; }
     fi
 
@@ -573,7 +577,7 @@ main() {
             { error "failed link $imgfp -> $myimg"; return 1; };;
         cp) cp --sparse=always "$img" "$myimg" ||
             { error "failed cp '$img' to tempdir"; return 1; };;
-        qcow) 
+        qcow)
             qemu-img create -f qcow2 -b "$imgfp" "$myimg" ||
                 { error "failed create qcow2 backed by $img"; return 1; };;
         overlay)
