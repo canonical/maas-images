@@ -17,3 +17,11 @@ There are several commands available for managing MAAS Images in the `bin` direc
 :func: create_parser
 :prog: bin/meph2-cloudimg-sync
 ```
+
+
+## `img2squashfs`
+```{literalinclude} ../../bin/img2squashfs
+:language: text
+:start-at: Usage: img2squashfs
+:end-before: EOF
+```

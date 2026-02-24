@@ -10,16 +10,17 @@ fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] source-image output-squash-image
+Usage: img2squashfs [ options ] <source-image> <output-squash-image>
 
-   convert 'source-image' into a squashfs filesystem image.
+   convert <source-image> into a squashfs filesystem image
+   written to <output-squash-image>.
 
-   source-image is a file in one of:
-     ${VALID_FORMATS[*]}
+   <source-image> is a file in one of the formats specified
+   with --format.
 
    output-squash-image will be a squashfs image.
 
-   options:
+   Options:
     -v | --verbose     increase verbosity
     -f | --format   F  source-image is of format F. default: auto.
                        must be one of:
@@ -32,7 +33,7 @@ Usage: ${0##*/} [ options ] source-image output-squash-image
     -O | --owner    O   change ownership of output to O (user:group)
 
    Example:
-     ${0##*/} --format=my.tar.gz my.squashfs
+     img2squashfs --format=my.tar.gz my.squashfs
 EOF
 }
 
@@ -115,7 +116,7 @@ determine_format() {
                 *.tar.gz|*.tgz|*.tar) fmt="img-tar";;
                 *.gz) fmt="root-image-gz";;
                 *.squashfs) fmt="squashfs-image";;
-                *) 
+                *)
                     error "WARN: file '$input' did not match name hueristics"
                     fmt="root-image";;
             esac
