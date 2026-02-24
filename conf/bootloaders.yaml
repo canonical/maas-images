@@ -47,9 +47,6 @@ bootloaders:
    arch: ppc64el
    arches: ppc64el,ppc64
    archive: http://ports.ubuntu.com
-   # We are waiting to upgrade to Focal for prebuilt signed PPC64 GRUB and
-   # shim packages to be built, like all other platforms have. The builder
-   # is on Precice and is unable to create Focal grub image.
    release: xenial
    os: grub-ieee1275
    files:
