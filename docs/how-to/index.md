@@ -9,4 +9,5 @@ a new stream.
 setup
 copying-product-version
 removing-product-version
+build-stream-with-updated-cloud-init
 ```

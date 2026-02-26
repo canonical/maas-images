@@ -39,6 +39,7 @@ reference/index
 - {doc}`how-to/setup`
 - {doc}`how-to/copying-product-version`
 - {doc}`how-to/removing-product-version`
+- {doc}`how-to/build-stream-with-updated-cloud-init`
 
 ```
 ````
