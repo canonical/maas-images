@@ -28,6 +28,8 @@ reference/index
 ```{grid-item-card} [Tutorial](tutorial/index)
 
 **Get started** - learn how to use MAAS images and build your own stream for testing.
+
+- {doc}`tutorial/using-build-stream`
 ```
 
 ```{grid-item-card} [How-to guides](how-to/index)

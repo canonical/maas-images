@@ -10,6 +10,17 @@ An optional PPA can provided, in order to upgrade certain packages
 in the image.
 
 By default, a new GPG key is generated in order to sign the stream.
+
+For example:
+
+The command:
+
+```
+tools/build-stream --arch amd64 --arch arm64 noble jammy
+```
+
+will build a stream with Ubuntu Noble and Jammy images for the amd64 and arm64 architectures.
+
 """
 import argparse
 import os
@@ -141,20 +152,27 @@ def sign_stream(images_path: Path, gpg_home_path: Path):
         check=True,
     )
 
-
-def main(raw_args: List[str]):
-    parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument("series", nargs="+")
-    parser.add_argument("--arch", "-a", action="append")
-    parser.add_argument("--images-dir", "-b", default="build/images")
-    parser.add_argument("--gpg-home", "-g", default="build/gpg")
-    parser.add_argument("--ppa", "-p", nargs="?")
+def create_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=__doc__, 
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("series", nargs="+", help="Space-separated list of series to download")
+    parser.add_argument("--arch", "-a", action="append", help="Comma-separated list of arches to download. If no arch is provided, amd64 will be used.")
+    parser.add_argument("--images-dir", "-b", default="build/images", help="Directory where to store the downloaded images")
+    parser.add_argument("--gpg-home", "-g", default="build/gpg", help="GPG home directory")
+    parser.add_argument("--ppa", "-p", nargs="?", help="PPA to use to build this stream")
     parser.add_argument(
         "--proposed-packages", nargs="?", default="",
-        help="Comma-separated list of packages to install from proposed")
+        help="Comma-separated list of packages to install from the -proposed pocket")
     parser.add_argument(
         "--pre-purge-packages", nargs="?", default="",
         help="Comma-separated list of packages to purge before installing anything")
+    return parser
+
+
+def main(raw_args: List[str]):
+    parser = create_parser()
     args = parser.parse_args(raw_args)
     if not args.arch:
         args.arch = ["amd64"]

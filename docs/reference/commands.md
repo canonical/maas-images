@@ -33,3 +33,10 @@ There are several commands available for managing MAAS Images in the `bin` direc
 :start-at: Usage: kpack-from-image
 :end-before: EOF
 ```
+
+## `build-stream`
+```{argparse}
+:filename: ../tools/build-stream
+:func: create_parser
+:prog: tools/build-stream
+```
