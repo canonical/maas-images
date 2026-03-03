@@ -1,3 +1,8 @@
+== NOTE ==
+The `master` branch is now used as a reference only. Active development continues in the `main` branch.
+Configuration files are still uploaded to this branch until we switch to main.
+
+
 This builds maas ephemeral images from candidate builds of cloud images.
 Ie, it creates stuff that goes on
   http://images.maas.io/ephemeral-v3/candidate
