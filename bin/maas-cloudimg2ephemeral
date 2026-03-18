@@ -53,14 +53,21 @@ failp() { [ $# -eq 0 ] || errorp "$@"; exit 1; }
 
 Usage() {
     cat <<EOF
-Usage: ${0##*/} [ options ] disk kpkg kernel initrd [manifest]
+Usage: maas-cloudimg2ephemeral [ options ] disk kpkg kernel initrd [manifest]
 
    Update the image 'disk', installing 'kpkg'
-   copy out kernel and initramfs tothe kernel 'kernel' and initrd 'initrd'
+   copy out kernel and initramfs to the kernel 'kernel' and initrd 'initrd'
+
+   if 'kpgp' is 'none', no kernel is installed, and no kernel and initrd
+   are extracted.
+
    If manifest is given, a (dpkg --show) manifest will be written.
-   
+
    Expects to receive in a cloudimg disk image with no partition
    table, and will update it for maas ephemeral use.
+
+   This includes updating/installing packages either from a PPA or the
+   proposed pocket, if specified.
 
    options:
       -v | --verbose      increase verbosity
@@ -217,7 +224,7 @@ ensure_iscsi_initramfs_support() {
             return 0
             ;;
     esac
-    mkdir -p "${mfile%/*}" && touch "$mfile" || 
+    mkdir -p "${mfile%/*}" && touch "$mfile" ||
     { error "failed to create iscsi.initramfs"; return 1; }
     log_change true "$change"
 }
@@ -262,7 +269,7 @@ apply_updates_chrooted() {
     if [ "$VERBOSITY" -ge 1 ]; then
         show_vars $required $known 1>&2
     fi
-    
+
     release=$(lsb_release -sc) ||
         { error "failed to get release"; return 1; }
 
@@ -273,7 +280,7 @@ apply_updates_chrooted() {
     mkdir -p "$pubd" || { error "failed to create pubdir '$pubd'"; return 1; }
 
     dpkg-query --show > "$pubd/manifest.in"
-    
+
     change="add additional repos."
     if [ -n "$repos" ]; then
         add_repos "$repos" || {
@@ -596,7 +603,7 @@ apply_updates() {
     local tab="    "
 
     disable_services "$dir" || return
-    
+
     # we expect /etc/lsb-release to be shell syntax with DISTRIB_CODENAME
     local rel="" fout host_arch
     host_arch=$(uname -m)
@@ -720,7 +727,7 @@ apply_updates() {
         mv "$fpubd/manifest" "$manifest" || fail "failed to move manifest"
     fi
     rm -Rf "$fpubd" || fail "failed to remove pubd"
-    
+
     undisable_services "$dir"
 
     return 0

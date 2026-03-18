@@ -11,6 +11,14 @@ There are several commands available for managing MAAS Images in the `bin` direc
 ```
 
 
+## `maas-cloudimg2ephemeral`
+```{literalinclude} ../../bin/maas-cloudimg2ephemeral
+:language: text
+:start-at: Usage: maas-cloudimg2ephemeral
+:end-before: EOF
+```
+
+
 ## `meph2-build`
 ```{argparse}
 :module: meph2.commands.build_image
