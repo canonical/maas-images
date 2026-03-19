@@ -11,6 +11,14 @@ There are several commands available for managing MAAS Images in the `bin` direc
 ```
 
 
+## `maas-cloudimg2eph2`
+```{literalinclude} ../../bin/maas-cloudimg2eph2
+:language: text
+:start-at: Usage: maas-cloudimg2eph2
+:end-before: EOF
+```
+
+
 ## `maas-cloudimg2ephemeral`
 ```{literalinclude} ../../bin/maas-cloudimg2ephemeral
 :language: text

@@ -69,6 +69,14 @@ Usage: maas-cloudimg2ephemeral [ options ] disk kpkg kernel initrd [manifest]
    This includes updating/installing packages either from a PPA or the
    proposed pocket, if specified.
 
+   The `M2E_ADD_REPOS` environment variable can be used to add additional
+   repositories. It's a comma-separated list of repos that will be added
+   using `add-apt-repository`.
+
+   The `M2E_ADD_PACKAGES` environment variable can be used to explicitly
+   install additional packages. It's a space-separated list of package
+   names.
+
    options:
       -v | --verbose      increase verbosity
       --proposed          enable the -proposed pocket
