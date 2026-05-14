@@ -160,10 +160,16 @@ show_vars() {
 
 _apt_update() {
     if [ "${_APT_UPDATED}" != "true" ]; then
+        _log_resolv_conf
         log_change true "run apt-update${1:+ [$1]}."
         _apt update
         _APT_UPDATED=true
     fi
+}
+
+_log_resolv_conf() {
+    debug 1 "cat /etc/resolv.conf"
+    cat /etc/resolv.conf
 }
 
 _apt() {
