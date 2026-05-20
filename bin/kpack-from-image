@@ -186,40 +186,10 @@ kernel_from_mp() {
 
 config_addl_modules() {
     local root="${1:-/}" rel="$2" fname=""
-    # From resolute onwards we use dracut LP: #2151116
     case "$rel" in
-        resolute)
-            local conf="${root%/}/etc/dracut.conf.d/98-kpack-extra.conf"
-            cat > "$conf" <<"EOF"
-# Explicitly add individual modules (equivalent to manual_add_modules)
-add_drivers+=" bcache hpilo virtiofs 9p "
-
-# Include entire kernel module directories (equivalent to copy_modules_dir)
-# The '=' prefix tells dracut to pull the entire directory tree
-add_drivers+=" =drivers/ata "
-add_drivers+=" =drivers/char/ipmi "
-add_drivers+=" =drivers/dax "
-add_drivers+=" =drivers/infiniband "
-add_drivers+=" =drivers/md "
-add_drivers+=" =drivers/net/usb "
-add_drivers+=" =drivers/net/bonding "
-add_drivers+=" =drivers/nvdimm "
-add_drivers+=" =drivers/scsi "
-add_drivers+=" =net/openvswitch "
-add_drivers+=" =net/vmw_vsock "
-add_drivers+=" =net/9p "
-EOF
-        case $(dpkg --print-architecture) in
-            arm64)
-                echo 'add_drivers+=" cppc-cpufreq i2c-thunderx "' >> "$conf"
-            ;;
-        esac
-        return 0
-       ;;
-    esac
-
-    fname="${root%/}/etc/initramfs-tools/hooks/kpack_extra"
-    cat > "$fname" <<"EOF"
+        precise|trusty|xenial|bionic|focal|groovy|hirsuite|impish|jammy|kinetic|lunar|mantic|noble|oracular|plucky|questing)
+            fname="${root%/}/etc/initramfs-tools/hooks/kpack_extra"
+            cat > "$fname" <<"EOF"
 #!/bin/sh
 . /usr/share/initramfs-tools/hook-functions
 
@@ -243,23 +213,72 @@ case $(dpkg --print-architecture) in
         ;;
 esac
 EOF
-    [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
+            [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
 
-    case "$rel" in
-        precise)
-            echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
+            case "$rel" in
+                precise)
+                    echo "manual_add_modules squashfs # (LP: #1501834)" >> "$fname"
+                ;;
+                trusty|xenial)
+                ;;
+                *)
+                    echo "copy_modules_dir kernel/drivers/md # (LP: #1813228)" >> "$fname"
+                ;;
+            esac
+
+            chmod 755 "$fname" ||
+                { error "failed setting execute on $fname"; return 1; }
+
+            return 0
         ;;
-        trusty|xenial)
-        ;;
+        # From resolute onwards we use dracut LP: #2151116
         *)
-	    echo "copy_modules_dir kernel/drivers/md # (LP: #1813228)" >> "$fname"
-        ;;
+            fname="${root%/}/etc/dracut.conf.d/99-kpack-extra.conf"
+            # Uncomment this for dracut debug output, values 0-6, see dracut.conf(5)
+            # echo 'stdloglvl="4"' >> "${root%/}/etc/dracut.conf.d/98-debug.conf"
+            cat > "$fname" <<"EOF"
+# Explicitly add individual modules (equivalent to manual_add_modules)
+add_drivers+=" bcache hpilo virtiofs 9p "
+
+# Include entire kernel module directories (equivalent to copy_modules_dir)
+# The '=' prefix tells dracut to pull the entire directory tree
+add_drivers+=" =drivers/acpi/nfit "
+add_drivers+=" =drivers/ata "
+add_drivers+=" =drivers/block "
+add_drivers+=" =drivers/bus "
+add_drivers+=" =drivers/char "
+add_drivers+=" =drivers/char/ipmi "
+add_drivers+=" =drivers/dax "
+add_drivers+=" =drivers/extcon "
+add_drivers+=" =drivers/gpu/drm "
+add_drivers+=" =drivers/i2c "
+add_drivers+=" =drivers/infiniband "
+add_drivers+=" =drivers/message "
+add_drivers+=" =drivers/md "
+add_drivers+=" =drivers/net/bonding "
+add_drivers+=" =drivers/net/fjes "
+add_drivers+=" =drivers/net/hyperv "
+add_drivers+=" =drivers/net/thunderbolt "
+add_drivers+=" =drivers/net/usb "
+add_drivers+=" =drivers/net/vmxnet3 "
+add_drivers+=" =drivers/ntb "
+add_drivers+=" =drivers/nvdimm "
+add_drivers+=" =drivers/pwm "
+add_drivers+=" =drivers/scsi "
+add_drivers+=" =net/openvswitch "
+add_drivers+=" =net/vmw_vsock "
+add_drivers+=" =net/9p "
+EOF
+            [ $? -eq 0 ] || { error "failed writing $fname"; return 1; }
+            case $(dpkg --print-architecture) in
+                arm64)
+                    echo 'add_drivers+=" cppc-cpufreq i2c-thunderx "' >> "$fname"
+                ;;
+            esac
+            return 0
+            ;;
     esac
 
-    chmod 755 "$fname" ||
-        { error "failed setting execute on $fname"; return 1; }
-
-    return 0
 }
 
 config_add_zfs() {
@@ -269,31 +288,30 @@ config_add_zfs() {
     # command or the kernel module *in* the initramfs, we just need the module
     # present so it can be used in install environment (LP: #1737592).
     local root="${1:-/}" rel="$2" fname=""
-    # From resolute onwards we use dracut LP: #2151116
-    case "$rel" in
-        resolute)
-            local conf="${root%/}/etc/dracut.conf.d/99-kpack-extra.conf"
-            cat >> "$conf" <<'EOF'
-add_drivers+=" zfs "
-EOF
-            return $?
-        ;;
-    esac
-    fname="${root%/}/etc/initramfs-tools/hooks/kpack_zfs"
     case "$rel" in
         precise|trusty) return 0;;
-    esac
-    debug 1 "Will include zfs modules for release $rel."
-    cat > "$fname" <<"EOF"
+        xenial|bionic|focal|groovy|hirsuite|impish|jammy|kinetic|lunar|mantic|noble|oracular|plucky|questing)
+            fname="${root%/}/etc/initramfs-tools/hooks/kpack_zfs"
+            debug 1 "Will include zfs modules for release $rel."
+            cat > "$fname" <<"EOF"
 . /usr/share/initramfs-tools/hook-functions
 
 manual_add_modules zfs # (LP: #1737592)
 EOF
-    [ $? -eq 0 ] || { error "failed writing to $fname for zfs"; return 1; }
-    chmod 755 "$fname" || {
-        error "failed adding execute to $fname for zfs";
-        return 1;
-    }
+                [ $? -eq 0 ] || { error "failed writing to $fname for zfs"; return 1; }
+            chmod 755 "$fname" || {
+                error "failed adding execute to $fname for zfs";
+                return 1;
+            }
+        ;;
+        # From resolute onwards we use dracut LP: #2151116
+        *)
+            fname="${root%/}/etc/dracut.conf.d/99-kpack-extra.conf"
+            debug 1 "Will include zfs modules for release $rel."
+            echo 'add_drivers+=" zfs "' >> "$fname"
+            return $?
+        ;;
+    esac
 }
 
 ensure_iscsi_initramfs_support() {
