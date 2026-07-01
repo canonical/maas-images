@@ -72,6 +72,77 @@ def sign_streams_d(path, status_cb=None):
             signjson_file(os.path.join(root, f), status_cb=status_cb)
 
 
+_LP_SIGN_BIN = "/snap/bin/cpc-lp-signing-client.sign"
+
+
+def _lp_signing_check():
+    """Return (True, None) if LP signing path is fully configured, else (False, reason).
+
+    Checks performed in order:
+      1. cpc-lp-signing-client snap binary exists and is executable.
+      2. LP_SIGN_PRIVATE_AUTH_KEY env var is set and non-empty.
+      3. LP_SIGNING_URL env var is set and non-empty.
+    """
+    if not os.path.isfile(_LP_SIGN_BIN) or not os.access(_LP_SIGN_BIN, os.X_OK):
+        return False, (
+            "cpc-lp-signing-client snap not found or not executable at %s"
+            % _LP_SIGN_BIN
+        )
+    if not os.environ.get("LP_SIGN_PRIVATE_AUTH_KEY"):
+        return False, "LP_SIGN_PRIVATE_AUTH_KEY is not set"
+    if not os.environ.get("LP_SIGNING_URL"):
+        return False, "LP_SIGNING_URL is not set"
+    return True, None
+
+
+def _sign_via_lp_service(input_file, output_file=None, inline=False):
+    """Sign a file using cpc-lp-signing-client.sign.
+
+    Auth key is read from LP_SIGN_PRIVATE_AUTH_KEY by the snap client.
+    Key ID (-k) is taken from SS_GPG_DEFAULT_KEY when set; omitted otherwise.
+    Raises subprocess.CalledProcessError on signing failure.
+    """
+    signing_url = os.environ["LP_SIGNING_URL"]
+    if output_file is None:
+        output_file = sutil.signed_fname(input_file, inline=inline)
+
+    cmd = [
+        _LP_SIGN_BIN,
+        input_file,
+        output_file,
+        "-u",
+        signing_url,
+        "-n",
+        os.path.basename(input_file),
+        "--force",
+    ]
+    key_id = os.environ.get("SS_GPG_DEFAULT_KEY", "")
+    if key_id:
+        cmd.extend(["-k", key_id])
+    if inline:
+        cmd.append("--inline")
+
+    subprocess.check_call(cmd)
+
+
+def _sign_via_lp_service_content(content, output_file, inline=False):
+    """Sign in-memory content using cpc-lp-signing-client.sign via a temp file.
+
+    Writes content to a temp file, signs it to output_file, then removes the temp file.
+    Raises subprocess.CalledProcessError on signing failure.
+    """
+    fd, tmppath = tempfile.mkstemp(suffix=".json")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(content)
+        _sign_via_lp_service(tmppath, output_file=output_file, inline=inline)
+    finally:
+        try:
+            os.unlink(tmppath)
+        except OSError:
+            pass
+
+
 def signjson_file(fname, status_cb=None):
     # input fname should be .json
     # creates .json.gpg and .sjson
@@ -83,10 +154,37 @@ def signjson_file(fname, status_cb=None):
     if status_cb:
         status_cb(fname)
 
+    lp_ok, lp_reason = _lp_signing_check()
+    if lp_ok:
+        print("[lp-signing] Using LP signing service for: %s" % fname, file=sys.stderr)
+        try:
+            _sign_via_lp_service(fname, inline=False)  # -> .json.gpg (detached)
+            if changed:
+                _sign_via_lp_service_content(
+                    scontent, sutil.signed_fname(fname, inline=True), inline=True
+                )  # -> .sjson (rewritten paths)
+            else:
+                _sign_via_lp_service(fname, inline=True)  # -> .sjson
+            return
+        except Exception as exc:
+            print(
+                "[lp-signing] ERROR: LP signing service failed for %s: %s; "
+                "falling back to GPG" % (fname, exc),
+                file=sys.stderr,
+            )
+    else:
+        print(
+            "[lp-signing] LP signing service not available (%s); "
+            "using GPG for: %s" % (lp_reason, fname),
+            file=sys.stderr,
+        )
+
+    # Legacy path: GPG key on disk (SS_GPG_DEFAULT_KEY must be set in environment)
     sutil.sign_file(fname, inline=False)
     if changed:
-        sutil.sign_content(scontent, sutil.signed_fname(fname, inline=True),
-                           inline=True)
+        sutil.sign_content(
+            scontent, sutil.signed_fname(fname, inline=True), inline=True
+        )
     else:
         sutil.sign_file(fname, inline=True)
 
