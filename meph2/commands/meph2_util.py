@@ -224,6 +224,11 @@ class DryRunMirrorWriter(mirrors.DryRunMirrorWriter):
 
 
 def main_insert(args):
+    util.trace(
+        "insert",
+        "starting: src=%s target=%s dry_run=%s no_sign=%s"
+        % (args.src, args.target, args.dry_run, args.no_sign),
+    )
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
     mirror_config = {'max_items': 20, 'keep_items': True,
@@ -245,10 +250,16 @@ def main_insert(args):
     tmirror.sync(smirror, src_path)
 
     util.gen_index_and_sign(args.target, sign=not args.no_sign)
+    util.trace("insert", "done: inserted into %s" % args.target)
     return 0
 
 
 def main_merge(args):
+    util.trace(
+        "merge",
+        "starting: src=%s target=%s no_sign=%s"
+        % (args.src, args.target, args.no_sign),
+    )
     src_product_streams = util.load_product_streams(args.src)
     target_product_streams = util.load_product_streams(args.target)
     src_products = util.load_products(args.src, src_product_streams)
@@ -280,9 +291,19 @@ def main_merge(args):
             os.path.join(args.target, product_stream))
 
     util.gen_index_and_sign(args.target, not args.no_sign)
+    util.trace(
+        "merge",
+        "done: merged %d source product stream(s) into %s"
+        % (len(src_product_streams), args.target),
+    )
 
 
 def main_promote(args):
+    util.trace(
+        "promote",
+        "starting: src=%s target=%s version=%s label=%s dry_run=%s"
+        % (args.src, args.target, args.version, args.label, args.dry_run),
+    )
     (src_url, src_path) = sutil.path_from_mirror_url(args.src, None)
     filter_list = filters.get_filters(args.filters)
 
@@ -313,10 +334,20 @@ def main_promote(args):
     tmirror.sync(smirror, src_path)
 
     util.gen_index_and_sign(args.target, not args.no_sign)
+    util.trace(
+        "promote",
+        "done: promoted version %s to label %s in %s"
+        % (args.version, args.label, args.target),
+    )
     return 0
 
 
 def main_clean_md(args):
+    util.trace(
+        "clean-md",
+        "starting: target=%s max=%s dry_run=%s no_sign=%s"
+        % (args.target, args.max, args.dry_run, args.no_sign),
+    )
     (mirror_url, mirror_path) = sutil.path_from_mirror_url(args.target, None)
     filter_list = filters.get_filters(args.filters)
 
@@ -341,10 +372,20 @@ def main_clean_md(args):
     tmirror.sync(smirror, mirror_path)
 
     util.gen_index_and_sign(mirror_url, not args.no_sign)
+    util.trace(
+        "clean-md",
+        "done: pruned to max %s item(s) per product in %s"
+        % (args.max, args.target),
+    )
     return 0
 
 
 def main_find_orphans(args):
+    util.trace(
+        "find-orphans",
+        "starting: orphan_data=%s data_d=%s streams=%s"
+        % (args.orphan_data, args.data_d, args.streams_dirs),
+    )
     data_d = args.data_d
     streams_d = args.streams_dirs
     if os.path.exists(os.path.join(data_d, 'streams/v1')) and not streams_d:
@@ -371,11 +412,20 @@ def main_find_orphans(args):
             if location not in non_orphans:
                 orphans.append(location)
 
+    util.trace(
+        "find-orphans",
+        "done: %d orphan(s) recorded to %s" % (len(orphans), args.orphan_data),
+    )
     util.write_orphan_file(args.orphan_data, orphans)
     return 0
 
 
 def main_reap_orphans(args):
+    util.trace(
+        "reap-orphans",
+        "starting: orphan_data=%s data_d=%s older=%s now=%s dry_run=%s"
+        % (args.orphan_data, args.data_d, args.older, args.now, args.dry_run),
+    )
     data_d = args.data_d
     known_orphans = util.read_orphan_file(args.orphan_data)
 
@@ -399,15 +449,31 @@ def main_reap_orphans(args):
 
     if not args.dry_run:
         util.write_orphan_file(args.orphan_data, known_orphans.keys() - reaped)
+    util.trace(
+        "reap-orphans",
+        "done: reaped %d of %d known orphan(s)%s"
+        % (
+            len(reaped),
+            len(known_orphans),
+            " (dry-run)" if args.dry_run else "",
+        ),
+    )
     return 0
 
 
 def main_sign(args):
+    util.trace("sign", "starting: data_d=%s" % args.data_d)
     util.gen_index_and_sign(args.data_d)
+    util.trace("sign", "done: index regenerated and signed in %s" % args.data_d)
     return 0
 
 
 def main_remove_version(args):
+    util.trace(
+        "remove-version",
+        "starting: data_d=%s version=%s dry_run=%s"
+        % (args.data_d, args.version, args.dry_run),
+    )
     filter_list = filters.get_filters(args.filters)
     product_streams = util.load_product_streams(args.data_d)
     resign = False
@@ -430,10 +496,20 @@ def main_remove_version(args):
                 f.write(util.dump_data(content).strip())
     if resign:
         util.gen_index_and_sign(args.data_d, not args.no_sign)
+    util.trace(
+        "remove-version",
+        "done: version %s removal %s"
+        % (args.version, "applied" if resign else "no-op (not found)"),
+    )
     return 0
 
 
 def main_copy_version(args):
+    util.trace(
+        "copy-version",
+        "starting: data_d=%s from_version=%s to_version=%s dry_run=%s"
+        % (args.data_d, args.from_version, args.to_version, args.dry_run),
+    )
     filter_list = filters.get_filters(args.filters)
     product_streams = util.load_product_streams(args.data_d)
     resign = False
@@ -469,6 +545,15 @@ def main_copy_version(args):
                 f.write(util.dump_data(content).strip())
     if resign:
         util.gen_index_and_sign(args.data_d, not args.no_sign)
+    util.trace(
+        "copy-version",
+        "done: copy %s -> %s %s"
+        % (
+            args.from_version,
+            args.to_version,
+            "applied" if resign else "no-op (not found)",
+        ),
+    )
     return 0
 
 
@@ -482,6 +567,11 @@ def main_import(args):
 
     sys.stderr.write(
        "=== WARNING: DEPRECATED ===\n" + main_import.__doc__ + "\n")
+    util.trace(
+        "import",
+        "starting: config=%s target=%s no_sign=%s"
+        % (args.import_cfg, args.target, args.no_sign),
+    )
 
     from meph2.commands import mimport
     return(mimport.main_import(args))
@@ -670,8 +760,14 @@ def get_diff(source, target, promote=False, new_versions_only=False, latest_only
 
 
 def main_diff(args):
+    util.trace(
+        "diff",
+        "starting: src=%s target=%s promote=%s"
+        % (args.src, args.target, args.promote),
+    )
 
     diff = get_diff(args.src, args.target, args.promote, args.new_versions_only, args.latest_only)
+    util.trace("diff", "computed diff with %d stream(s) differing" % len(diff))
 
     def output(buff):
         buff.write("# Generated by %s-%s\n" % (
@@ -764,6 +860,11 @@ def patch_versions(
 
 
 def main_patch(args):
+    util.trace(
+        "patch",
+        "starting: input=%s dry_run=%s no_sign=%s"
+        % (args.input, args.dry_run, args.no_sign),
+    )
     streams = args.streams[0]
     regenerate_index = False
     if len(streams) == 1:
@@ -879,6 +980,15 @@ def main_patch(args):
                 util.dump_data(target_content).strip()
     if regenerate_index and not args.dry_run:
         util.gen_index_and_sign(target_path, sign=not args.no_sign)
+    util.trace(
+        "patch",
+        "done: index %s"
+        % (
+            "regenerated"
+            if regenerate_index and not args.dry_run
+            else "unchanged"
+        ),
+    )
     return 0
 
 

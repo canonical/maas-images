@@ -42,6 +42,14 @@ timestamp = sutil.timestamp
 STREAMS_D = "streams/v1/"
 
 
+def trace(tag, msg):
+    """
+    Emit a tagged trace line to stderr for pipeline log visibility in the output of the
+    CPC/MAAS Jenkins jobs console.
+    """
+    print("[meph2:%s] %s" % (tag, msg), file=sys.stderr)
+
+
 def create_index(target_d, files=None, path_prefix="streams/v1/"):
     if files is None:
         files = [f for f in os.listdir(target_d) if f.endswith(".json")]
@@ -156,7 +164,7 @@ def signjson_file(fname, status_cb=None):
 
     lp_ok, lp_reason = _lp_signing_check()
     if lp_ok:
-        print("[lp-signing] Using LP signing service for: %s" % fname, file=sys.stderr)
+        trace("lp-signing", "Using LP signing service for: %s" % fname)
         try:
             _sign_via_lp_service(fname, inline=False)  # -> .json.gpg (detached)
             if changed:
@@ -167,16 +175,16 @@ def signjson_file(fname, status_cb=None):
                 _sign_via_lp_service(fname, inline=True)  # -> .sjson
             return
         except Exception as exc:
-            print(
-                "[lp-signing] ERROR: LP signing service failed for %s: %s; "
+            trace(
+                "lp-signing",
+                "ERROR: LP signing service failed for %s: %s; "
                 "falling back to GPG" % (fname, exc),
-                file=sys.stderr,
             )
     else:
-        print(
-            "[lp-signing] LP signing service not available (%s); "
-            "using GPG for: %s" % (lp_reason, fname),
-            file=sys.stderr,
+        trace(
+            "lp-signing",
+            "LP signing service not available (%s); using GPG for: %s"
+            % (lp_reason, fname),
         )
 
     # Legacy path: GPG key on disk (SS_GPG_DEFAULT_KEY must be set in environment)

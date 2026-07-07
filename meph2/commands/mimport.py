@@ -513,6 +513,11 @@ def import_packer_maas(args, cfgdata):
 
 
 def main_import(args):
+    util.trace(
+        "import",
+        "starting: config=%s target=%s no_sign=%s"
+        % (args.import_cfg, args.target, args.no_sign),
+    )
     cfg_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "conf", args.import_cfg)
     if not os.path.exists(cfg_path):
@@ -525,6 +530,7 @@ def main_import(args):
         cfgdata = yaml.safe_load(fp)
 
     if 'packer-maas' in cfgdata:
+        util.trace("import", "detected packer-maas config")
         import_packer_maas(args, cfgdata)
     else:
         target_product_stream = os.path.join(
@@ -554,6 +560,7 @@ def main_import(args):
             fp.write(util.dump_data(product_tree))
 
     util.gen_index_and_sign(args.target, not args.no_sign)
+    util.trace("import", "done: index regenerated in %s" % args.target)
 
 
 def main():
