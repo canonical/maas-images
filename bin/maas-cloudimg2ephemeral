@@ -618,12 +618,19 @@ apply_updates() {
 
     disable_services "$dir" || return
 
-    # we expect /etc/lsb-release to be shell syntax with DISTRIB_CODENAME
     local rel="" fout host_arch
     host_arch=$(uname -m)
-    rel=$(. "$dir/etc/lsb-release" && echo "${DISTRIB_CODENAME}") &&
+    # Try first /etc/lsb-release and then /etc/os-release. From Ubuntu 26.10
+    # /etc/lsb-release is no longer provided in favor of /etc/os-release.
+    # We expect those two files to be shell syntax.
+    local release_file="$dir/etc/lsb-release" release_var="DISTRIB_CODENAME"
+    if [ ! -f "$release_file" ]; then
+        release_file="$dir/etc/os-release"
+        release_var="VERSION_CODENAME"
+    fi
+    rel=$(. "$release_file" && echo "${!release_var}") &&
         [ -n "$rel" ] ||
-        fail "failed to read DISTRIB_CODENAME from $dir/etc/lsb-release"
+        fail "failed to read ${release_var} from ${release_file}"
 
     if [ -z "$debian_arch" ]; then
         # not pretty, use 'file' to determine arch
