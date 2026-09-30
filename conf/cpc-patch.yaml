@@ -6,6 +6,25 @@
 # latest-only: False
 # promote: True
 
+com.ubuntu.maas:1:bootloader-download.json:
+  com.ubuntu.maas:1:grub-efi:uefi:arm64:
+    versions:
+      '20260328.0':
+        labels:
+        - candidate
+        - stable
+  com.ubuntu.maas:1:grub-efi-signed:uefi:amd64:
+    versions:
+      '20250715.0':
+        labels:
+        - candidate
+        - stable
+  com.ubuntu.maas:1:pxelinux:pxe:amd64:
+    versions:
+      '20250715.0':
+        labels:
+        - candidate
+        - stable
 com.ubuntu.maas:centos-bases-download.json:
   com.ubuntu.maas:centos-bases:7.0:amd64:
     support_eol:
