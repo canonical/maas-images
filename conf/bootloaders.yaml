@@ -41,6 +41,16 @@ bootloaders:
     - usr/lib/shim/shimaa64.efi.signed.latest, bootaa64.efi
     - usr/lib/shim/mmaa64.efi, mmaa64.efi
     - usr/lib/grub/arm64-efi-signed/grubnetaa64.efi.signed, grubaa64.efi
+ - firmware-platform: uefi
+   packages:
+    - grub-efi-riscv64-bin
+   arch: riscv64
+   arches: riscv64
+   archive: http://ports.ubuntu.com
+   release: noble
+   os: grub-efi
+   files:
+    - usr/lib/grub/riscv64-efi/monolithic/grubnetriscv64.efi, grubriscv64.efi
  - firmware-platform: open-firmware
    packages:
     - grub-ieee1275-bin

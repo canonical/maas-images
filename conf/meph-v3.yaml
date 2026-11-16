@@ -90,6 +90,7 @@ releases:
    kernels:
     - [ stonking,    amd64,    ga-26.10,        generic,     linux-generic,                        *sa_hwe_ss ]
     - [ stonking,    arm64,    ga-26.10,        generic,     linux-generic,                        *sa_hwe_ss ]
+    - [ stonking,    riscv64,  ga-26.10,        generic,     linux-generic,                        *sa_hwe_ss ]
     - [ stonking,    armhf,    ga-26.10,        generic,     linux-generic,                        *arm_hwe_ss ]
     - [ stonking,    ppc64el,  ga-26.10,        generic,     linux-generic,                        *sa_hwe_ss ]
     - [ stonking,    s390x,    ga-26.10,        generic,     linux-generic,                        *sa_hwe_ss ]
@@ -98,6 +99,7 @@ releases:
    kernels:
     - [ resolute,    amd64,    ga-26.04,        generic,     linux-generic,                        *sa_hwe_rr ]
     - [ resolute,    arm64,    ga-26.04,        generic,     linux-generic,                        *sa_hwe_rr ]
+    - [ resolute,    riscv64,  ga-26.04,        generic,     linux-generic,                        *sa_hwe_rr ]
     - [ resolute,    armhf,    ga-26.04,        generic,     linux-generic,                        *arm_hwe_rr ]
     - [ resolute,    ppc64el,  ga-26.04,        generic,     linux-generic,                        *sa_hwe_rr ]
     - [ resolute,    s390x,    ga-26.04,        generic,     linux-generic,                        *sa_hwe_rr ]
